@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, View, Dimensions } from 'react-native';
+import { Text, View, Dimensions, Image } from 'react-native';
 import { WebView } from 'react-native-webview';
 
 interface LaTeXRendererProps {
@@ -8,6 +8,10 @@ interface LaTeXRendererProps {
 }
 
 const LaTeXRenderer: React.FC<LaTeXRendererProps> = ({ text, style }) => {
+  const isImageUrl = (str: string) => {
+    return /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(str) || str.includes('youtube.com') || str.includes('youtu.be');
+  };
+
   const renderContent = () => {
     const parts = text.split(/(\$\$LATEX::[^:]*::)/g);
     
@@ -39,6 +43,15 @@ const LaTeXRenderer: React.FC<LaTeXRendererProps> = ({ text, style }) => {
             scrollEnabled={false}
             showsVerticalScrollIndicator={false}
             showsHorizontalScrollIndicator={false}
+          />
+        );
+      }
+      if (isImageUrl(part.trim())) {
+        return (
+          <Image
+            key={index}
+            source={{ uri: part.trim() }}
+            style={{ width: 200, height: 150, resizeMode: 'contain', marginVertical: 8 }}
           />
         );
       }

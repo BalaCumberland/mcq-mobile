@@ -83,7 +83,7 @@ const QuizScreen = ({ navigation }) => {
       
       <LaTeXRenderer text={currentQuestion.question} style={styles.question} />
       
-      <View style={styles.answersContainer}>
+      <ScrollView style={styles.answersContainer} showsVerticalScrollIndicator={true}>
         {allAnswers.map((answer, index) => (
           <TouchableOpacity
             key={index}
@@ -102,7 +102,7 @@ const QuizScreen = ({ navigation }) => {
             </View>
           </TouchableOpacity>
         ))}
-      </View>
+      </ScrollView>
       
       <View style={styles.navigationContainer}>
         <TouchableOpacity
