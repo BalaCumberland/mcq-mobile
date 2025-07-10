@@ -122,8 +122,9 @@ const QuizScreen = ({ navigation }) => {
           </TouchableOpacity>
         ) : (
           <TouchableOpacity
-            style={styles.navButton}
+            style={[styles.navButton, !userAnswers[currentQuestionIndex] && styles.disabledButton]}
             onPress={nextQuestion}
+            disabled={!userAnswers[currentQuestionIndex]}
           >
             <Text style={styles.navButtonText}>Next</Text>
           </TouchableOpacity>
