@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import useQuizStore from '../store/QuizStore';
+import LaTeXRenderer from '../components/LaTeXRenderer';
 
 const QuizScreen = ({ navigation }) => {
   const { 
@@ -30,37 +31,47 @@ const QuizScreen = ({ navigation }) => {
     }, 0);
 
     return (
-      <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+      <View style={styles.container}>
         <Text style={styles.title}>Quiz Results</Text>
         <Text style={styles.score}>Score: {correctCount}/{quiz.questions.length}</Text>
+        <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         
         {quiz.questions.map((question, index) => {
           const isCorrect = userAnswers[index] === question.correctAnswer;
           return (
             <View key={index} style={styles.resultCard}>
-              <Text style={styles.questionText}>{question.question}</Text>
+              <LaTeXRenderer text={question.question} style={styles.questionText} />
               <Text style={[styles.resultLabel, { color: isCorrect ? 'green' : 'red' }]}>
                 {isCorrect ? '✓ CORRECT' : '✗ INCORRECT'}
               </Text>
-              <Text style={styles.correctAnswer}>
-                Correct Answer: {question.correctAnswer}
-              </Text>
+              <View style={styles.correctAnswerContainer}>
+                <Text style={styles.correctAnswerLabel}>Correct Answer: </Text>
+                <LaTeXRenderer text={question.correctAnswer} style={styles.correctAnswer} />
+              </View>
               {!isCorrect && (
-                <Text style={styles.userAnswer}>
-                  Your Answer: {userAnswers[index] || 'Not answered'}
-                </Text>
+                <>
+                  <View style={styles.userAnswerContainer}>
+                    <Text style={styles.userAnswerLabel}>Your Answer: </Text>
+                    <LaTeXRenderer text={userAnswers[index] || 'Not answered'} style={styles.userAnswer} />
+                  </View>
+                  <View style={styles.explanationContainer}>
+                    <Text style={styles.explanationLabel}>Explanation: </Text>
+                    <LaTeXRenderer text={question.explanation} style={styles.explanation} />
+                  </View>
+                </>
               )}
             </View>
           );
         })}
         
+        </ScrollView>
         <TouchableOpacity 
           style={styles.button} 
           onPress={() => navigation.goBack()}
         >
           <Text style={styles.buttonText}>Back to Home</Text>
         </TouchableOpacity>
-      </ScrollView>
+      </View>
     );
   }
 
@@ -70,7 +81,7 @@ const QuizScreen = ({ navigation }) => {
         Question {currentQuestionIndex + 1} of {quiz.questions.length}
       </Text>
       
-      <Text style={styles.question}>{currentQuestion.question}</Text>
+      <LaTeXRenderer text={currentQuestion.question} style={styles.question} />
       
       <View style={styles.answersContainer}>
         {allAnswers.map((answer, index) => (
@@ -87,7 +98,7 @@ const QuizScreen = ({ navigation }) => {
                 styles.radioButton,
                 userAnswers[currentQuestionIndex] === answer && styles.radioSelected
               ]} />
-              <Text style={styles.answerText}>{answer}</Text>
+              <LaTeXRenderer text={answer} style={styles.answerText} />
             </View>
           </TouchableOpacity>
         ))}
@@ -213,14 +224,47 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 5,
   },
+  correctAnswerContainer: {
+    flexDirection: 'row',
+    marginBottom: 5,
+    flexWrap: 'wrap',
+  },
+  correctAnswerLabel: {
+    fontSize: 14,
+    color: 'green',
+    fontWeight: 'bold',
+  },
   correctAnswer: {
     fontSize: 14,
     color: 'green',
+  },
+  userAnswerContainer: {
+    flexDirection: 'row',
     marginBottom: 5,
+    flexWrap: 'wrap',
+  },
+  userAnswerLabel: {
+    fontSize: 14,
+    color: 'red',
+    fontWeight: 'bold',
   },
   userAnswer: {
     fontSize: 14,
     color: 'red',
+  },
+  explanationContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  explanationLabel: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: 'bold',
+  },
+  explanation: {
+    fontSize: 14,
+    color: '#666',
+    fontStyle: 'italic',
   },
   button: {
     backgroundColor: '#007bff',
@@ -233,6 +277,9 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  scrollView: {
+    flex: 1,
   },
   scrollContent: {
     paddingBottom: 20,
