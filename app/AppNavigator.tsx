@@ -1,7 +1,9 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { TouchableOpacity, Text } from 'react-native';
+import { TouchableOpacity, Text, View } from 'react-native';
+import { signOut } from 'firebase/auth';
+import { auth } from './config/firebase';
 import LoginScreen from './screens/LoginScreen';
 import SignupScreen from './screens/SignupScreen';
 import HomeScreen from './screens/HomeScreen';
@@ -18,12 +20,27 @@ export default function AppNavigator() {
           headerLeft: () => null,
           gestureEnabled: false,
           headerRight: route.name !== 'Login' && route.name !== 'Signup' ? () => (
-            <TouchableOpacity 
-              onPress={() => navigation.navigate('Home')}
-              style={{ marginRight: 15, backgroundColor: '#007bff', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 4 }}
-            >
-              <Text style={{ color: '#fff', fontWeight: 'bold' }}>Home</Text>
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', gap: 10, marginRight: 15 }}>
+              <TouchableOpacity 
+                onPress={() => navigation.navigate('Home')}
+                style={{ backgroundColor: '#007bff', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 4 }}
+              >
+                <Text style={{ color: '#fff', fontWeight: 'bold' }}>Home</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                onPress={async () => {
+                  try {
+                    await signOut(auth);
+                    navigation.navigate('Login');
+                  } catch (error) {
+                    console.error('Logout error:', error);
+                  }
+                }}
+                style={{ backgroundColor: '#dc2626', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 4 }}
+              >
+                <Text style={{ color: '#fff', fontWeight: 'bold' }}>Logout</Text>
+              </TouchableOpacity>
+            </View>
           ) : undefined,
         })}
       >
