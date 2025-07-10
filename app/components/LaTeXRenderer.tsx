@@ -1,6 +1,7 @@
 import React from 'react';
 import { Text, View, Dimensions, Image } from 'react-native';
 import { WebView } from 'react-native-webview';
+import Video from 'react-native-video';
 
 interface LaTeXRendererProps {
   text: string;
@@ -9,11 +10,26 @@ interface LaTeXRendererProps {
 
 const LaTeXRenderer: React.FC<LaTeXRendererProps> = ({ text, style }) => {
   const isImageUrl = (str: string) => {
-    return /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(str) || str.includes('youtube.com') || str.includes('youtu.be');
+    return /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(str);
+  };
+
+  const isYouTubeUrl = (str: string) => {
+    return str.includes('youtube.com') || str.includes('youtu.be');
+  };
+
+  const isVideoUrl = (str: string) => {
+    return /\.(mp4|avi|mov|wmv|flv|webm|mkv|m4v)$/i.test(str);
+  };
+
+  const getYouTubeEmbedUrl = (url: string) => {
+    const videoId = url.includes('youtu.be') 
+      ? url.split('youtu.be/')[1]?.split('?')[0]
+      : url.split('v=')[1]?.split('&')[0];
+    return `https://www.youtube.com/embed/${videoId}`;
   };
 
   const renderContent = () => {
-    const parts = text.split(/(\$\$LATEX::[^:]*::)/g);
+    const parts = text.split(/(\$\$(?:LATEX|SMILES)::[^:]*::)/g);
     
     return parts.map((part, index) => {
       if (part.startsWith('$$LATEX::') && part.endsWith('::')) {
@@ -43,6 +59,41 @@ const LaTeXRenderer: React.FC<LaTeXRendererProps> = ({ text, style }) => {
             scrollEnabled={false}
             showsVerticalScrollIndicator={false}
             showsHorizontalScrollIndicator={false}
+          />
+        );
+      }
+      if (part.startsWith('$$SMILES::') && part.endsWith('::')) {
+        const smiles = part.replace(/^\$\$SMILES::/, '').replace(/::$/, '').trim();
+        const smilesUrl = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles/${encodeURIComponent(smiles)}/PNG?image_size=300x200`;
+        return (
+          <Image
+            key={index}
+            source={{ uri: smilesUrl }}
+            style={{ width: 300, height: 200, resizeMode: 'contain', marginVertical: 8 }}
+          />
+        );
+      }
+      if (isYouTubeUrl(part.trim())) {
+        const embedUrl = getYouTubeEmbedUrl(part.trim());
+        return (
+          <WebView
+            key={index}
+            source={{ uri: embedUrl }}
+            style={{ width: 300, height: 200, marginVertical: 8 }}
+            allowsFullscreenVideo={true}
+            mediaPlaybackRequiresUserAction={false}
+          />
+        );
+      }
+      if (isVideoUrl(part.trim())) {
+        return (
+          <Video
+            key={index}
+            source={{ uri: part.trim() }}
+            style={{ width: 300, height: 200, marginVertical: 8 }}
+            controls={true}
+            resizeMode="contain"
+            paused={true}
           />
         );
       }
