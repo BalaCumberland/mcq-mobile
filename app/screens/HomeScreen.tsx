@@ -11,6 +11,7 @@ import { Picker } from '@react-native-picker/picker';
 import { getAuthToken } from '../services/firebaseAuth';
 import API_BASE_URL from '../config/env';
 import useUserStore from '../store/UserStore';
+import demoData from '../data/demoData';
 import useQuizStore from '../store/QuizStore';
 
 const HomeScreen = ({ route, navigation }) => {
@@ -66,12 +67,23 @@ const HomeScreen = ({ route, navigation }) => {
     setSelectedSubject(subject);
     setSelectedQuiz(null);
     if (subject) {
-      fetchUnattemptedQuizzes(subject);
+      if (user?.payment_status === 'UNPAID') {
+        setQuizzes(['Demo Quiz']);
+      } else {
+        fetchUnattemptedQuizzes(subject);
+      }
     }
   };
 
   const beginTest = async () => {
     if (!selectedQuiz || !user) return;
+    
+    // Check if user payment status is UNPAID
+    if (user.payment_status === 'UNPAID') {
+      setQuiz(demoData);
+      navigation.navigate('Quiz');
+      return;
+    }
     
     try {
       setLoading(true);
