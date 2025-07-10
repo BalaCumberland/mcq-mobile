@@ -5,6 +5,7 @@ import {
   StyleSheet,
   FlatList,
   ActivityIndicator,
+  TouchableOpacity,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { getAuthToken } from '../services/firebaseAuth';
@@ -91,6 +92,12 @@ const HomeScreen = ({ route }) => {
           renderItem={({ item }) => (
             <View style={styles.quizCard}>
               <Text style={styles.quizTitle}>{item}</Text>
+              <TouchableOpacity 
+                style={styles.beginButton}
+                onPress={() => console.log('Begin test:', item)}
+              >
+                <Text style={styles.beginButtonText}>Begin Test</Text>
+              </TouchableOpacity>
             </View>
           )}
           ListEmptyComponent={
@@ -135,6 +142,9 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     marginVertical: 6,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   quizTitle: {
     fontSize: 16,
@@ -144,5 +154,15 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 24,
     color: '#777',
+  },
+  beginButton: {
+    backgroundColor: '#007bff',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
+  },
+  beginButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
   },
 });
