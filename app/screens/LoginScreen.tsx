@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { View, TextInput, StyleSheet, Alert, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../config/firebase';
 import userStore from '../store/UserStore';
 
-export default function LoginScreen({ navigation }: any) {
+const LoginScreen = memo(function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -81,7 +81,7 @@ export default function LoginScreen({ navigation }: any) {
       </View>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {
@@ -160,3 +160,5 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 });
+
+export default LoginScreen;

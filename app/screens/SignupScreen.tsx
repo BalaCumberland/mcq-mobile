@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, memo, useCallback } from 'react';
 import { View, TextInput, StyleSheet, Alert, Text, TouchableOpacity, ActivityIndicator, ScrollView } from 'react-native';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../config/firebase';
@@ -6,7 +6,7 @@ import { Picker } from '@react-native-picker/picker';
 
 const CLASS_OPTIONS = ['CLS6', 'CLS7', 'CLS8', 'CLS9', 'CLS10', 'CLS11-MPC', 'CLS12-MPC', 'CLS11-BIPC', 'CLS12-BIPC'];
 
-export default function SignupScreen({ navigation }: any) {
+const SignupScreen = memo(function SignupScreen({ navigation }: any) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -15,12 +15,12 @@ export default function SignupScreen({ navigation }: any) {
   const [studentClass, setStudentClass] = useState('CLS6');
   const [loading, setLoading] = useState(false);
 
-  const isValidIndianPhone = (phone: string) => {
+  const isValidIndianPhone = useCallback((phone: string) => {
     const phoneRegex = /^[6789]\d{9}$/;
     return phoneRegex.test(phone);
-  };
+  }, []);
 
-  const handleSignup = async () => {
+  const handleSignup = useCallback(async () => {
     if (password !== confirmPassword) {
       Alert.alert('Error', 'Passwords do not match');
       return;
@@ -63,7 +63,7 @@ export default function SignupScreen({ navigation }: any) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [email, name, phoneNumber, password, confirmPassword, studentClass, navigation, isValidIndianPhone]);
 
   return (
     <ScrollView style={styles.container}>
@@ -180,7 +180,7 @@ export default function SignupScreen({ navigation }: any) {
       </View>
     </ScrollView>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {
@@ -276,3 +276,5 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 });
+
+export default SignupScreen;

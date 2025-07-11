@@ -87,7 +87,7 @@ const useQuizStore = create<QuizState>()(persist((set, get) => ({
     
     if (remaining <= 0) {
       set({ showResults: true, timeRemaining: 0 });
-    } else {
+    } else if (Math.abs(remaining - (state.timeRemaining || 0)) > 0) {
       set({ timeRemaining: remaining });
     }
   },

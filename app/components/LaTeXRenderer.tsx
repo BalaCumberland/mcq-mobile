@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo, useMemo } from 'react';
 import { Text, View, Dimensions, Image } from 'react-native';
 import { WebView } from 'react-native-webview';
 import Video from 'react-native-video';
@@ -8,7 +8,7 @@ interface LaTeXRendererProps {
   style?: any;
 }
 
-const LaTeXRenderer: React.FC<LaTeXRendererProps> = ({ text, style }) => {
+const LaTeXRenderer: React.FC<LaTeXRendererProps> = memo(({ text, style }) => {
   const isImageUrl = (str: string) => {
     return /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(str);
   };
@@ -28,7 +28,7 @@ const LaTeXRenderer: React.FC<LaTeXRendererProps> = ({ text, style }) => {
     return `https://www.youtube.com/embed/${videoId}`;
   };
 
-  const renderContent = () => {
+  const renderContent = useMemo(() => {
     const parts = text.split(/(\$\$(?:LATEX|SMILES)::[^:]*::)/g);
     
     return parts.map((part, index) => {
@@ -108,9 +108,9 @@ const LaTeXRenderer: React.FC<LaTeXRendererProps> = ({ text, style }) => {
       }
       return part ? <Text key={index} style={style}>{part}</Text> : null;
     });
-  };
+  }, [text]);
 
-  return <>{renderContent()}</>;
-};
+  return <>{renderContent}</>;
+});
 
 export default LaTeXRenderer;

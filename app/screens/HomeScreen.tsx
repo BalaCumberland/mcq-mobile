@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, memo, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -16,7 +16,7 @@ import demoData from '../data/demoData';
 import useQuizStore from '../store/QuizStore';
 
 
-const HomeScreen = ({ route, navigation }) => {
+const HomeScreen = memo(({ route, navigation }) => {
   const { user } = useUserStore();
   const { setQuiz, hasActiveQuiz, quiz: activeQuiz, timeRemaining, resetQuiz } = useQuizStore();
   const [selectedSubject, setSelectedSubject] = useState(null);
@@ -25,13 +25,13 @@ const HomeScreen = ({ route, navigation }) => {
   const [loading, setLoading] = useState(false);
   const [fetchingQuizzes, setFetchingQuizzes] = useState(false);
 
-  const subjectOptions =
+  const subjectOptions = useMemo(() => 
     user?.subjects?.map((subject) => ({
       label: subject,
       value: subject,
-    })) || [];
+    })) || [], [user?.subjects]);
 
-  const fetchUnattemptedQuizzes = async (subject: string) => {
+  const fetchUnattemptedQuizzes = useCallback(async (subject: string) => {
     setFetchingQuizzes(true);
     try {
       const token = await getAuthToken();
@@ -64,9 +64,9 @@ const HomeScreen = ({ route, navigation }) => {
     } finally {
       setFetchingQuizzes(false);
     }
-  };
+  }, [user?.email]);
 
-  const handleSubjectChange = (subject: string) => {
+  const handleSubjectChange = useCallback((subject: string) => {
     setSelectedSubject(subject);
     setSelectedQuiz(null);
     if (subject) {
@@ -76,9 +76,9 @@ const HomeScreen = ({ route, navigation }) => {
         fetchUnattemptedQuizzes(subject);
       }
     }
-  };
+  }, [user?.payment_status, fetchUnattemptedQuizzes]);
 
-  const beginTest = async () => {
+  const beginTest = useCallback(async () => {
     if (!selectedQuiz || !user) return;
     
     // Check if user payment status is UNPAID
@@ -112,7 +112,7 @@ const HomeScreen = ({ route, navigation }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedQuiz, user, setQuiz, navigation]);
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -214,7 +214,7 @@ const HomeScreen = ({ route, navigation }) => {
       </View>
     </ScrollView>
   );
-};
+});
 
 export default HomeScreen;
 
