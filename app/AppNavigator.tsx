@@ -11,6 +11,50 @@ import QuizScreen from './screens/QuizScreen';
 
 const Stack = createStackNavigator();
 
+const navStyles = {
+  headerRight: {
+    flexDirection: 'row',
+    gap: 8,
+    marginRight: 16,
+  },
+  homeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#4CAF50',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 4,
+    elevation: 2,
+  },
+  homeButtonEmoji: {
+    fontSize: 12,
+    marginRight: 3,
+  },
+  homeButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 12,
+  },
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FF9800',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 4,
+    elevation: 2,
+  },
+  logoutButtonEmoji: {
+    fontSize: 12,
+    marginRight: 3,
+  },
+  logoutButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 12,
+  },
+};
+
 export default function AppNavigator() {
   return (
     <NavigationContainer>
@@ -19,13 +63,28 @@ export default function AppNavigator() {
         screenOptions={({ navigation, route }) => ({
           headerLeft: () => null,
           gestureEnabled: false,
+          headerStyle: {
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.1,
+            shadowRadius: 8,
+            elevation: 8,
+          },
+          headerTitleStyle: {
+            fontSize: 20,
+            fontWeight: 'bold',
+            color: '#333',
+          },
+          headerTitle: route.name === 'Login' ? '🎓 EduQuiz' : route.name === 'Signup' ? '🎓 Sign Up' : '🎓 EduQuiz',
           headerRight: route.name !== 'Login' && route.name !== 'Signup' ? () => (
-            <View style={{ flexDirection: 'row', gap: 10, marginRight: 15 }}>
+            <View style={navStyles.headerRight}>
               <TouchableOpacity 
                 onPress={() => navigation.navigate('Home')}
-                style={{ backgroundColor: '#007bff', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 4 }}
+                style={navStyles.homeButton}
               >
-                <Text style={{ color: '#fff', fontWeight: 'bold' }}>Home</Text>
+                <Text style={navStyles.homeButtonEmoji}>🏠</Text>
+                <Text style={navStyles.homeButtonText}>Home</Text>
               </TouchableOpacity>
               <TouchableOpacity 
                 onPress={async () => {
@@ -36,9 +95,10 @@ export default function AppNavigator() {
                     console.error('Logout error:', error);
                   }
                 }}
-                style={{ backgroundColor: '#dc2626', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 4 }}
+                style={navStyles.logoutButton}
               >
-                <Text style={{ color: '#fff', fontWeight: 'bold' }}>Logout</Text>
+                <Text style={navStyles.logoutButtonEmoji}>⏻</Text>
+                <Text style={navStyles.logoutButtonText}>Logout</Text>
               </TouchableOpacity>
             </View>
           ) : undefined,

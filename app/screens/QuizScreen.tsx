@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import useQuizStore from '../store/QuizStore';
-import useCompletedQuizStore from '../store/CompletedQuizStore';
+
 import LaTeXRenderer from '../components/LaTeXRenderer';
 
 const QuizScreen = ({ navigation }) => {
@@ -17,7 +17,6 @@ const QuizScreen = ({ navigation }) => {
     finishQuiz,
     updateTimer
   } = useQuizStore();
-  const { addCompletedQuiz } = useCompletedQuizStore();
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -79,12 +78,7 @@ const QuizScreen = ({ navigation }) => {
         </ScrollView>
         <TouchableOpacity 
           style={styles.button} 
-          onPress={() => {
-            if (quiz?.quizName && quiz.quizName !== 'DEMO-QUIZ') {
-              addCompletedQuiz(quiz.quizName);
-            }
-            navigation.goBack();
-          }}
+          onPress={() => navigation.goBack()}
         >
           <Text style={styles.buttonText}>Back to Home</Text>
         </TouchableOpacity>

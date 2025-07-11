@@ -68,7 +68,7 @@ export default function SignupScreen({ navigation }: any) {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.formContainer}>
-        <Text style={styles.title}>Create Account</Text>
+        <Text style={styles.title}>🎓 Create Account</Text>
         
         <View style={styles.inputContainer}>
           <Text style={styles.label}>👤 Full Name</Text>
@@ -185,25 +185,21 @@ export default function SignupScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#f5f5f5',
   },
   formContainer: {
     backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 30,
-    margin: 20,
-    marginTop: 40,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 5,
+    borderRadius: 8,
+    padding: 20,
+    marginHorizontal: 16,
+    marginVertical: 16,
+    elevation: 2,
   },
   title: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 30,
+    marginBottom: 20,
     color: '#333',
   },
   inputContainer: {
@@ -212,18 +208,18 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#374151',
-    marginBottom: 8,
+    color: '#333',
+    marginBottom: 6,
   },
   input: {
-    backgroundColor: '#f9fafb',
-    borderWidth: 2,
-    borderColor: '#e5e7eb',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    backgroundColor: '#f9f9f9',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
     fontSize: 16,
-    color: '#374151',
+    color: '#333',
   },
   inputError: {
     borderColor: '#ef4444',
@@ -234,28 +230,24 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   pickerContainer: {
-    backgroundColor: '#f9fafb',
-    borderWidth: 2,
-    borderColor: '#e5e7eb',
-    borderRadius: 12,
+    backgroundColor: '#f9f9f9',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 4,
   },
   picker: {
     height: 50,
   },
   button: {
-    backgroundColor: '#8b5cf6',
-    borderRadius: 16,
-    paddingVertical: 16,
-    marginTop: 10,
-    shadowColor: '#8b5cf6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    backgroundColor: '#4CAF50',
+    borderRadius: 4,
+    paddingVertical: 12,
+    marginTop: 16,
+    elevation: 2,
   },
   buttonDisabled: {
-    backgroundColor: '#d1d5db',
-    shadowOpacity: 0,
+    backgroundColor: '#ccc',
+    elevation: 0,
   },
   buttonContent: {
     flexDirection: 'row',
@@ -265,7 +257,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
   },
   buttonEmoji: {
@@ -276,11 +268,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   linkText: {
-    color: '#6b7280',
+    color: '#666',
     fontSize: 16,
   },
   link: {
-    color: '#8b5cf6',
-    fontWeight: '600',
+    color: '#2196F3',
+    fontWeight: 'bold',
   },
 });

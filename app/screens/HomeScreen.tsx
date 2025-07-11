@@ -14,12 +14,11 @@ import API_BASE_URL from '../config/env';
 import useUserStore from '../store/UserStore';
 import demoData from '../data/demoData';
 import useQuizStore from '../store/QuizStore';
-import useCompletedQuizStore from '../store/CompletedQuizStore';
+
 
 const HomeScreen = ({ route, navigation }) => {
   const { user } = useUserStore();
   const { setQuiz, hasActiveQuiz, quiz: activeQuiz, timeRemaining, resetQuiz } = useQuizStore();
-  const { isQuizCompleted, addCompletedQuiz } = useCompletedQuizStore();
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [selectedQuiz, setSelectedQuiz] = useState(null);
   const [quizzes, setQuizzes] = useState([]);
@@ -58,9 +57,7 @@ const HomeScreen = ({ route, navigation }) => {
       const data = await response.json();
       console.log('✅ Unattempted quizzes:', data);
 
-      // Filter out completed quizzes
-      const availableQuizzes = (data.unattempted_quizzes || []).filter(quiz => !isQuizCompleted(quiz));
-      setQuizzes(availableQuizzes);
+      setQuizzes(data.unattempted_quizzes || []);
     } catch (err) {
       console.error('❌ Error fetching quizzes:', err.message);
       setQuizzes([]);
@@ -148,9 +145,9 @@ const HomeScreen = ({ route, navigation }) => {
       <View style={styles.mainCard}>
         <View style={styles.cardHeader}>
           <View style={styles.cardIcon}>
-            <Text style={styles.cardIconText}>🎯</Text>
+            <Text style={styles.cardIconText}>🎓</Text>
           </View>
-          <Text style={styles.title}>Select Your Quiz</Text>
+          <Text style={styles.title}>Select Quiz</Text>
         </View>
 
         <View style={styles.inputContainer}>
@@ -224,90 +221,96 @@ export default HomeScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
-    padding: 16,
+    backgroundColor: '#f5f5f5',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
   },
   welcomeCard: {
     backgroundColor: '#fff',
     borderRadius: 16,
-    padding: 20,
-    marginBottom: 24,
-    shadowColor: '#000',
+    paddingVertical: 16,
+    paddingHorizontal: '6%',
+    marginBottom: 16,
+    shadowColor: '#1e40af',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
+    alignItems: 'center',
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#2196F3',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  avatarText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  welcomeTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  welcomeSubtitle: {
+    fontSize: 14,
+    color: '#64748b',
+    textAlign: 'center',
+  },
+  mainCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    paddingVertical: 20,
+    paddingHorizontal: '5%',
+    shadowColor: '#1e40af',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
-    alignItems: 'center',
-  },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#3b82f6',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  avatarText: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  welcomeTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1f2937',
-    marginBottom: 4,
-  },
-  welcomeSubtitle: {
-    fontSize: 16,
-    color: '#6b7280',
-  },
-  mainCard: {
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
-    elevation: 8,
   },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 16,
   },
   cardIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#f97316',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#4CAF50',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
   },
   cardIconText: {
-    fontSize: 20,
+    fontSize: 16,
   },
   title: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
-    color: '#1f2937',
+    color: '#333',
+    flex: 1,
   },
   inputContainer: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#374151',
-    marginBottom: 12,
+    color: '#333',
+    marginBottom: 8,
   },
   pickerWrapper: {
-    backgroundColor: '#f9fafb',
-    borderWidth: 2,
-    borderColor: '#e5e7eb',
+    backgroundColor: '#f8fafc',
+    borderWidth: 1,
+    borderColor: '#bfdbfe',
     borderRadius: 12,
   },
   picker: {
@@ -316,16 +319,12 @@ const styles = StyleSheet.create({
     color: '#374151',
   },
   beginButton: {
-    backgroundColor: '#f97316',
-    paddingVertical: 16,
-    borderRadius: 16,
-    marginTop: 24,
+    backgroundColor: '#2196F3',
+    paddingVertical: 12,
+    borderRadius: 4,
+    marginTop: 16,
     alignItems: 'center',
-    shadowColor: '#f97316',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    elevation: 2,
   },
   beginButtonDisabled: {
     backgroundColor: '#d1d5db',
@@ -339,29 +338,36 @@ const styles = StyleSheet.create({
   beginButtonText: {
     color: '#fff',
     fontWeight: 'bold',
-    fontSize: 18,
+    fontSize: 16,
   },
   beginButtonEmoji: {
     fontSize: 18,
   },
   resumeCard: {
-    backgroundColor: '#dbeafe',
-    borderRadius: 16,
-    padding: 20,
+    backgroundColor: '#fef3c7',
+    borderRadius: 20,
+    paddingVertical: 24,
+    paddingHorizontal: '6%',
     marginBottom: 24,
     borderWidth: 2,
-    borderColor: '#3b82f6',
+    borderColor: '#f59e0b',
+    shadowColor: '#f59e0b',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
   resumeTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
-    color: '#1e40af',
-    marginBottom: 8,
+    color: '#92400e',
+    marginBottom: 12,
   },
   resumeText: {
-    fontSize: 14,
-    color: '#1e40af',
-    marginBottom: 4,
+    fontSize: 16,
+    color: '#92400e',
+    marginBottom: 6,
+    fontWeight: '500',
   },
   resumeButtons: {
     flexDirection: 'row',
@@ -370,10 +376,15 @@ const styles = StyleSheet.create({
   },
   resumeButton: {
     flex: 1,
-    backgroundColor: '#3b82f6',
-    paddingVertical: 12,
-    borderRadius: 8,
+    backgroundColor: '#10b981',
+    paddingVertical: 14,
+    borderRadius: 12,
     alignItems: 'center',
+    shadowColor: '#10b981',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 3,
   },
   resumeButtonText: {
     color: '#fff',
@@ -381,10 +392,15 @@ const styles = StyleSheet.create({
   },
   startFreshButton: {
     flex: 1,
-    backgroundColor: '#6b7280',
-    paddingVertical: 12,
-    borderRadius: 8,
+    backgroundColor: '#64748b',
+    paddingVertical: 14,
+    borderRadius: 12,
     alignItems: 'center',
+    shadowColor: '#64748b',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 3,
   },
   startFreshButtonText: {
     color: '#fff',
@@ -401,31 +417,40 @@ const styles = StyleSheet.create({
     borderColor: '#e5e7eb',
   },
   loadingText: {
-    marginLeft: 8,
-    color: '#6b7280',
-    fontSize: 16,
+    marginLeft: 10,
+    color: '#1e40af',
+    fontSize: 18,
+    fontWeight: '600',
   },
   emptyContainer: {
     alignItems: 'center',
-    padding: 24,
-    backgroundColor: '#f0fdf4',
-    borderRadius: 12,
+    paddingVertical: 32,
+    paddingHorizontal: '8%',
+    backgroundColor: '#ecfdf5',
+    borderRadius: 20,
     borderWidth: 2,
-    borderColor: '#bbf7d0',
+    borderColor: '#a7f3d0',
+    shadowColor: '#10b981',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
   emptyEmoji: {
     fontSize: 32,
     marginBottom: 8,
   },
   emptyTitle: {
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: 'bold',
-    color: '#166534',
-    marginBottom: 4,
+    color: '#065f46',
+    marginBottom: 8,
   },
   emptyText: {
-    fontSize: 14,
-    color: '#166534',
+    fontSize: 16,
+    color: '#065f46',
     textAlign: 'center',
+    fontWeight: '500',
+    lineHeight: 24,
   },
 });
