@@ -20,6 +20,10 @@ const SignupScreen = memo(function SignupScreen({ navigation }: any) {
     return phoneRegex.test(phone);
   }, []);
 
+  const sanitizeInput = (input: string) => {
+    return input.trim().replace(/[<>"'&]/g, '');
+  };
+
   const handleSignup = useCallback(async () => {
     if (password !== confirmPassword) {
       Alert.alert('Error', 'Passwords do not match');
@@ -42,10 +46,10 @@ const SignupScreen = memo(function SignupScreen({ navigation }: any) {
           'Content-Type': 'text/plain;charset=UTF-8',
         },
         body: JSON.stringify({
-          email,
-          name,
-          phoneNumber,
-          studentClass
+          email: sanitizeInput(email),
+          name: sanitizeInput(name),
+          phoneNumber: sanitizeInput(phoneNumber),
+          studentClass: sanitizeInput(studentClass)
         })
       });
       
