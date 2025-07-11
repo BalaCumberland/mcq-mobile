@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import useQuizStore from '../store/QuizStore';
+import useCompletedQuizStore from '../store/CompletedQuizStore';
 import LaTeXRenderer from '../components/LaTeXRenderer';
 
 const QuizScreen = ({ navigation }) => {
@@ -9,11 +10,22 @@ const QuizScreen = ({ navigation }) => {
     currentQuestionIndex, 
     userAnswers, 
     showResults,
+    timeRemaining,
     nextQuestion, 
     prevQuestion, 
     selectAnswer,
-    finishQuiz
+    finishQuiz,
+    updateTimer
   } = useQuizStore();
+  const { addCompletedQuiz } = useCompletedQuizStore();
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      updateTimer();
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, [updateTimer]);
 
   if (!quiz) return null;
 
@@ -67,7 +79,12 @@ const QuizScreen = ({ navigation }) => {
         </ScrollView>
         <TouchableOpacity 
           style={styles.button} 
-          onPress={() => navigation.goBack()}
+          onPress={() => {
+            if (quiz?.quizName && quiz.quizName !== 'DEMO-QUIZ') {
+              addCompletedQuiz(quiz.quizName);
+            }
+            navigation.goBack();
+          }}
         >
           <Text style={styles.buttonText}>Back to Home</Text>
         </TouchableOpacity>
@@ -77,9 +94,14 @@ const QuizScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>
-        Question {currentQuestionIndex + 1} of {quiz.questions.length}
-      </Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>
+          Question {currentQuestionIndex + 1} of {quiz.questions.length}
+        </Text>
+        <Text style={styles.timer}>
+          ⏰ {Math.floor((timeRemaining || 0) / 60)}:{((timeRemaining || 0) % 60).toString().padStart(2, '0')}
+        </Text>
+      </View>
       
       <LaTeXRenderer text={currentQuestion.question} style={styles.question} />
       
@@ -140,11 +162,20 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: '#fff',
   },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 20,
-    textAlign: 'center',
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  timer: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#dc2626',
   },
   question: {
     fontSize: 18,
