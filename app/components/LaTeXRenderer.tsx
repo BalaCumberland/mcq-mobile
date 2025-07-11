@@ -42,11 +42,11 @@ const LaTeXRenderer: React.FC<LaTeXRendererProps> = memo(({ text, style }) => {
               <script>
                 window.MathJax = {
                   tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
-                  chtml: { scale: 1.2 }
+                  chtml: { scale: 2.0 }
                 };
               </script>
             </head>
-            <body style="margin:0; padding:8px; font-size:16px;">
+            <body style="margin:0; padding:12px; font-size:20px;">
               $$${latex}$$
             </body>
           </html>
@@ -55,7 +55,7 @@ const LaTeXRenderer: React.FC<LaTeXRendererProps> = memo(({ text, style }) => {
           <WebView
             key={index}
             source={{ html }}
-            style={{ height: 60, backgroundColor: 'transparent' }}
+            style={{ height: 100, backgroundColor: 'transparent' }}
             scrollEnabled={false}
             showsVerticalScrollIndicator={false}
             showsHorizontalScrollIndicator={false}
