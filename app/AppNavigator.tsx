@@ -8,6 +8,8 @@ import LoginScreen from './screens/LoginScreen';
 import SignupScreen from './screens/SignupScreen';
 import HomeScreen from './screens/HomeScreen';
 import QuizScreen from './screens/QuizScreen';
+import AdminScreen from './screens/AdminScreen';
+import useUserStore from './store/UserStore';
 
 const Stack = createStackNavigator();
 
@@ -53,9 +55,30 @@ const navStyles = {
     fontWeight: 'bold',
     fontSize: 12,
   },
+  adminButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#9C27B0',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 4,
+    elevation: 2,
+  },
+  adminButtonEmoji: {
+    fontSize: 12,
+    marginRight: 3,
+  },
+  adminButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 12,
+  },
 };
 
 export default function AppNavigator() {
+  const { user } = useUserStore();
+  const isAdmin = user?.role === 'admin' || user?.role === 'super';
+  
   return (
     <NavigationContainer>
       <Stack.Navigator 
@@ -86,6 +109,15 @@ export default function AppNavigator() {
                 <Text style={navStyles.homeButtonEmoji}>🏠</Text>
                 <Text style={navStyles.homeButtonText}>Home</Text>
               </TouchableOpacity>
+              {isAdmin && (
+                <TouchableOpacity 
+                  onPress={() => navigation.navigate('Admin')}
+                  style={navStyles.adminButton}
+                >
+                  <Text style={navStyles.adminButtonEmoji}>⚙️</Text>
+                  <Text style={navStyles.adminButtonText}>Admin</Text>
+                </TouchableOpacity>
+              )}
               <TouchableOpacity 
                 onPress={async () => {
                   try {
@@ -108,6 +140,7 @@ export default function AppNavigator() {
         <Stack.Screen name="Signup" component={SignupScreen} />
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="Quiz" component={QuizScreen} />
+        <Stack.Screen name="Admin" component={AdminScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

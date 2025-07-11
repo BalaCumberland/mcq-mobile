@@ -4,8 +4,7 @@ import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../config/firebase';
 import { Picker } from '@react-native-picker/picker';
 import ApiService from '../services/apiService';
-
-const CLASS_OPTIONS = ['CLS6', 'CLS7', 'CLS8', 'CLS9', 'CLS10', 'CLS11-MPC', 'CLS12-MPC', 'CLS11-BIPC', 'CLS12-BIPC'];
+import { CLASS_OPTIONS } from '../config/env';
 
 const SignupScreen = memo(function SignupScreen({ navigation }: any) {
   const [name, setName] = useState('');
