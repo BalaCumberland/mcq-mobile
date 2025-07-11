@@ -9,8 +9,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-import { getAuthToken } from '../services/firebaseAuth';
-import API_BASE_URL from '../config/env';
+import ApiService from '../services/apiService';
 import useUserStore from '../store/UserStore';
 import demoData from '../data/demoData';
 import useQuizStore from '../store/QuizStore';
@@ -34,29 +33,8 @@ const HomeScreen = memo(({ route, navigation }) => {
   const fetchUnattemptedQuizzes = useCallback(async (subject: string) => {
     setFetchingQuizzes(true);
     try {
-      const token = await getAuthToken();
-
-      const url = `https://apdjq7fpontm374bg3p2w3gx3m0hcbwy.lambda-url.us-east-1.on.aws/quiz/unattempted-quizzes?category=${encodeURIComponent(
-        subject
-      )}&email=${encodeURIComponent(user.email)}`;
-
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          Accept: '*/*',
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Failed to fetch quizzes:', errorText);
-        throw new Error('Failed to fetch quizzes');
-      }
-
-      const data = await response.json();
+      const data = await ApiService.getUnattemptedQuizzes(subject, user.email);
       console.log('✅ Unattempted quizzes:', data);
-
       setQuizzes(data.unattempted_quizzes || []);
     } catch (err) {
       console.error('❌ Error fetching quizzes:', err.message);
@@ -90,21 +68,7 @@ const HomeScreen = memo(({ route, navigation }) => {
     
     try {
       setLoading(true);
-      const token = await getAuthToken();
-      
-      const url = `https://apdjq7fpontm374bg3p2w3gx3m0hcbwy.lambda-url.us-east-1.on.aws/quiz/get-by-name?quizName=${encodeURIComponent(selectedQuiz)}&email=${encodeURIComponent(user.email)}`;
-      
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          Accept: '*/*',
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      
-      if (!response.ok) throw new Error('Failed to fetch quiz');
-      
-      const data = await response.json();
+      const data = await ApiService.getQuizByName(selectedQuiz, user.email);
       setQuiz(data.quiz);
       navigation.navigate('Quiz');
     } catch (error) {

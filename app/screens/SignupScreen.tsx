@@ -3,6 +3,7 @@ import { View, TextInput, StyleSheet, Alert, Text, TouchableOpacity, ActivityInd
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../config/firebase';
 import { Picker } from '@react-native-picker/picker';
+import ApiService from '../services/apiService';
 
 const CLASS_OPTIONS = ['CLS6', 'CLS7', 'CLS8', 'CLS9', 'CLS10', 'CLS11-MPC', 'CLS12-MPC', 'CLS11-BIPC', 'CLS12-BIPC'];
 
@@ -39,25 +40,12 @@ const SignupScreen = memo(function SignupScreen({ navigation }: any) {
     try {
       await createUserWithEmailAndPassword(auth, email, password);
       
-      const response = await fetch('https://apdjq7fpontm374bg3p2w3gx3m0hcbwy.lambda-url.us-east-1.on.aws/students/register', {
-        method: 'POST',
-        headers: {
-          'Accept': '*/*',
-          'Content-Type': 'text/plain;charset=UTF-8',
-        },
-        body: JSON.stringify({
-          email: sanitizeInput(email),
-          name: sanitizeInput(name),
-          phoneNumber: sanitizeInput(phoneNumber),
-          studentClass: sanitizeInput(studentClass)
-        })
+      const result = await ApiService.registerStudent({
+        email: sanitizeInput(email),
+        name: sanitizeInput(name),
+        phoneNumber: sanitizeInput(phoneNumber),
+        studentClass: sanitizeInput(studentClass)
       });
-      
-      if (!response.ok) {
-        throw new Error('Failed to register student');
-      }
-      
-      const result = await response.json();
       console.log('Registration result:', result);
       
       Alert.alert('Success', 'Account created successfully!');
