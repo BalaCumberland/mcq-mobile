@@ -76,7 +76,7 @@ export default function AppNavigator() {
             fontWeight: 'bold',
             color: '#333',
           },
-          headerTitle: route.name === 'Login' ? '🎓 EduQuiz' : route.name === 'Signup' ? '🎓 Sign Up' : '🎓 EduQuiz',
+          headerTitle: route.name === 'Login' ? '🎓 GradeUp' : route.name === 'Signup' ? '🎓 Sign Up' : '🎓 GradeUp',
           headerRight: route.name !== 'Login' && route.name !== 'Signup' ? () => (
             <View style={navStyles.headerRight}>
               <TouchableOpacity 
