@@ -49,12 +49,14 @@ const QuizScreen = ({ navigation }) => {
         <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         
         {quiz.questions.map((question, index) => {
-          const isCorrect = userAnswers[index] === question.correctAnswer;
+          const userAnswer = userAnswers[index];
+          const isCorrect = userAnswer === question.correctAnswer;
+          const isSkipped = userAnswer === null;
           return (
             <View key={index} style={styles.resultCard}>
               <LaTeXRenderer text={question.question} style={styles.questionText} />
               <Text style={[styles.resultLabel, { color: isCorrect ? 'green' : 'red' }]}>
-                {isCorrect ? '✓ CORRECT' : '✗ INCORRECT'}
+                {isCorrect ? '✓ CORRECT' : isSkipped ? '⏭ SKIPPED' : '✗ INCORRECT'}
               </Text>
               <View style={styles.correctAnswerContainer}>
                 <Text style={styles.correctAnswerLabel}>Correct Answer: </Text>
@@ -63,7 +65,7 @@ const QuizScreen = ({ navigation }) => {
               {!isCorrect && (
                 <View style={styles.userAnswerContainer}>
                   <Text style={styles.userAnswerLabel}>Your Answer: </Text>
-                  <LaTeXRenderer text={userAnswers[index] || 'Not answered'} style={styles.userAnswer} />
+                  <LaTeXRenderer text={isSkipped ? 'Skipped' : userAnswers[index] || 'Not answered'} style={styles.userAnswer} />
                 </View>
               )}
               {question.explanation && (
@@ -131,12 +133,20 @@ const QuizScreen = ({ navigation }) => {
         </TouchableOpacity>
         
         {isLastQuestion ? (
-          <TouchableOpacity
-            style={styles.navButton}
-            onPress={finishQuiz}
-          >
-            <Text style={styles.navButtonText}>Show Results</Text>
-          </TouchableOpacity>
+          <View style={styles.rightButtons}>
+            <TouchableOpacity
+              style={styles.skipButton}
+              onPress={skipQuestion}
+            >
+              <Text style={styles.skipButtonText}>Skip</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.navButton}
+              onPress={finishQuiz}
+            >
+              <Text style={styles.navButtonText}>Show Results</Text>
+            </TouchableOpacity>
+          </View>
         ) : (
           <View style={styles.rightButtons}>
             <TouchableOpacity
