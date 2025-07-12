@@ -14,6 +14,7 @@ const QuizScreen = ({ navigation }) => {
     nextQuestion, 
     prevQuestion, 
     selectAnswer,
+    skipQuestion,
     finishQuiz,
     updateTimer
   } = useQuizStore();
@@ -137,13 +138,21 @@ const QuizScreen = ({ navigation }) => {
             <Text style={styles.navButtonText}>Show Results</Text>
           </TouchableOpacity>
         ) : (
-          <TouchableOpacity
-            style={[styles.navButton, !userAnswers[currentQuestionIndex] && styles.disabledButton]}
-            onPress={nextQuestion}
-            disabled={!userAnswers[currentQuestionIndex]}
-          >
-            <Text style={styles.navButtonText}>Next</Text>
-          </TouchableOpacity>
+          <View style={styles.rightButtons}>
+            <TouchableOpacity
+              style={styles.skipButton}
+              onPress={skipQuestion}
+            >
+              <Text style={styles.skipButtonText}>Skip</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.navButton, !userAnswers[currentQuestionIndex] && styles.disabledButton]}
+              onPress={nextQuestion}
+              disabled={!userAnswers[currentQuestionIndex]}
+            >
+              <Text style={styles.navButtonText}>Next</Text>
+            </TouchableOpacity>
+          </View>
         )}
       </View>
     </View>
@@ -225,6 +234,20 @@ const styles = StyleSheet.create({
     backgroundColor: '#ccc',
   },
   navButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  rightButtons: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  skipButton: {
+    backgroundColor: '#ff9800',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  skipButtonText: {
     color: '#fff',
     fontWeight: 'bold',
   },

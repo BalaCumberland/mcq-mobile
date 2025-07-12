@@ -27,6 +27,7 @@ interface QuizState {
   nextQuestion: () => void;
   prevQuestion: () => void;
   selectAnswer: (answer: string) => void;
+  skipQuestion: () => void;
   finishQuiz: () => void;
   resetQuiz: () => void;
   updateTimer: () => void;
@@ -65,6 +66,23 @@ const useQuizStore = create<QuizState>()(persist((set, get) => ({
     const newAnswers = [...state.userAnswers];
     newAnswers[state.currentQuestionIndex] = answer;
     return { userAnswers: newAnswers };
+  }),
+
+  skipQuestion: () => set((state) => {
+    const newAnswers = [...state.userAnswers];
+    newAnswers[state.currentQuestionIndex] = null; // Mark as skipped
+    
+    if (state.currentQuestionIndex < (state.quiz?.questions.length || 0) - 1) {
+      return { 
+        userAnswers: newAnswers,
+        currentQuestionIndex: state.currentQuestionIndex + 1 
+      };
+    } else {
+      return { 
+        userAnswers: newAnswers,
+        showResults: true 
+      };
+    }
   }),
   
   finishQuiz: () => set({ showResults: true }),

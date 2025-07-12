@@ -1,7 +1,6 @@
 import React, { memo, useMemo } from 'react';
 import { Text, View, Dimensions, Image } from 'react-native';
 import { WebView } from 'react-native-webview';
-import Video from 'react-native-video';
 
 interface LaTeXRendererProps {
   text: string;
@@ -13,20 +12,7 @@ const LaTeXRenderer: React.FC<LaTeXRendererProps> = memo(({ text, style }) => {
     return /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(str);
   };
 
-  const isYouTubeUrl = (str: string) => {
-    return str.includes('youtube.com') || str.includes('youtu.be');
-  };
 
-  const isVideoUrl = (str: string) => {
-    return /\.(mp4|avi|mov|wmv|flv|webm|mkv|m4v)$/i.test(str);
-  };
-
-  const getYouTubeEmbedUrl = (url: string) => {
-    const videoId = url.includes('youtu.be') 
-      ? url.split('youtu.be/')[1]?.split('?')[0]
-      : url.split('v=')[1]?.split('&')[0];
-    return `https://www.youtube.com/embed/${videoId}`;
-  };
 
   const renderContent = useMemo(() => {
     const parts = text.split(/(\$\$(?:LATEX|SMILES)::[^:]*::)/g);
@@ -73,30 +59,7 @@ const LaTeXRenderer: React.FC<LaTeXRendererProps> = memo(({ text, style }) => {
           />
         );
       }
-      if (isYouTubeUrl(part.trim())) {
-        const embedUrl = getYouTubeEmbedUrl(part.trim());
-        return (
-          <WebView
-            key={index}
-            source={{ uri: embedUrl }}
-            style={{ width: 300, height: 200, marginVertical: 8 }}
-            allowsFullscreenVideo={true}
-            mediaPlaybackRequiresUserAction={false}
-          />
-        );
-      }
-      if (isVideoUrl(part.trim())) {
-        return (
-          <Video
-            key={index}
-            source={{ uri: part.trim() }}
-            style={{ width: 300, height: 200, marginVertical: 8 }}
-            controls={true}
-            resizeMode="contain"
-            paused={true}
-          />
-        );
-      }
+
       if (isImageUrl(part.trim())) {
         return (
           <Image
