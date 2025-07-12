@@ -60,16 +60,16 @@ const QuizScreen = ({ navigation }) => {
                 <LaTeXRenderer text={question.correctAnswer} style={styles.correctAnswer} />
               </View>
               {!isCorrect && (
-                <>
-                  <View style={styles.userAnswerContainer}>
-                    <Text style={styles.userAnswerLabel}>Your Answer: </Text>
-                    <LaTeXRenderer text={userAnswers[index] || 'Not answered'} style={styles.userAnswer} />
-                  </View>
-                  <View style={styles.explanationContainer}>
-                    <Text style={styles.explanationLabel}>Explanation: </Text>
-                    <LaTeXRenderer text={question.explanation} style={styles.explanation} />
-                  </View>
-                </>
+                <View style={styles.userAnswerContainer}>
+                  <Text style={styles.userAnswerLabel}>Your Answer: </Text>
+                  <LaTeXRenderer text={userAnswers[index] || 'Not answered'} style={styles.userAnswer} />
+                </View>
+              )}
+              {question.explanation && (
+                <View style={styles.explanationContainer}>
+                  <Text style={styles.explanationLabel}>Explanation: </Text>
+                  <LaTeXRenderer text={question.explanation} style={styles.explanation} />
+                </View>
               )}
             </View>
           );
