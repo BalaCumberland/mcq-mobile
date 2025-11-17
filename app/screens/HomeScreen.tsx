@@ -95,21 +95,7 @@ const HomeScreen = memo(({ route, navigation }) => {
         </View>
       )}
 
-      {hasActiveQuiz() && timeRemaining && timeRemaining > 0 && (
-        <View style={styles.resumeCard}>
-          <Text style={styles.resumeTitle}>⏰ Resume Quiz</Text>
-          <Text style={styles.resumeText}>Quiz: {activeQuiz?.quizName}</Text>
-          <Text style={styles.resumeText}>Time left: {Math.floor(timeRemaining / 60)}:{(timeRemaining % 60).toString().padStart(2, '0')}</Text>
-          <View style={styles.resumeButtons}>
-            <TouchableOpacity style={styles.resumeButton} onPress={() => navigation.navigate('Quiz')}>
-              <Text style={styles.resumeButtonText}>Continue</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.startFreshButton} onPress={resetQuiz}>
-              <Text style={styles.startFreshButtonText}>Start Fresh</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
+
 
       <View style={styles.mainCard}>
         <View style={styles.cardHeader}>
@@ -377,69 +363,7 @@ const styles = StyleSheet.create({
   beginButtonEmoji: {
     fontSize: 18,
   },
-  resumeCard: {
-    backgroundColor: '#fef3c7',
-    borderRadius: 20,
-    paddingVertical: 24,
-    paddingHorizontal: '6%',
-    marginBottom: 24,
-    borderWidth: 2,
-    borderColor: '#f59e0b',
-    shadowColor: '#f59e0b',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  resumeTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#92400e',
-    marginBottom: 12,
-  },
-  resumeText: {
-    fontSize: 16,
-    color: '#92400e',
-    marginBottom: 6,
-    fontWeight: '500',
-  },
-  resumeButtons: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 12,
-  },
-  resumeButton: {
-    flex: 1,
-    backgroundColor: '#10b981',
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-    shadowColor: '#10b981',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  resumeButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  startFreshButton: {
-    flex: 1,
-    backgroundColor: '#64748b',
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-    shadowColor: '#64748b',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  startFreshButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
+
   loadingContainer: {
     flexDirection: 'row',
     alignItems: 'center',

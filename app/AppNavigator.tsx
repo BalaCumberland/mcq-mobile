@@ -8,6 +8,7 @@ import LoginScreen from './screens/LoginScreen';
 import SignupScreen from './screens/SignupScreen';
 import HomeScreen from './screens/HomeScreen';
 import QuizScreen from './screens/QuizScreen';
+import ProgressScreen from './screens/ProgressScreen';
 
 import useUserStore from './store/UserStore';
 
@@ -55,6 +56,24 @@ const navStyles = {
     fontWeight: 'bold',
     fontSize: 12,
   },
+  progressButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#9C27B0',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 4,
+    elevation: 2,
+  },
+  progressButtonEmoji: {
+    fontSize: 12,
+    marginRight: 3,
+  },
+  progressButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 12,
+  },
 
 };
 
@@ -92,6 +111,13 @@ export default function AppNavigator() {
                 <Text style={navStyles.homeButtonEmoji}>🏠</Text>
                 <Text style={navStyles.homeButtonText}>Home</Text>
               </TouchableOpacity>
+              <TouchableOpacity 
+                onPress={() => navigation.navigate('Progress')}
+                style={navStyles.progressButton}
+              >
+                <Text style={navStyles.progressButtonEmoji}>📊</Text>
+                <Text style={navStyles.progressButtonText}>Progress</Text>
+              </TouchableOpacity>
 
               <TouchableOpacity 
                 onPress={async () => {
@@ -115,6 +141,7 @@ export default function AppNavigator() {
         <Stack.Screen name="Signup" component={SignupScreen} />
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="Quiz" component={QuizScreen} />
+        <Stack.Screen name="Progress" component={ProgressScreen} />
 
       </Stack.Navigator>
     </NavigationContainer>

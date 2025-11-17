@@ -79,10 +79,23 @@ const QuizScreen = ({ navigation }) => {
     if ((showResults || forceResults) && !quizResults && quiz) {
       const submitAndGetResults = async () => {
         try {
-          const answers = quiz.questions.map((_, index) => ({
-            qno: index + 1,
-            options: userAnswers[index] ? [userAnswers[index]] : []
-          }));
+          const answers = quiz.questions.map((_, index) => {
+            const userAns = userAnswers[index];
+            const question = quiz.questions[index];
+            let option = '';
+            
+            if (userAns && question.allAnswers) {
+              const answerIndex = question.allAnswers.indexOf(userAns);
+              if (answerIndex !== -1) {
+                option = String.fromCharCode(65 + answerIndex); // Convert to A, B, C, D
+              }
+            }
+            
+            return {
+              qno: index + 1,
+              options: option ? [option] : []
+            };
+          });
           
           const className = quiz.className || 'CLS8';
           const subjectName = quiz.subjectName || 'MATHS';
@@ -96,7 +109,8 @@ const QuizScreen = ({ navigation }) => {
           // Create fallback results
           const fallbackResults = quiz.questions.map((question, index) => {
             const userAnswer = userAnswers[index];
-            const correctAnswer = question.allAnswers?.[0] || 'Unknown';
+            const allAnswers = question.allAnswers || [];
+            const correctAnswer = allAnswers[0] || 'Unknown';
             const isCorrect = userAnswer === correctAnswer;
             const isSkipped = !userAnswer || userAnswer === '';
             
@@ -211,12 +225,6 @@ const QuizScreen = ({ navigation }) => {
           Question {currentQuestionIndex + 1} of {quiz.questions.length}
         </Text>
         <View style={styles.headerRight}>
-          <TouchableOpacity
-            style={styles.questionsButton}
-            onPress={() => setShowQuestionPanel(true)}
-          >
-            <Text style={styles.questionsButtonText}>Questions</Text>
-          </TouchableOpacity>
           <Text style={styles.timer}>
             ⏰ {Math.floor((timeRemaining || 0) / 60)}:{((timeRemaining || 0) % 60).toString().padStart(2, '0')}
           </Text>
@@ -225,6 +233,14 @@ const QuizScreen = ({ navigation }) => {
       
       {/* Progress Bar */}
       <View style={styles.progressContainer}>
+        <View style={styles.progressStats}>
+          <Text style={styles.progressText}>
+            {currentQuestionIndex + 1}/{quiz.questions.length} Questions
+          </Text>
+          <Text style={styles.progressText}>
+            {userAnswers.filter(answer => answer && answer !== '').length} Answered
+          </Text>
+        </View>
         <View style={styles.progressBar}>
           <View 
             style={[
@@ -373,20 +389,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
-  questionsButton: {
-    backgroundColor: '#2196F3',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-  },
-  questionsButtonText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
+
   progressContainer: {
     paddingHorizontal: 20,
     marginBottom: 15,
+  },
+  progressStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  progressText: {
+    fontSize: 12,
+    color: '#666',
+    fontWeight: '500',
   },
   progressBar: {
     height: 4,
