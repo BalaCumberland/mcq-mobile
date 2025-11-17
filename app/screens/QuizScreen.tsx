@@ -92,7 +92,7 @@ const QuizScreen = ({ navigation }) => {
           const response = await ApiService.submitQuiz(className, subjectName, topic, quiz.quizName, answers);
           setQuizResults(response);
         } catch (error) {
-          console.error('Failed to get results:', error);
+          console.log('API unavailable, using fallback results');
           // Create fallback results
           const fallbackResults = quiz.questions.map((question, index) => {
             const userAnswer = userAnswers[index];
@@ -314,7 +314,7 @@ const QuizScreen = ({ navigation }) => {
               </View>
             </View>
             
-            <ScrollView style={styles.questionGrid}>
+            <ScrollView style={styles.questionGrid} nestedScrollEnabled={true}>
               <View style={styles.gridContainer}>
                 {Array.from({ length: quiz.questions.length }, (_, index) => {
                   const questionNum = index + 1;
@@ -325,6 +325,7 @@ const QuizScreen = ({ navigation }) => {
                   return (
                     <TouchableOpacity
                       key={questionNum}
+                      activeOpacity={0.7}
                       style={[
                         styles.questionButton,
                         isCurrent && styles.currentQuestion,
@@ -332,14 +333,14 @@ const QuizScreen = ({ navigation }) => {
                         isSkipped && !isCurrent && !isAnswered && styles.skippedQuestion
                       ]}
                       onPress={() => {
-                        console.log('Navigating to question:', questionNum, 'index:', index);
+                        console.log('BUTTON PRESSED:', questionNum);
                         setPage(index);
                         setShowQuestionPanel(false);
                       }}
                     >
                       <Text style={[
                         styles.questionButtonText,
-                        (isCurrent || isAnswered) && styles.questionButtonTextActive
+                        (isCurrent || isAnswered || isSkipped) && styles.questionButtonTextActive
                       ]}>
                         {questionNum}
                       </Text>
@@ -471,9 +472,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#FF9800',
   },
   questionButtonText: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: 'bold',
-    color: '#666',
+    color: '#000',
+    textAlign: 'center',
   },
   questionButtonTextActive: {
     color: '#fff',
