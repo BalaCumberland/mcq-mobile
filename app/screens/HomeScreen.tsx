@@ -18,57 +18,62 @@ import useQuizStore from '../store/QuizStore';
 const HomeScreen = memo(({ route, navigation }) => {
   const { user } = useUserStore();
   const { setQuiz, hasActiveQuiz, quiz: activeQuiz, timeRemaining, resetQuiz } = useQuizStore();
-  const [selectedSubject, setSelectedSubject] = useState(null);
-  const [selectedQuiz, setSelectedQuiz] = useState(null);
+  const [selectedClass, setSelectedClass] = useState('');
+  const [selectedSubject, setSelectedSubject] = useState('');
+  const [selectedTopic, setSelectedTopic] = useState('');
+  const [selectedQuiz, setSelectedQuiz] = useState('');
+  const [subjects, setSubjects] = useState([]);
+  const [topics, setTopics] = useState([]);
   const [quizzes, setQuizzes] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [fetchingSubjects, setFetchingSubjects] = useState(false);
+  const [fetchingTopics, setFetchingTopics] = useState(false);
   const [fetchingQuizzes, setFetchingQuizzes] = useState(false);
 
-  const subjectOptions = useMemo(() => 
-    user?.subjects?.map((subject) => ({
-      label: subject,
-      value: subject,
-    })) || [], [user?.subjects]);
+  const fetchSubjects = useCallback(async (className: string) => {
+    setFetchingSubjects(true);
+    try {
+      const data = await ApiService.getSubjects(className);
+      setSubjects(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Error fetching subjects:', err);
+      setSubjects([]);
+    } finally {
+      setFetchingSubjects(false);
+    }
+  }, []);
 
-  const fetchUnattemptedQuizzes = useCallback(async (subject: string) => {
+  const fetchTopics = useCallback(async (className: string, subjectName: string) => {
+    setFetchingTopics(true);
+    try {
+      const data = await ApiService.getTopics(className, subjectName);
+      setTopics(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Error fetching topics:', err);
+      setTopics([]);
+    } finally {
+      setFetchingTopics(false);
+    }
+  }, []);
+
+  const fetchQuizzes = useCallback(async (className: string, subjectName: string, topic: string) => {
     setFetchingQuizzes(true);
     try {
-      const data = await ApiService.getUnattemptedQuizzes(subject, user.email);
-      console.log('✅ Unattempted quizzes:', data);
-      setQuizzes(data.unattempted_quizzes || []);
+      const data = await ApiService.getQuizzes(className, subjectName, topic);
+      setQuizzes(data.quizzes?.map(q => q.quizName) || []);
     } catch (err) {
-      console.error('❌ Error fetching quizzes:', err.message);
       setQuizzes([]);
     } finally {
       setFetchingQuizzes(false);
     }
-  }, [user?.email]);
-
-  const handleSubjectChange = useCallback((subject: string) => {
-    setSelectedSubject(subject);
-    setSelectedQuiz(null);
-    if (subject) {
-      if (user?.payment_status === 'UNPAID') {
-        setQuizzes(['Demo Quiz']);
-      } else {
-        fetchUnattemptedQuizzes(subject);
-      }
-    }
-  }, [user?.payment_status, fetchUnattemptedQuizzes]);
+  }, []);
 
   const beginTest = useCallback(async () => {
-    if (!selectedQuiz || !user) return;
-    
-    // Check if user payment status is UNPAID
-    if (user.payment_status === 'UNPAID') {
-      setQuiz(demoData);
-      navigation.navigate('Quiz');
-      return;
-    }
+    if (!selectedQuiz || !selectedClass || !selectedSubject || !selectedTopic) return;
     
     try {
       setLoading(true);
-      const data = await ApiService.getQuizByName(selectedQuiz, user.email);
+      const data = await ApiService.getQuiz(selectedClass, selectedSubject, selectedTopic, selectedQuiz);
       setQuiz(data.quiz);
       navigation.navigate('Quiz');
     } catch (error) {
@@ -76,7 +81,7 @@ const HomeScreen = memo(({ route, navigation }) => {
     } finally {
       setLoading(false);
     }
-  }, [selectedQuiz, user, setQuiz, navigation]);
+  }, [selectedQuiz, selectedClass, selectedSubject, selectedTopic, setQuiz, navigation]);
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -115,22 +120,87 @@ const HomeScreen = memo(({ route, navigation }) => {
         </View>
 
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>📚 Subject Category</Text>
+          <Text style={styles.label}>🏫 Class</Text>
           <View style={styles.pickerWrapper}>
             <Picker
-              selectedValue={selectedSubject}
-              onValueChange={handleSubjectChange}
+              selectedValue={selectedClass}
+              onValueChange={(value) => {
+                setSelectedClass(value);
+                setSelectedSubject('');
+                setSelectedTopic('');
+                setSelectedQuiz('');
+                if (value) fetchSubjects(value);
+              }}
               style={styles.picker}
             >
-              <Picker.Item label="Select a subject..." value={null} />
-              {subjectOptions.map((subject, index) => (
-                <Picker.Item key={index} label={subject.label} value={subject.value} />
-              ))}
+              <Picker.Item label="Select class..." value="" />
+              {user?.student_class && (
+                <Picker.Item label={user.student_class} value={user.student_class} />
+              )}
             </Picker>
           </View>
         </View>
 
+        {selectedClass && (
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>📚 Subject</Text>
+            {fetchingSubjects ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="small" color="#f97316" />
+                <Text style={styles.loadingText}>Loading subjects...</Text>
+              </View>
+            ) : (
+              <View style={styles.pickerWrapper}>
+                <Picker
+                  selectedValue={selectedSubject}
+                  onValueChange={(value) => {
+                    setSelectedSubject(value);
+                    setSelectedTopic('');
+                    setSelectedQuiz('');
+                    if (value) fetchTopics(selectedClass, value);
+                  }}
+                  style={styles.picker}
+                >
+                  <Picker.Item label="Select subject..." value="" />
+                  {subjects.map((subject, index) => (
+                    <Picker.Item key={index} label={subject} value={subject} />
+                  ))}
+                </Picker>
+              </View>
+            )}
+          </View>
+        )}
+
         {selectedSubject && (
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>📝 Topic</Text>
+            {fetchingTopics ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="small" color="#f97316" />
+                <Text style={styles.loadingText}>Loading topics...</Text>
+              </View>
+            ) : (
+              <View style={styles.pickerWrapper}>
+                <Picker
+                  selectedValue={selectedTopic}
+                  onValueChange={(value) => {
+                    setSelectedTopic(value);
+                    setSelectedQuiz('');
+                    if (value) fetchQuizzes(selectedClass, selectedSubject, value);
+                  }}
+                  style={styles.picker}
+                >
+                  <Picker.Item label="Select topic..." value="" />
+                  {topics.map((topic, index) => (
+                    <Picker.Item key={index} label={topic} value={topic} />
+                  ))}
+                </Picker>
+              </View>
+            )}
+          </View>
+        )}
+
+        {selectedTopic && (
           <View style={styles.inputContainer}>
             <Text style={styles.label}>📝 Available Quizzes</Text>
             {fetchingQuizzes ? (
@@ -145,7 +215,7 @@ const HomeScreen = memo(({ route, navigation }) => {
                   onValueChange={setSelectedQuiz}
                   style={styles.picker}
                 >
-                  <Picker.Item label="Select a quiz..." value={null} />
+                  <Picker.Item label="Select a quiz..." value="" />
                   {quizzes.map((quiz, index) => (
                     <Picker.Item key={index} label={quiz} value={quiz} />
                   ))}
@@ -155,7 +225,7 @@ const HomeScreen = memo(({ route, navigation }) => {
               <View style={styles.emptyContainer}>
                 <Text style={styles.emptyEmoji}>🎉</Text>
                 <Text style={styles.emptyTitle}>All Done!</Text>
-                <Text style={styles.emptyText}>No quizzes available for this subject. Great job!</Text>
+                <Text style={styles.emptyText}>No quizzes available for this topic. Great job!</Text>
               </View>
             )}
           </View>

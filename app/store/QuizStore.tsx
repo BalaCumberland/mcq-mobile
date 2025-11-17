@@ -27,9 +27,10 @@ interface QuizState {
   nextQuestion: () => void;
   prevQuestion: () => void;
   selectAnswer: (answer: string) => void;
-  skipQuestion: () => void;
+  setPage: (index: number) => void;
   skipQuestion: () => void;
   finishQuiz: () => void;
+  submitQuiz: (className: string, subjectName: string, topic: string) => Promise<void>;
   resetQuiz: () => void;
   updateTimer: () => void;
   hasActiveQuiz: () => boolean;
@@ -68,24 +69,9 @@ const useQuizStore = create<QuizState>()(persist((set, get) => ({
     newAnswers[state.currentQuestionIndex] = answer;
     return { userAnswers: newAnswers };
   }),
-
-  skipQuestion: () => set((state) => {
-    const newAnswers = [...state.userAnswers];
-    newAnswers[state.currentQuestionIndex] = null; // Mark as skipped
-    
-    if (state.currentQuestionIndex < (state.quiz?.questions.length || 0) - 1) {
-      return { 
-        userAnswers: newAnswers,
-        currentQuestionIndex: state.currentQuestionIndex + 1 
-      };
-    } else {
-      return { 
-        userAnswers: newAnswers,
-        showResults: true 
-      };
-    }
-  }),
   
+  setPage: (index) => set({ currentQuestionIndex: index }),
+
   skipQuestion: () => set((state) => {
     const newAnswers = [...state.userAnswers];
     newAnswers[state.currentQuestionIndex] = null;
@@ -104,6 +90,24 @@ const useQuizStore = create<QuizState>()(persist((set, get) => ({
   }),
   
   finishQuiz: () => set({ showResults: true }),
+  
+  submitQuiz: async (className: string, subjectName: string, topic: string) => {
+    const state = get();
+    if (!state.quiz) return;
+    
+    try {
+      const ApiService = await import('../services/apiService');
+      await ApiService.default.submitQuiz(
+        className,
+        subjectName, 
+        topic,
+        state.quiz.quizName,
+        state.userAnswers
+      );
+    } catch (error) {
+      console.error('Error submitting quiz:', error);
+    }
+  },
   
   resetQuiz: () => set({ 
     quiz: null, 

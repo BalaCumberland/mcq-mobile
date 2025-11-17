@@ -1,17 +1,21 @@
 import { getAuthToken } from './firebaseAuth';
+import { LAMBDA_MCQ_GO_API_URL } from '../config/env';
 
 const API_ENDPOINTS = {
   REGISTER: '/students/register',
-  QUIZ_UNATTEMPTED: '/quiz/unattempted-quizzes',
-  QUIZ_GET: '/quiz/get-by-name',
+  QUIZ_LIST: '/quiz/list',
+  QUIZ_GET: '/quiz',
+  QUIZ_SUBMIT: '/quiz/submit',
+  USER_BY_EMAIL: '/students/lookup',
+  SUBJECTS: '/subject/fetch',
+  TOPICS: '/topic/fetch',
 };
 
 class ApiService {
-  private baseUrl: string;
+  public baseUrl: string;
 
   constructor() {
-    // Use environment variable or fetch from secure config
-    this.baseUrl = process.env.REACT_APP_API_URL || 'https://apdjq7fpontm374bg3p2w3gx3m0hcbwy.lambda-url.us-east-1.on.aws';
+    this.baseUrl = LAMBDA_MCQ_GO_API_URL;
   }
 
   private async makeRequest(endpoint: string, options: RequestInit = {}) {
@@ -44,14 +48,42 @@ class ApiService {
     });
   }
 
-  async getUnattemptedQuizzes(category: string, email: string) {
-    const params = new URLSearchParams({ category, email });
-    return this.makeRequest(`${API_ENDPOINTS.QUIZ_UNATTEMPTED}?${params}`);
+  async getQuizzes(className: string, subjectName: string, topic: string) {
+    const params = new URLSearchParams({ className, subjectName, topic });
+    return this.makeRequest(`${API_ENDPOINTS.QUIZ_LIST}?${params}`);
   }
 
-  async getQuizByName(quizName: string, email: string) {
-    const params = new URLSearchParams({ quizName, email });
+  async getQuiz(className: string, subjectName: string, topic: string, quizName: string) {
+    const params = new URLSearchParams({ className, subjectName, topic, quizName });
     return this.makeRequest(`${API_ENDPOINTS.QUIZ_GET}?${params}`);
+  }
+
+  async submitQuiz(className: string, subjectName: string, topic: string, quizName: string, answers: any[]) {
+    const params = new URLSearchParams({ 
+      quizName: decodeURIComponent(quizName),
+      className, 
+      subjectName, 
+      topic 
+    });
+    return this.makeRequest(`${API_ENDPOINTS.QUIZ_SUBMIT}?${params}`, {
+      method: 'POST',
+      body: JSON.stringify({ answers }),
+    });
+  }
+
+  async getUserByEmail(email: string) {
+    const params = new URLSearchParams({ identifier: email });
+    return this.makeRequest(`${API_ENDPOINTS.USER_BY_EMAIL}?${params}`);
+  }
+
+  async getSubjects(className: string) {
+    const params = new URLSearchParams({ className });
+    return this.makeRequest(`${API_ENDPOINTS.SUBJECTS}?${params}`);
+  }
+
+  async getTopics(className: string, subjectName: string) {
+    const params = new URLSearchParams({ className, subjectName });
+    return this.makeRequest(`${API_ENDPOINTS.TOPICS}?${params}`);
   }
 }
 
