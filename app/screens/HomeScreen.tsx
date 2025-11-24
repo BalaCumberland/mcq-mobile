@@ -75,7 +75,12 @@ const HomeScreen = memo(({ route, navigation }) => {
       setLoading(true);
       const data = await ApiService.getQuiz(selectedClass, selectedSubject, selectedTopic, selectedQuiz);
       setQuiz(data.quiz);
-      navigation.navigate('Quiz');
+      navigation.navigate('Quiz', {
+        className: selectedClass,
+        subjectName: selectedSubject,
+        topic: selectedTopic,
+        quizName: selectedQuiz
+      });
     } catch (error) {
       console.error('Error fetching quiz:', error);
     } finally {

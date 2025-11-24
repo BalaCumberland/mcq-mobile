@@ -1,5 +1,6 @@
 import { getAuthToken } from './firebaseAuth';
 import { LAMBDA_MCQ_GO_API_URL } from '../config/env';
+import { QuizSubmitRequest, QuizSubmitResponse } from '../types/quiz';
 
 const API_ENDPOINTS = {
   REGISTER: '/students/register',
@@ -58,17 +59,54 @@ class ApiService {
     return this.makeRequest(`${API_ENDPOINTS.QUIZ_GET}?${params}`);
   }
 
-  async submitQuiz(className: string, subjectName: string, topic: string, quizName: string, answers: any[]) {
+  async submitQuiz(
+    className: string, 
+    subjectName: string, 
+    topic: string, 
+    quizName: string, 
+    studentId: string,
+    answers: { questionId: string; selectedAnswer: string }[]
+  ): Promise<QuizSubmitResponse> {
     const params = new URLSearchParams({ 
       quizName: decodeURIComponent(quizName),
       className, 
       subjectName, 
       topic 
     });
-    return this.makeRequest(`${API_ENDPOINTS.QUIZ_SUBMIT}?${params}`, {
+    
+    // Convert to old format that server expects
+    const oldFormatAnswers = answers.map((answer, index) => ({
+      qno: index + 1,
+      options: answer.selectedAnswer ? [answer.selectedAnswer] : []
+    }));
+    
+    const requestBody = {
+      answers: oldFormatAnswers
+    };
+    
+    // Try existing endpoint structure first
+    const specUrl = 'https://ieetpwfoci.execute-api.us-east-1.amazonaws.com/prod/v2/quiz/submit';
+    const fullUrl = `${specUrl}?${params}`;
+    console.log('Quiz Submit URL:', fullUrl);
+    console.log('Request Body:', JSON.stringify(requestBody));
+    
+    const token = await getAuthToken();
+    
+    const response = await fetch(fullUrl, {
       method: 'POST',
-      body: JSON.stringify({ answers }),
+      headers: {
+        'Accept': '*/*',
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(requestBody),
     });
+    
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status}`);
+    }
+    
+    return response.json();
   }
 
   async getUserByEmail(email: string) {

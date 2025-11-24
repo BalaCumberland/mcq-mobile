@@ -5,7 +5,7 @@ import ApiService from '../services/apiService';
 
 import LaTeXRenderer from '../components/LaTeXRenderer';
 
-const QuizScreen = ({ navigation }) => {
+const QuizScreen = ({ navigation, route }) => {
   const { 
     quiz, 
     currentQuestionIndex, 
@@ -79,33 +79,49 @@ const QuizScreen = ({ navigation }) => {
     if ((showResults || forceResults) && !quizResults && quiz) {
       const submitAndGetResults = async () => {
         try {
-          const answers = quiz.questions.map((_, index) => {
+          const answers = quiz.questions.map((question, index) => {
             const userAns = userAnswers[index];
-            const question = quiz.questions[index];
-            let option = '';
-            
-            if (userAns && question.allAnswers) {
-              const answerIndex = question.allAnswers.indexOf(userAns);
-              if (answerIndex !== -1) {
-                option = String.fromCharCode(65 + answerIndex); // Convert to A, B, C, D
-              }
-            }
-            
             return {
-              qno: index + 1,
-              options: option ? [option] : []
+              questionId: `q${index + 1}`,
+              selectedAnswer: userAns || ''
             };
           });
           
-          const className = quiz.className || 'CLS8';
-          const subjectName = quiz.subjectName || 'MATHS';
-          const topic = quiz.topic || 'algebra';
+          // Get the actual selected values from navigation params or quiz object
+          const className = route?.params?.className || quiz.className || 'CLS12-MPC';
+          const subjectName = route?.params?.subjectName || quiz.subjectName || 'MATHS2A';
+          const topic = route?.params?.topic || quiz.topic || 'UNIT-1-Complex Numbers';
+          const quizName = route?.params?.quizName || quiz.quizName || quiz.title;
           
-          console.log('Submitting quiz:', { className, subjectName, topic, quizName: quiz.quizName, answers });
-          const response = await ApiService.submitQuiz(className, subjectName, topic, quiz.quizName, answers);
+          console.log('Quiz data for submit:', {
+            className,
+            subjectName, 
+            topic,
+            quizName,
+            routeParams: route?.params
+          });
+          let response;
+          
+          const studentId = 'student123'; // TODO: Get from user store
+          
+          try {
+            response = await ApiService.submitQuiz(className, subjectName, topic, quizName, studentId, answers);
+          } catch (firstError) {
+            if (firstError.message.includes('404')) {
+              // Try with topic-based quiz name as fallback
+              const topicName = topic.replace('UNIT-1-', '').replace('+', ' ');
+              quizName = `${topicName}-Exercise - 1-55MIN`;
+              response = await ApiService.submitQuiz(className, subjectName, topic, quizName, studentId, answers);
+            } else {
+              throw firstError;
+            }
+          }
+          
           setQuizResults(response);
         } catch (error) {
           console.log('API unavailable, using fallback results');
+          console.log('Error:', error);
+          console.log('Sample quiz question:', JSON.stringify(quiz.questions[0], null, 2));
           // Create fallback results
           const fallbackResults = quiz.questions.map((question, index) => {
             const userAnswer = userAnswers[index];
@@ -120,7 +136,7 @@ const QuizScreen = ({ navigation }) => {
               correctAnswer: [correctAnswer],
               studentAnswer: userAnswer ? [userAnswer] : [],
               status: isSkipped ? 'skipped' : isCorrect ? 'correct' : 'incorrect',
-              explanation: question.explanation || null
+              explanation: question.explanation || `This question tests your understanding of ${quiz.subjectName || 'the subject'} concepts. Review the correct answer and related theory.`
             };
           });
           
@@ -197,12 +213,11 @@ const QuizScreen = ({ navigation }) => {
                   </View>
                 )}
                 
-                {result.explanation && (
-                  <View style={styles.answerSection}>
-                    <Text style={styles.explanationLabel}>Explanation:</Text>
-                    <LaTeXRenderer text={result.explanation} style={styles.explanation} />
-                  </View>
-                )}
+                <View style={styles.answerSection}>
+                  <Text style={styles.explanationLabel}>Explanation:</Text>
+                  <LaTeXRenderer text={result.explanation || 'No explanation available'} style={styles.explanation} />
+
+                </View>
               </View>
             );
           })}
