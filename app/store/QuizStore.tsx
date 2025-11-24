@@ -70,7 +70,10 @@ const useQuizStore = create<QuizState>()(persist((set, get) => ({
     return { userAnswers: newAnswers };
   }),
   
-  setPage: (index) => set({ currentQuestionIndex: index }),
+  setPage: (index) => {
+    console.log('setPage called with index:', index);
+    set({ currentQuestionIndex: index });
+  },
 
   skipQuestion: () => set((state) => {
     const newAnswers = [...state.userAnswers];

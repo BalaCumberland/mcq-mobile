@@ -240,6 +240,15 @@ const QuizScreen = ({ navigation, route }) => {
           Question {currentQuestionIndex + 1} of {quiz.questions.length}
         </Text>
         <View style={styles.headerRight}>
+          <TouchableOpacity 
+            style={styles.questionsButton}
+            onPress={() => {
+              console.log('Questions button pressed, opening modal');
+              setShowQuestionPanel(true);
+            }}
+          >
+            <Text style={styles.questionsButtonText}>📋 Questions</Text>
+          </TouchableOpacity>
           <Text style={styles.timer}>
             ⏰ {Math.floor((timeRemaining || 0) / 60)}:{((timeRemaining || 0) % 60).toString().padStart(2, '0')}
           </Text>
@@ -321,6 +330,7 @@ const QuizScreen = ({ navigation, route }) => {
         animationType="slide"
         onRequestClose={() => setShowQuestionPanel(false)}
       >
+        {console.log('Modal rendering, visible:', showQuestionPanel)}
         <View style={styles.modalOverlay}>
           <View style={styles.questionPanel}>
             <View style={styles.panelHeader}>
@@ -345,14 +355,16 @@ const QuizScreen = ({ navigation, route }) => {
               </View>
             </View>
             
-            <ScrollView style={styles.questionGrid} nestedScrollEnabled={true}>
+            <ScrollView style={styles.questionGrid} nestedScrollEnabled={true} showsVerticalScrollIndicator={true}>
               <View style={styles.gridContainer}>
+                {console.log('Rendering question buttons, total questions:', quiz.questions.length)}
                 {Array.from({ length: quiz.questions.length }, (_, index) => {
                   const questionNum = index + 1;
                   const isAnswered = userAnswers[index] && userAnswers[index] !== '';
                   const isSkipped = userAnswers[index] === null || userAnswers[index] === '';
                   const isCurrent = index === currentQuestionIndex;
                   
+                  console.log(`Question ${questionNum}: answered=${isAnswered}, skipped=${isSkipped}, current=${isCurrent}`);
                   return (
                     <TouchableOpacity
                       key={questionNum}
@@ -364,7 +376,7 @@ const QuizScreen = ({ navigation, route }) => {
                         isSkipped && !isCurrent && !isAnswered && styles.skippedQuestion
                       ]}
                       onPress={() => {
-                        console.log('BUTTON PRESSED:', questionNum);
+                        console.log('BUTTON PRESSED:', questionNum, 'Going to index:', index);
                         setPage(index);
                         setShowQuestionPanel(false);
                       }}
@@ -404,6 +416,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
+  questionsButton: {
+    backgroundColor: '#FF9800',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+  questionsButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
 
   progressContainer: {
     paddingHorizontal: 20,
@@ -439,7 +467,7 @@ const styles = StyleSheet.create({
   questionPanel: {
     backgroundColor: '#fff',
     width: '90%',
-    maxHeight: '80%',
+    height: '70%',
     borderRadius: 12,
     padding: 20,
   },
@@ -478,6 +506,7 @@ const styles = StyleSheet.create({
   },
   questionGrid: {
     flex: 1,
+    minHeight: 200,
   },
   gridContainer: {
     flexDirection: 'row',
@@ -485,13 +514,13 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   questionButton: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     backgroundColor: '#ccc',
     borderRadius: 6,
     justifyContent: 'center',
     alignItems: 'center',
-    margin: 2,
+    margin: 4,
   },
   currentQuestion: {
     backgroundColor: '#2196F3',
