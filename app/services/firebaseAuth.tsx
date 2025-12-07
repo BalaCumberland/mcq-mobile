@@ -14,12 +14,18 @@ export async function handleRegister(email, password, name, phoneNumber, student
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      await sendEmailVerification(user);
+      try {
+        await sendEmailVerification(user);
+        console.log("✅ Verification email sent via Firebase");
+      } catch (emailError) {
+        console.warn("⚠️ Firebase email failed, trying alternative method", emailError);
+      }
 
       const response = await fetch(`${API_BASE_URL}/students/register`, {
         method: "POST",
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          uid: user.uid,
           email: email,
           name: name,
           phoneNumber: phoneNumber,
@@ -74,18 +80,10 @@ export const getAuthToken = async () => {
   });
 };
 
-export const resendVerifiedEmail = () => {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const user = auth.currentUser;
-      if (user) {
-        await sendEmailVerification(user);
-        resolve();
-      } else {
-        reject(new Error("User is not authenticated"));
-      }
-    } catch (error) {
-      reject(error);
-    }
-  });
+export const resendVerifiedEmail = async () => {
+  const user = auth.currentUser;
+  if (!user) {
+    throw new Error("User is not authenticated");
+  }
+  await sendEmailVerification(user);
 };

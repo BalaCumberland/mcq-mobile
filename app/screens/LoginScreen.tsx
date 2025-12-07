@@ -3,6 +3,7 @@ import { View, TextInput, StyleSheet, Alert, Text, TouchableOpacity, ActivityInd
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '../config/firebase';
 import userStore from '../store/UserStore';
+import { resendVerifiedEmail } from '../services/firebaseAuth';
 
 const LoginScreen = memo(function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
@@ -32,10 +33,38 @@ const LoginScreen = memo(function LoginScreen({ navigation }: any) {
     }
   };
 
+  const handleResendEmail = async () => {
+    try {
+      await resendVerifiedEmail();
+      Alert.alert(
+        'Email Sent',
+        'Verification email sent! Check your inbox.\n\n💡 Check spam/junk folder if you don\'t see it.'
+      );
+    } catch (error: any) {
+      console.error('Resend email error:', error);
+      Alert.alert('Error', error.message || 'Failed to resend verification email');
+    }
+  };
+
   const handleLogin = async () => {
     setLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      
+      if (!user.emailVerified) {
+        Alert.alert(
+          'Email Not Verified',
+          'Please verify your email address to access the application.\n\nCheck including spam/junk folder and verify your account before logging in.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Resend Email', onPress: handleResendEmail }
+          ]
+        );
+        setLoading(false);
+        return;
+      }
+      
       const response = await userStore.getState().fetchUserByEmail(email);
       console.log(response);
       Alert.alert('Login Success', `Welcome back, ${response.email}`);

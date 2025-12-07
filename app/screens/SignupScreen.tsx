@@ -57,9 +57,20 @@ const SignupScreen = memo(function SignupScreen({ navigation }: any) {
 
     setLoading(true);
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      
+      // Send email verification (no actionCodeSettings needed for React Native)
+      const { sendEmailVerification } = await import('firebase/auth');
+      try {
+        await sendEmailVerification(user);
+        console.log('✅ Verification email sent via Firebase');
+      } catch (emailError: any) {
+        console.warn('⚠️ Firebase email failed:', emailError.message);
+      }
       
       const result = await ApiService.registerStudent({
+        uid: user.uid,
         email: sanitizeInput(email),
         name: sanitizeInput(name),
         phoneNumber: sanitizeInput(phoneNumber),
@@ -67,8 +78,13 @@ const SignupScreen = memo(function SignupScreen({ navigation }: any) {
       });
       console.log('Registration result:', result);
       
-      Alert.alert('Success', 'Account created successfully!');
-      navigation.navigate('Login');
+      Alert.alert(
+        'Registration Successful!',
+        'Account created successfully!\n\nCheck your email including spam/junk folder to verify your account.',
+        [
+          { text: 'OK', onPress: () => navigation.navigate('Login') }
+        ]
+      );
     } catch (error: any) {
       Alert.alert('Signup Failed', error.message);
     } finally {
