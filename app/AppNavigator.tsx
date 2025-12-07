@@ -9,6 +9,7 @@ import SignupScreen from './screens/SignupScreen';
 import HomeScreen from './screens/HomeScreen';
 import QuizScreen from './screens/QuizScreen';
 import ProgressScreen from './screens/ProgressScreen';
+import ProfileScreen from './screens/ProfileScreen';
 
 import useUserStore from './store/UserStore';
 
@@ -20,61 +21,30 @@ const navStyles = {
     gap: 8,
     marginRight: 16,
   },
+  iconButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 8,
+    elevation: 2,
+  },
   homeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
     backgroundColor: '#4CAF50',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 4,
-    elevation: 2,
-  },
-  homeButtonEmoji: {
-    fontSize: 12,
-    marginRight: 3,
-  },
-  homeButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 12,
-  },
-  logoutButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FF9800',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 4,
-    elevation: 2,
-  },
-  logoutButtonEmoji: {
-    fontSize: 12,
-    marginRight: 3,
-  },
-  logoutButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 12,
   },
   progressButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
     backgroundColor: '#9C27B0',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 4,
-    elevation: 2,
   },
-  progressButtonEmoji: {
-    fontSize: 12,
-    marginRight: 3,
+  profileButton: {
+    backgroundColor: '#FF5722',
   },
-  progressButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 12,
+  logoutButton: {
+    backgroundColor: '#FF9800',
   },
-
+  buttonEmoji: {
+    fontSize: 20,
+  },
 };
 
 export default function AppNavigator() {
@@ -106,19 +76,22 @@ export default function AppNavigator() {
             <View style={navStyles.headerRight}>
               <TouchableOpacity 
                 onPress={() => navigation.navigate('Home')}
-                style={navStyles.homeButton}
+                style={[navStyles.iconButton, navStyles.homeButton]}
               >
-                <Text style={navStyles.homeButtonEmoji}>🏠</Text>
-                <Text style={navStyles.homeButtonText}>Home</Text>
+                <Text style={navStyles.buttonEmoji}>🏠</Text>
               </TouchableOpacity>
               <TouchableOpacity 
                 onPress={() => navigation.navigate('Progress')}
-                style={navStyles.progressButton}
+                style={[navStyles.iconButton, navStyles.progressButton]}
               >
-                <Text style={navStyles.progressButtonEmoji}>📊</Text>
-                <Text style={navStyles.progressButtonText}>Progress</Text>
+                <Text style={navStyles.buttonEmoji}>📊</Text>
               </TouchableOpacity>
-
+              <TouchableOpacity 
+                onPress={() => navigation.navigate('Profile')}
+                style={[navStyles.iconButton, navStyles.profileButton]}
+              >
+                <Text style={navStyles.buttonEmoji}>👤</Text>
+              </TouchableOpacity>
               <TouchableOpacity 
                 onPress={async () => {
                   try {
@@ -128,10 +101,9 @@ export default function AppNavigator() {
                     console.error('Logout error:', error);
                   }
                 }}
-                style={navStyles.logoutButton}
+                style={[navStyles.iconButton, navStyles.logoutButton]}
               >
-                <Text style={navStyles.logoutButtonEmoji}>⏻</Text>
-                <Text style={navStyles.logoutButtonText}>Logout</Text>
+                <Text style={navStyles.buttonEmoji}>⏻</Text>
               </TouchableOpacity>
             </View>
           ) : undefined,
@@ -142,7 +114,7 @@ export default function AppNavigator() {
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="Quiz" component={QuizScreen} />
         <Stack.Screen name="Progress" component={ProgressScreen} />
-
+        <Stack.Screen name="Profile" component={ProfileScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

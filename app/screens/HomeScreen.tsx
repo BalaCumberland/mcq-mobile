@@ -18,7 +18,6 @@ import useQuizStore from '../store/QuizStore';
 const HomeScreen = memo(({ route, navigation }) => {
   const { user } = useUserStore();
   const { setQuiz, hasActiveQuiz, quiz: activeQuiz, timeRemaining, resetQuiz } = useQuizStore();
-  const [selectedClass, setSelectedClass] = useState('');
   const [selectedSubject, setSelectedSubject] = useState('');
   const [selectedTopic, setSelectedTopic] = useState('');
   const [selectedQuiz, setSelectedQuiz] = useState('');
@@ -29,6 +28,12 @@ const HomeScreen = memo(({ route, navigation }) => {
   const [fetchingSubjects, setFetchingSubjects] = useState(false);
   const [fetchingTopics, setFetchingTopics] = useState(false);
   const [fetchingQuizzes, setFetchingQuizzes] = useState(false);
+
+  React.useEffect(() => {
+    if (user?.student_class) {
+      fetchSubjects(user.student_class);
+    }
+  }, [user, fetchSubjects]);
 
   const fetchSubjects = useCallback(async (className: string) => {
     setFetchingSubjects(true);
@@ -69,14 +74,14 @@ const HomeScreen = memo(({ route, navigation }) => {
   }, []);
 
   const beginTest = useCallback(async () => {
-    if (!selectedQuiz || !selectedClass || !selectedSubject || !selectedTopic) return;
+    if (!selectedQuiz || !user?.student_class || !selectedSubject || !selectedTopic) return;
     
     try {
       setLoading(true);
-      const data = await ApiService.getQuiz(selectedClass, selectedSubject, selectedTopic, selectedQuiz);
+      const data = await ApiService.getQuiz(user.student_class, selectedSubject, selectedTopic, selectedQuiz);
       setQuiz(data.quiz);
       navigation.navigate('Quiz', {
-        className: selectedClass,
+        className: user.student_class,
         subjectName: selectedSubject,
         topic: selectedTopic,
         quizName: selectedQuiz
@@ -86,7 +91,7 @@ const HomeScreen = memo(({ route, navigation }) => {
     } finally {
       setLoading(false);
     }
-  }, [selectedQuiz, selectedClass, selectedSubject, selectedTopic, setQuiz, navigation]);
+  }, [selectedQuiz, user, selectedSubject, selectedTopic, setQuiz, navigation]);
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -111,29 +116,6 @@ const HomeScreen = memo(({ route, navigation }) => {
         </View>
 
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>🏫 Class</Text>
-          <View style={styles.pickerWrapper}>
-            <Picker
-              selectedValue={selectedClass}
-              onValueChange={(value) => {
-                setSelectedClass(value);
-                setSelectedSubject('');
-                setSelectedTopic('');
-                setSelectedQuiz('');
-                if (value) fetchSubjects(value);
-              }}
-              style={styles.picker}
-            >
-              <Picker.Item label="Select class..." value="" />
-              {user?.student_class && (
-                <Picker.Item label={user.student_class} value={user.student_class} />
-              )}
-            </Picker>
-          </View>
-        </View>
-
-        {selectedClass && (
-          <View style={styles.inputContainer}>
             <Text style={styles.label}>📚 Subject</Text>
             {fetchingSubjects ? (
               <View style={styles.loadingContainer}>
@@ -148,7 +130,7 @@ const HomeScreen = memo(({ route, navigation }) => {
                     setSelectedSubject(value);
                     setSelectedTopic('');
                     setSelectedQuiz('');
-                    if (value) fetchTopics(selectedClass, value);
+                    if (value && user?.student_class) fetchTopics(user.student_class, value);
                   }}
                   style={styles.picker}
                 >
@@ -177,7 +159,7 @@ const HomeScreen = memo(({ route, navigation }) => {
                   onValueChange={(value) => {
                     setSelectedTopic(value);
                     setSelectedQuiz('');
-                    if (value) fetchQuizzes(selectedClass, selectedSubject, value);
+                    if (value && user?.student_class) fetchQuizzes(user.student_class, selectedSubject, value);
                   }}
                   style={styles.picker}
                 >

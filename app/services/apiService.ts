@@ -123,6 +123,45 @@ class ApiService {
     const params = new URLSearchParams({ className, subjectName });
     return this.makeRequest(`${API_ENDPOINTS.TOPICS}?${params}`);
   }
+
+  async getClassesPublic() {
+    const url = `${this.baseUrl}/class/fetch`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Accept': '*/*',
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status}`);
+    }
+    
+    return response.json();
+  }
+
+  async upgradeClass(newClass: string) {
+    const token = await getAuthToken();
+    const url = `${this.baseUrl}/students/upgrade-class`;
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Accept': '*/*',
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ newClass }),
+    });
+    
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.error || `API Error: ${response.status}`);
+    }
+    
+    return response.json();
+  }
 }
 
 export default new ApiService();

@@ -1,10 +1,9 @@
-import React, { useState, memo, useCallback } from 'react';
+import React, { useState, memo, useCallback, useEffect } from 'react';
 import { View, TextInput, StyleSheet, Alert, Text, TouchableOpacity, ActivityIndicator, ScrollView } from 'react-native';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../config/firebase';
 import { Picker } from '@react-native-picker/picker';
 import ApiService from '../services/apiService';
-import { CLASS_OPTIONS } from '../config/env';
 
 const SignupScreen = memo(function SignupScreen({ navigation }: any) {
   const [name, setName] = useState('');
@@ -12,8 +11,29 @@ const SignupScreen = memo(function SignupScreen({ navigation }: any) {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [studentClass, setStudentClass] = useState('CLS6');
+  const [studentClass, setStudentClass] = useState('');
+  const [classes, setClasses] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingClasses, setLoadingClasses] = useState(false);
+
+  useEffect(() => {
+    const fetchClasses = async () => {
+      setLoadingClasses(true);
+      try {
+        const data = await ApiService.getClassesPublic();
+        setClasses(Array.isArray(data) ? data : []);
+        if (data && data.length > 0) {
+          setStudentClass(data[0]);
+        }
+      } catch (error) {
+        console.error('Error fetching classes:', error);
+        setClasses([]);
+      } finally {
+        setLoadingClasses(false);
+      }
+    };
+    fetchClasses();
+  }, []);
 
   const isValidIndianPhone = useCallback((phone: string) => {
     const phoneRegex = /^[6789]\d{9}$/;
@@ -126,26 +146,34 @@ const SignupScreen = memo(function SignupScreen({ navigation }: any) {
         
         <View style={styles.inputContainer}>
           <Text style={styles.label}>🎓 Student Class</Text>
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={studentClass}
-              onValueChange={setStudentClass}
-              style={styles.picker}
-            >
-              {CLASS_OPTIONS.map((cls) => (
-                <Picker.Item key={cls} label={cls} value={cls} />
-              ))}
-            </Picker>
-          </View>
+          {loadingClasses ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color="#4CAF50" />
+              <Text style={styles.loadingText}>Loading classes...</Text>
+            </View>
+          ) : (
+            <View style={styles.pickerContainer}>
+              <Picker
+                selectedValue={studentClass}
+                onValueChange={setStudentClass}
+                style={styles.picker}
+              >
+                <Picker.Item label="Select class..." value="" />
+                {classes.map((cls) => (
+                  <Picker.Item key={cls} label={cls} value={cls} />
+                ))}
+              </Picker>
+            </View>
+          )}
         </View>
         
         <TouchableOpacity
           style={[
             styles.button,
-            (loading || !isValidIndianPhone(phoneNumber)) && styles.buttonDisabled
+            (loading || !isValidIndianPhone(phoneNumber) || !studentClass) && styles.buttonDisabled
           ]}
           onPress={handleSignup}
-          disabled={loading || !isValidIndianPhone(phoneNumber)}
+          disabled={loading || !isValidIndianPhone(phoneNumber) || !studentClass}
         >
           {loading ? (
             <View style={styles.buttonContent}>
@@ -265,6 +293,21 @@ const styles = StyleSheet.create({
   link: {
     color: '#2196F3',
     fontWeight: 'bold',
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    backgroundColor: '#f9f9f9',
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  loadingText: {
+    marginLeft: 8,
+    color: '#4CAF50',
+    fontSize: 14,
   },
 });
 
