@@ -5,6 +5,7 @@ import { QuizSubmitRequest, QuizSubmitResponse } from '../types/quiz';
 const API_ENDPOINTS = {
   REGISTER: '/students/register',
   QUIZ_LIST: '/quiz/list',
+  QUIZ_UNATTEMPTED: '/quiz/unattempted-quizzes',
   QUIZ_GET: '/quiz',
   QUIZ_SUBMIT: '/quiz/submit',
   USER_BY_EMAIL: '/students/lookup',
@@ -51,7 +52,7 @@ class ApiService {
 
   async getQuizzes(className: string, subjectName: string, topic: string) {
     const params = new URLSearchParams({ className, subjectName, topic });
-    return this.makeRequest(`${API_ENDPOINTS.QUIZ_LIST}?${params}`);
+    return this.makeRequest(`${API_ENDPOINTS.QUIZ_UNATTEMPTED}?${params}`);
   }
 
   async getQuiz(className: string, subjectName: string, topic: string, quizName: string) {

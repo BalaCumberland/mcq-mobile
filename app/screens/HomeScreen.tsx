@@ -17,7 +17,7 @@ import useQuizStore from '../store/QuizStore';
 
 const HomeScreen = memo(({ route, navigation }) => {
   const { user } = useUserStore();
-  const { setQuiz, hasActiveQuiz, quiz: activeQuiz, timeRemaining, resetQuiz } = useQuizStore();
+  const { setQuiz } = useQuizStore();
   const [selectedSubject, setSelectedSubject] = useState('');
   const [selectedTopic, setSelectedTopic] = useState('');
   const [selectedQuiz, setSelectedQuiz] = useState('');
@@ -30,10 +30,16 @@ const HomeScreen = memo(({ route, navigation }) => {
   const [fetchingQuizzes, setFetchingQuizzes] = useState(false);
 
   React.useEffect(() => {
+    if (!user || user.payment_status !== "PAID") {
+      setQuizzes(["DEMO"]);
+      setSelectedQuiz("DEMO");
+      return;
+    }
+    
     if (user?.student_class) {
       fetchSubjects(user.student_class);
     }
-  }, [user, fetchSubjects]);
+  }, [user]);
 
   const fetchSubjects = useCallback(async (className: string) => {
     setFetchingSubjects(true);
@@ -65,8 +71,16 @@ const HomeScreen = memo(({ route, navigation }) => {
     setFetchingQuizzes(true);
     try {
       const data = await ApiService.getQuizzes(className, subjectName, topic);
-      setQuizzes(data.quizzes?.map(q => q.quizName) || []);
+      const quizzes = data.quizzes || data.unattempted_quizzes || [];
+      const availableQuizzes = quizzes.map(quiz => typeof quiz === 'string' ? quiz : quiz.quizName);
+      setQuizzes(availableQuizzes);
+      if (availableQuizzes.length > 0) {
+        setSelectedQuiz(availableQuizzes[0]);
+      } else {
+        setSelectedQuiz("");
+      }
     } catch (err) {
+      console.error('Error fetching quizzes:', err);
       setQuizzes([]);
     } finally {
       setFetchingQuizzes(false);
