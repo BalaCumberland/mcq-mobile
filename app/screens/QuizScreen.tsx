@@ -185,7 +185,7 @@ const QuizScreen = ({ navigation, route }) => {
     const { correctCount = 0, wrongCount = 0, skippedCount = 0, totalCount = 0, percentage = 0, results = [] } = quizResults;
 
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['bottom']}>
         <View style={styles.resultsHeader}>
           <Text style={styles.title}>Quiz Results</Text>
           <Text style={styles.score}>Score: {correctCount}/{totalCount} ({Math.round(percentage)}%)</Text>
@@ -239,26 +239,28 @@ const QuizScreen = ({ navigation, route }) => {
           })}
         </ScrollView>
         
-        <TouchableOpacity 
-          style={styles.button} 
-          onPress={() => {
-            Alert.alert(
-              'Leave Quiz Results?',
-              'Are you sure you want to go back to home?',
-              [
-                { text: 'Cancel', style: 'cancel' },
-                { text: 'Yes', onPress: () => {
-                  // Clear quiz state before navigating
-                  useQuizStore.getState().resetQuiz();
-                  navigation.navigate('Home');
-                }}
-              ]
-            );
-          }}
-        >
-          <Text style={styles.buttonText}>Back to Home</Text>
-        </TouchableOpacity>
-      </View>
+        <View style={{ alignItems: 'center', marginTop: 20 }}>
+          <TouchableOpacity 
+            style={styles.navButton} 
+            onPress={() => {
+              Alert.alert(
+                'Leave Quiz Results?',
+                'Are you sure you want to go back to home?',
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  { text: 'Yes', onPress: () => {
+                    // Clear quiz state before navigating
+                    useQuizStore.getState().resetQuiz();
+                    navigation.navigate('Home');
+                  }}
+                ]
+              );
+            }}
+          >
+            <Text style={styles.navButtonText}>🏠 Back to Home</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
     );
   }
 
