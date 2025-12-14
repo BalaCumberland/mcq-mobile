@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
 import ApiService from '../services/apiService';
 import useUserStore from '../store/UserStore';
+import { getAuthToken } from '../services/firebaseAuth';
+import { LAMBDA_MCQ_GO_API_URL } from '../config/env';
 
 const ProgressScreen = ({ navigation }) => {
   const { user } = useUserStore();
@@ -14,25 +16,20 @@ const ProgressScreen = ({ navigation }) => {
 
   const fetchAnalytics = async () => {
     try {
-      // Mock analytics data - replace with actual API call
-      const mockData = {
-        totalQuizzes: 15,
-        completedQuizzes: 12,
-        averageScore: 78,
-        totalQuestions: 180,
-        correctAnswers: 140,
-        subjectProgress: [
-          { subject: 'Mathematics', completed: 8, total: 10, avgScore: 82 },
-          { subject: 'Science', completed: 4, total: 5, avgScore: 75 },
-        ],
-        recentQuizzes: [
-          { name: 'Algebra Quiz 1', score: 85, date: '2024-01-15' },
-          { name: 'Physics Quiz 2', score: 72, date: '2024-01-14' },
-        ]
-      };
-      setAnalytics(mockData);
+      const token = await getAuthToken();
+      const response = await fetch(`${LAMBDA_MCQ_GO_API_URL}/students/progress`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': '*/*'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setAnalytics(data);
+      }
     } catch (error) {
-      console.error('Failed to fetch analytics:', error);
+      console.error('Failed to fetch progress:', error);
     } finally {
       setLoading(false);
     }
@@ -40,86 +37,73 @@ const ProgressScreen = ({ navigation }) => {
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.title}>Loading Analytics...</Text>
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#2196F3" />
+        <Text style={styles.loadingText}>Loading Progress...</Text>
       </View>
     );
   }
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.title}>Student Progress</Text>
+      <Text style={styles.title}>📊 Your Progress</Text>
       
-      {/* Overall Stats */}
-      <View style={styles.statsContainer}>
-        <View style={styles.statCard}>
-          <Text style={styles.statNumber}>{analytics.completedQuizzes}</Text>
-          <Text style={styles.statLabel}>Quizzes Completed</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statNumber}>{analytics.averageScore}%</Text>
-          <Text style={styles.statLabel}>Average Score</Text>
-        </View>
-      </View>
-
-      {/* Progress Bar */}
-      <View style={styles.progressSection}>
-        <Text style={styles.sectionTitle}>Overall Progress</Text>
-        <View style={styles.progressBar}>
-          <View 
-            style={[
-              styles.progressFill, 
-              { width: `${(analytics.completedQuizzes / analytics.totalQuizzes) * 100}%` }
-            ]} 
-          />
-        </View>
-        <Text style={styles.progressText}>
-          {analytics.completedQuizzes} of {analytics.totalQuizzes} quizzes completed
-        </Text>
-      </View>
-
       {/* Subject Progress */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Subject Progress</Text>
-        {analytics.subjectProgress.map((subject, index) => (
-          <View key={index} style={styles.subjectCard}>
-            <Text style={styles.subjectName}>{subject.subject}</Text>
-            <View style={styles.subjectStats}>
-              <Text style={styles.subjectText}>
-                {subject.completed}/{subject.total} completed
-              </Text>
-              <Text style={styles.subjectScore}>{subject.avgScore}% avg</Text>
+      {analytics?.subjectSummary && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>📊 Subject Progress</Text>
+          {analytics.subjectSummary.map((subject, index) => (
+            <View key={index} style={styles.subjectCard}>
+              <Text style={styles.subjectName}>{subject.subjectName}</Text>
+              <View style={styles.subjectStats}>
+                <Text style={styles.statText}>Attempted: {subject.attempted}</Text>
+                <Text style={styles.statText}>Remaining: {subject.unattempted}</Text>
+                <Text style={styles.percentageText}>{subject.percentage}%</Text>
+              </View>
             </View>
-            <View style={styles.subjectProgressBar}>
-              <View 
-                style={[
-                  styles.subjectProgressFill, 
-                  { width: `${(subject.completed / subject.total) * 100}%` }
-                ]} 
-              />
-            </View>
-          </View>
-        ))}
-      </View>
+          ))}
+        </View>
+      )}
 
-      {/* Recent Quizzes */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Recent Quizzes</Text>
-        {analytics.recentQuizzes.map((quiz, index) => (
-          <View key={index} style={styles.quizCard}>
-            <View style={styles.quizInfo}>
-              <Text style={styles.quizName}>{quiz.name}</Text>
-              <Text style={styles.quizDate}>{quiz.date}</Text>
-            </View>
-            <Text style={[
-              styles.quizScore,
-              { color: quiz.score >= 80 ? '#4CAF50' : quiz.score >= 60 ? '#FF9800' : '#f44336' }
-            ]}>
-              {quiz.score}%
-            </Text>
+      {/* Individual Test Results */}
+      {analytics?.individualTests && Object.keys(analytics.individualTests).map(subject => (
+        analytics.individualTests[subject].length > 0 && (
+          <View key={subject} style={styles.section}>
+            <Text style={styles.sectionTitle}>🏆 {subject} Results</Text>
+            {analytics.individualTests[subject].map((test, index) => (
+              <TouchableOpacity 
+                key={index} 
+                style={styles.testCard}
+                onPress={() => navigation.navigate('Review', {
+                  quizName: test.quizName,
+                  className: analytics.className,
+                  subjectName: test.subjectName,
+                  topic: test.topic
+                })}
+              >
+                <Text style={styles.testName}>{test.topic}</Text>
+                <View style={styles.testStats}>
+                  <Text style={styles.testScore}>{test.percentage}%</Text>
+                  <Text style={styles.testDetail}>✅ {test.correctCount}</Text>
+                  <Text style={styles.testDetail}>❌ {test.wrongCount}</Text>
+                  <Text style={styles.testDetail}>⏭️ {test.skippedCount}</Text>
+                </View>
+                <Text style={styles.testDate}>{new Date(test.attemptedAt).toLocaleDateString()}</Text>
+                <Text style={styles.reviewHint}>👆 Tap to review answers</Text>
+              </TouchableOpacity>
+            ))}
           </View>
-        ))}
-      </View>
+        )
+      ))}
+
+      {/* No Data Message */}
+      {!analytics && (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyEmoji}>📚</Text>
+          <Text style={styles.emptyTitle}>No Progress Data</Text>
+          <Text style={styles.emptyText}>Complete some quizzes to see your progress!</Text>
+        </View>
+      )}
     </ScrollView>
   );
 };
@@ -129,6 +113,17 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f5f5f5',
     padding: 20,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#666',
   },
   title: {
     fontSize: 24,
@@ -149,6 +144,10 @@ const styles = StyleSheet.create({
     flex: 0.48,
     elevation: 2,
   },
+  statEmoji: {
+    fontSize: 24,
+    marginBottom: 8,
+  },
   statNumber: {
     fontSize: 32,
     fontWeight: 'bold',
@@ -159,34 +158,7 @@ const styles = StyleSheet.create({
     color: '#666',
     marginTop: 5,
   },
-  progressSection: {
-    backgroundColor: '#fff',
-    padding: 20,
-    borderRadius: 12,
-    marginBottom: 20,
-    elevation: 2,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 15,
-  },
-  progressBar: {
-    height: 8,
-    backgroundColor: '#e0e0e0',
-    borderRadius: 4,
-    overflow: 'hidden',
-    marginBottom: 10,
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: '#4CAF50',
-    borderRadius: 4,
-  },
-  progressText: {
-    fontSize: 14,
-    color: '#666',
-  },
+
   section: {
     backgroundColor: '#fff',
     padding: 20,
@@ -195,64 +167,94 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   subjectCard: {
-    marginBottom: 15,
-    paddingBottom: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    backgroundColor: '#f9f9f9',
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: '#2196F3',
   },
   subjectName: {
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 8,
+    color: '#333',
   },
   subjectStats: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    alignItems: 'center',
   },
-  subjectText: {
-    fontSize: 14,
+  statText: {
+    fontSize: 12,
     color: '#666',
   },
-  subjectScore: {
-    fontSize: 14,
+  percentageText: {
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#2196F3',
   },
-  subjectProgressBar: {
-    height: 6,
-    backgroundColor: '#e0e0e0',
-    borderRadius: 3,
-    overflow: 'hidden',
+  testCard: {
+    backgroundColor: '#fff',
+    padding: 12,
+    borderRadius: 6,
+    marginBottom: 8,
+    elevation: 1,
   },
-  subjectProgressFill: {
-    height: '100%',
-    backgroundColor: '#2196F3',
-    borderRadius: 3,
+  testName: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 6,
+    color: '#333',
   },
-  quizCard: {
+  testStats: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    marginBottom: 4,
   },
-  quizInfo: {
-    flex: 1,
-  },
-  quizName: {
+  testScore: {
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: 'bold',
+    color: '#4CAF50',
   },
-  quizDate: {
+  testDetail: {
     fontSize: 12,
     color: '#666',
-    marginTop: 2,
   },
-  quizScore: {
+  testDate: {
+    fontSize: 11,
+    color: '#999',
+  },
+  reviewHint: {
+    fontSize: 10,
+    color: '#2196F3',
+    textAlign: 'center',
+    marginTop: 4,
+    fontStyle: 'italic',
+  },
+
+  emptyState: {
+    backgroundColor: '#fff',
+    padding: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    elevation: 2,
+  },
+  emptyEmoji: {
+    fontSize: 48,
+    marginBottom: 16,
+  },
+  emptyTitle: {
     fontSize: 18,
     fontWeight: 'bold',
+    marginBottom: 8,
+    color: '#333',
+  },
+  emptyText: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
   },
 });
 

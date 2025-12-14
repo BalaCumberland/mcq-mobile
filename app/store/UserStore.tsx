@@ -47,7 +47,7 @@ const useUserStore = create(
 
       logout: async () => {
         set({ user: null });
-        await AsyncStorage.removeItem('user-storage'); // ✅ Remove persisted user data
+        await AsyncStorage.clear(); // Clear all cached data
       },
     }),
     {
