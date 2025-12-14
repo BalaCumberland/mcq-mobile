@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, Alert } from 'react-native';
 import useQuizStore from '../store/QuizStore';
 import ApiService from '../services/apiService';
 
@@ -79,8 +79,10 @@ const QuizScreen = ({ navigation, route }) => {
     if ((showResults || forceResults) && !quizResults && quiz) {
       const submitAndGetResults = async () => {
         try {
+          console.log('UserAnswers array:', userAnswers);
           const answers = quiz.questions.map((question, index) => {
             const userAns = userAnswers[index];
+            console.log(`Question ${index + 1}: userAnswer = "${userAns}"`);
             return {
               questionId: `q${index + 1}`,
               selectedAnswer: userAns || ''
@@ -105,53 +107,35 @@ const QuizScreen = ({ navigation, route }) => {
           const studentId = 'student123'; // TODO: Get from user store
           
           try {
-            response = await ApiService.submitQuiz(className, subjectName, topic, quizName, studentId, answers);
+            response = await ApiService.submitQuiz(className, subjectName, topic, quizName, studentId, answers, quiz);
+            console.log('API Response:', JSON.stringify(response, null, 2));
+            if (response.results && response.results.length > 0) {
+              console.log('Sample result:', JSON.stringify(response.results[0], null, 2));
+            }
+            setQuizResults(response);
+            return; // Exit early if API succeeds
           } catch (firstError) {
+            console.log('First API call failed:', firstError);
             if (firstError.message.includes('404')) {
               // Try with topic-based quiz name as fallback
               const topicName = topic.replace('UNIT-1-', '').replace('+', ' ');
               quizName = `${topicName}-Exercise - 1-55MIN`;
-              response = await ApiService.submitQuiz(className, subjectName, topic, quizName, studentId, answers);
+              try {
+                response = await ApiService.submitQuiz(className, subjectName, topic, quizName, studentId, answers, quiz);
+                console.log('Fallback API Response:', response);
+                setQuizResults(response);
+                return; // Exit early if fallback API succeeds
+              } catch (secondError) {
+                console.log('Fallback API also failed:', secondError);
+                throw secondError;
+              }
             } else {
               throw firstError;
             }
           }
-          
-          setQuizResults(response);
         } catch (error) {
-          console.log('API unavailable, using fallback results');
-          console.log('Error:', error);
-          console.log('Sample quiz question:', JSON.stringify(quiz.questions[0], null, 2));
-          // Create fallback results
-          const fallbackResults = quiz.questions.map((question, index) => {
-            const userAnswer = userAnswers[index];
-            const allAnswers = question.allAnswers || [];
-            const correctAnswer = allAnswers[0] || 'Unknown';
-            const isCorrect = userAnswer === correctAnswer;
-            const isSkipped = !userAnswer || userAnswer === '';
-            
-            return {
-              qno: index + 1,
-              question: question.question,
-              correctAnswer: [correctAnswer],
-              studentAnswer: userAnswer ? [userAnswer] : [],
-              status: isSkipped ? 'skipped' : isCorrect ? 'correct' : 'incorrect',
-              explanation: question.explanation || `This question tests your understanding of ${quiz.subjectName || 'the subject'} concepts. Review the correct answer and related theory.`
-            };
-          });
-          
-          const correctCount = fallbackResults.filter(r => r.status === 'correct').length;
-          const wrongCount = fallbackResults.filter(r => r.status === 'incorrect').length;
-          const skippedCount = fallbackResults.filter(r => r.status === 'skipped').length;
-          
-          setQuizResults({
-            correctCount,
-            wrongCount,
-            skippedCount,
-            totalCount: quiz.questions.length,
-            percentage: (correctCount / quiz.questions.length) * 100,
-            results: fallbackResults
-          });
+          console.error('Quiz submission failed:', error);
+          alert('Failed to submit quiz. Please try again.');
         }
       };
       
@@ -182,7 +166,9 @@ const QuizScreen = ({ navigation, route }) => {
             const isCorrect = result.status === 'correct';
             const isSkipped = result.status === 'skipped';
             const correctAnswers = Array.isArray(result.correctAnswer) ? result.correctAnswer : [result.correctAnswer];
-            const userAnswer = result.studentAnswer?.[0] || 'Not answered';
+            const userAnswer = result.studentAnswer && result.studentAnswer.length > 0 
+              ? result.studentAnswer[0] 
+              : 'Not answered';
             
             return (
               <View key={index} style={styles.resultCard}>
@@ -225,7 +211,16 @@ const QuizScreen = ({ navigation, route }) => {
         
         <TouchableOpacity 
           style={styles.button} 
-          onPress={() => navigation.goBack()}
+          onPress={() => {
+            Alert.alert(
+              'Leave Quiz Results?',
+              'Are you sure you want to go back to home?',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Yes', onPress: () => navigation.navigate('Home') }
+              ]
+            );
+          }}
         >
           <Text style={styles.buttonText}>Back to Home</Text>
         </TouchableOpacity>
