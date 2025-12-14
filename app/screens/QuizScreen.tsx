@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, Alert, BackHandler } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import useQuizStore from '../store/QuizStore';
 import ApiService from '../services/apiService';
 
@@ -25,15 +27,6 @@ const QuizScreen = ({ navigation, route }) => {
   const [forceResults, setForceResults] = useState(false);
   const [quizResults, setQuizResults] = useState(null);
 
-  console.log('QuizScreen render:', { 
-    quiz: !!quiz, 
-    showResults, 
-    currentQuestionIndex, 
-    userAnswersLength: userAnswers.length,
-    questionsLength: quiz?.questions?.length,
-    willShowResults: showResults
-  });
-  
   // Force results if we have quiz data but showResults is false after finish
   React.useEffect(() => {
     console.log('showResults changed:', showResults);
@@ -47,16 +40,35 @@ const QuizScreen = ({ navigation, route }) => {
     return () => clearInterval(interval);
   }, [updateTimer]);
 
-  if (!quiz) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.title}>Loading...</Text>
-      </View>
-    );
-  }
+  useFocusEffect(
+    React.useCallback(() => {
+      const backAction = () => {
+        if (quiz && !showResults && !forceResults) {
+          Alert.alert(
+            'Exit Quiz?',
+            'Are you sure you want to exit? Your progress will be lost.',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Exit', onPress: () => {
+                // Clear quiz state before navigating
+                useQuizStore.getState().resetQuiz();
+                navigation.navigate('Home');
+              }}
+            ]
+          );
+          return true;
+        }
+        return false;
+      };
 
-  const currentQuestion = quiz.questions[currentQuestionIndex];
+      const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+      return () => backHandler.remove();
+    }, [quiz, showResults, forceResults, navigation])
+  );
+
   const allAnswers = React.useMemo(() => {
+    if (!quiz || !quiz.questions[currentQuestionIndex]) return [];
+    const currentQuestion = quiz.questions[currentQuestionIndex];
     // Use allAnswers from API if available, otherwise fallback to old format
     if (currentQuestion.allAnswers && Array.isArray(currentQuestion.allAnswers)) {
       return currentQuestion.allAnswers;
@@ -68,12 +80,8 @@ const QuizScreen = ({ navigation, route }) => {
       currentQuestion.correctAnswer,
       ...(typeof incorrect === 'string' ? incorrect.split(' ~~ ') : [])
     ].filter(Boolean).sort(() => Math.random() - 0.5);
-  }, [currentQuestion]);
+  }, [quiz, currentQuestionIndex]);
 
-  const isLastQuestion = currentQuestionIndex === quiz.questions.length - 1;
-
-  console.log('Results check:', { showResults, forceResults, hasQuiz: !!quiz });
-  
   // Submit quiz when results are requested
   useEffect(() => {
     if ((showResults || forceResults) && !quizResults && quiz) {
@@ -142,6 +150,28 @@ const QuizScreen = ({ navigation, route }) => {
       submitAndGetResults();
     }
   }, [showResults, forceResults, quiz, userAnswers, quizResults]);
+
+  console.log('QuizScreen render:', { 
+    quiz: !!quiz, 
+    showResults, 
+    currentQuestionIndex, 
+    userAnswersLength: userAnswers.length,
+    questionsLength: quiz?.questions?.length,
+    willShowResults: showResults
+  });
+
+  if (!quiz) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>Loading...</Text>
+      </View>
+    );
+  }
+
+  const currentQuestion = quiz.questions[currentQuestionIndex];
+  const isLastQuestion = currentQuestionIndex === quiz.questions.length - 1;
+
+  console.log('Results check:', { showResults, forceResults, hasQuiz: !!quiz });
 
   if (showResults || forceResults) {
     if (!quizResults) {
@@ -217,7 +247,11 @@ const QuizScreen = ({ navigation, route }) => {
               'Are you sure you want to go back to home?',
               [
                 { text: 'Cancel', style: 'cancel' },
-                { text: 'Yes', onPress: () => navigation.navigate('Home') }
+                { text: 'Yes', onPress: () => {
+                  // Clear quiz state before navigating
+                  useQuizStore.getState().resetQuiz();
+                  navigation.navigate('Home');
+                }}
               ]
             );
           }}
@@ -229,7 +263,7 @@ const QuizScreen = ({ navigation, route }) => {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
       <View style={styles.header}>
         <Text style={styles.title}>
           Question {currentQuestionIndex + 1} of {quiz.questions.length}
@@ -390,7 +424,7 @@ const QuizScreen = ({ navigation, route }) => {
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 };
 

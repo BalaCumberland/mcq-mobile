@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { TouchableOpacity, Text, View, Alert } from 'react-native';
+import { TouchableOpacity, Text, View, Alert, BackHandler } from 'react-native';
 import { signOut } from 'firebase/auth';
 import { auth } from './config/firebase';
 import LoginScreen from './screens/LoginScreen';
@@ -54,6 +54,8 @@ export default function AppNavigator() {
   const { user } = useUserStore();
   const { hasActiveQuiz } = useQuizStore();
 
+
+
   
   return (
     <NavigationContainer>
@@ -75,7 +77,9 @@ export default function AppNavigator() {
             fontWeight: 'bold',
             color: '#333',
           },
-          headerTitle: route.name === 'Login' ? '🎓 GradeUp' : route.name === 'Signup' ? '🎓 Sign Up' : route.name === 'ForgotPassword' ? '🔒 Reset Password' : '🎓 GradeUp',
+          headerTitle: route.name === 'Login' ? '🎓 GradeUp' : route.name === 'Signup' ? '🎓 Sign Up' : route.name === 'ForgotPassword' ? '🔒 Reset Password' : route.name === 'Review' ? '📋 Quiz Review' : '🎓 GradeUp',
+          headerLeft: route.name === 'Review' ? undefined : () => null,
+          gestureEnabled: route.name === 'Review',
           headerRight: route.name !== 'Login' && route.name !== 'Signup' && route.name !== 'ForgotPassword' ? () => (
             <View style={navStyles.headerRight}>
               <TouchableOpacity 
@@ -146,7 +150,10 @@ export default function AppNavigator() {
                         { text: 'Logout', onPress: async () => {
                           try {
                             await signOut(auth);
-                            navigation.navigate('Login');
+                            navigation.reset({
+                              index: 0,
+                              routes: [{ name: 'Login' }],
+                            });
                           } catch (error) {
                             console.error('Logout error:', error);
                           }
@@ -156,7 +163,10 @@ export default function AppNavigator() {
                   } else {
                     try {
                       await signOut(auth);
-                      navigation.navigate('Login');
+                      navigation.reset({
+                        index: 0,
+                        routes: [{ name: 'Login' }],
+                      });
                     } catch (error) {
                       console.error('Logout error:', error);
                     }

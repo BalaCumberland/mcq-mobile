@@ -1,15 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, ScrollView } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { Picker } from '@react-native-picker/picker';
 import useUserStore from '../store/UserStore';
+import useQuizStore from '../store/QuizStore';
 import ApiService from '../services/apiService';
 
 const ProfileScreen = ({ navigation }: any) => {
   const { user, setUser } = useUserStore();
+  const { clearQuizState } = useQuizStore();
   const [classes, setClasses] = useState<string[]>([]);
   const [selectedClass, setSelectedClass] = useState(user?.student_class || '');
   const [loading, setLoading] = useState(false);
   const [loadingClasses, setLoadingClasses] = useState(false);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      // Clear any persisted quiz state when entering Profile screen
+      try {
+        clearQuizState();
+      } catch (error) {
+        console.warn('Error clearing quiz state:', error);
+      }
+    }, [clearQuizState])
+  );
 
   useEffect(() => {
     const fetchClasses = async () => {

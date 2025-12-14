@@ -32,6 +32,7 @@ interface QuizState {
   finishQuiz: () => void;
   submitQuiz: (className: string, subjectName: string, topic: string) => Promise<void>;
   resetQuiz: () => void;
+  clearQuizState: () => void;
   updateTimer: () => void;
   hasActiveQuiz: () => boolean;
 }
@@ -121,6 +122,15 @@ const useQuizStore = create<QuizState>()(persist((set, get) => ({
     timeRemaining: null
   }),
   
+  clearQuizState: () => set({ 
+    quiz: null, 
+    currentQuestionIndex: 0, 
+    userAnswers: [], 
+    showResults: false,
+    startTime: null,
+    timeRemaining: null
+  }),
+  
   updateTimer: () => {
     const state = get();
     if (!state.startTime || !state.quiz || state.showResults) return;
@@ -136,8 +146,13 @@ const useQuizStore = create<QuizState>()(persist((set, get) => ({
   },
   
   hasActiveQuiz: () => {
-    const state = get();
-    return !!(state.quiz && !state.showResults && state.timeRemaining && state.timeRemaining > 0);
+    try {
+      const state = get();
+      return !!(state.quiz && !state.showResults && state.startTime && state.timeRemaining && state.timeRemaining > 0);
+    } catch (error) {
+      console.warn('Error checking active quiz:', error);
+      return false;
+    }
   }
 }), {
   name: 'quiz-storage',

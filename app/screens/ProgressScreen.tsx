@@ -1,18 +1,29 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import ApiService from '../services/apiService';
 import useUserStore from '../store/UserStore';
+import useQuizStore from '../store/QuizStore';
 import { getAuthToken } from '../services/firebaseAuth';
 import { LAMBDA_MCQ_GO_API_URL } from '../config/env';
 
 const ProgressScreen = ({ navigation }) => {
   const { user } = useUserStore();
+  const { clearQuizState } = useQuizStore();
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchAnalytics();
-  }, []);
+  useFocusEffect(
+    React.useCallback(() => {
+      // Clear any persisted quiz state when entering Progress screen
+      try {
+        clearQuizState();
+      } catch (error) {
+        console.warn('Error clearing quiz state:', error);
+      }
+      fetchAnalytics();
+    }, [clearQuizState])
+  );
 
   const fetchAnalytics = async () => {
     try {
