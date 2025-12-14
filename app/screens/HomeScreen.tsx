@@ -7,7 +7,10 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   ScrollView,
+  BackHandler,
+  Alert,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { Picker } from '@react-native-picker/picker';
 import ApiService from '../services/apiService';
 import useUserStore from '../store/UserStore';
@@ -17,7 +20,7 @@ import useQuizStore from '../store/QuizStore';
 
 const HomeScreen = memo(({ route, navigation }) => {
   const { user } = useUserStore();
-  const { setQuiz } = useQuizStore();
+  const { setQuiz, clearQuizState } = useQuizStore();
   const [selectedSubject, setSelectedSubject] = useState('');
   const [selectedTopic, setSelectedTopic] = useState('');
   const [selectedQuiz, setSelectedQuiz] = useState('');
@@ -40,6 +43,32 @@ const HomeScreen = memo(({ route, navigation }) => {
       fetchSubjects(user.student_class);
     }
   }, [user]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      // Clear any persisted quiz state when entering Home screen
+      try {
+        clearQuizState();
+      } catch (error) {
+        console.warn('Error clearing quiz state:', error);
+      }
+      
+      const backAction = () => {
+        Alert.alert(
+          'Exit App?',
+          'Are you sure you want to exit the application?',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Exit', onPress: () => BackHandler.exitApp() }
+          ]
+        );
+        return true;
+      };
+
+      const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+      return () => backHandler.remove();
+    }, [clearQuizState])
+  );
 
   const fetchSubjects = useCallback(async (className: string) => {
     setFetchingSubjects(true);
@@ -129,7 +158,8 @@ const HomeScreen = memo(({ route, navigation }) => {
           <Text style={styles.title}>Select Quiz</Text>
         </View>
 
-        <View style={styles.inputContainer}>
+        {user && user.payment_status === "PAID" && (
+          <View style={styles.inputContainer}>
             <Text style={styles.label}>📚 Subject</Text>
             {fetchingSubjects ? (
               <View style={styles.loadingContainer}>
@@ -137,23 +167,31 @@ const HomeScreen = memo(({ route, navigation }) => {
                 <Text style={styles.loadingText}>Loading subjects...</Text>
               </View>
             ) : (
-              <View style={styles.pickerWrapper}>
-                <Picker
-                  selectedValue={selectedSubject}
-                  onValueChange={(value) => {
-                    setSelectedSubject(value);
-                    setSelectedTopic('');
-                    setSelectedQuiz('');
-                    if (value && user?.student_class) fetchTopics(user.student_class, value);
-                  }}
-                  style={styles.picker}
-                >
-                  <Picker.Item label="Select subject..." value="" />
-                  {subjects.map((subject, index) => (
-                    <Picker.Item key={index} label={subject} value={subject} />
-                  ))}
-                </Picker>
-              </View>
+              subjects.length > 0 ? (
+                <View style={styles.pickerWrapper}>
+                  <Picker
+                    selectedValue={selectedSubject}
+                    onValueChange={(value) => {
+                      setSelectedSubject(value);
+                      setSelectedTopic('');
+                      setSelectedQuiz('');
+                      if (value && user?.student_class) fetchTopics(user.student_class, value);
+                    }}
+                    style={styles.picker}
+                  >
+                    <Picker.Item label="Select subject..." value="" />
+                    {subjects.map((subject, index) => (
+                      <Picker.Item key={index} label={subject} value={subject} />
+                    ))}
+                  </Picker>
+                </View>
+              ) : (
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyEmoji}>📚</Text>
+                  <Text style={styles.emptyTitle}>No Subjects Available</Text>
+                  <Text style={styles.emptyText}>No subjects found for your class.</Text>
+                </View>
+              )
             )}
           </View>
         )}
@@ -167,22 +205,30 @@ const HomeScreen = memo(({ route, navigation }) => {
                 <Text style={styles.loadingText}>Loading topics...</Text>
               </View>
             ) : (
-              <View style={styles.pickerWrapper}>
-                <Picker
-                  selectedValue={selectedTopic}
-                  onValueChange={(value) => {
-                    setSelectedTopic(value);
-                    setSelectedQuiz('');
-                    if (value && user?.student_class) fetchQuizzes(user.student_class, selectedSubject, value);
-                  }}
-                  style={styles.picker}
-                >
-                  <Picker.Item label="Select topic..." value="" />
-                  {topics.map((topic, index) => (
-                    <Picker.Item key={index} label={topic} value={topic} />
-                  ))}
-                </Picker>
-              </View>
+              topics.length > 0 ? (
+                <View style={styles.pickerWrapper}>
+                  <Picker
+                    selectedValue={selectedTopic}
+                    onValueChange={(value) => {
+                      setSelectedTopic(value);
+                      setSelectedQuiz('');
+                      if (value && user?.student_class) fetchQuizzes(user.student_class, selectedSubject, value);
+                    }}
+                    style={styles.picker}
+                  >
+                    <Picker.Item label="Select topic..." value="" />
+                    {topics.map((topic, index) => (
+                      <Picker.Item key={index} label={topic} value={topic} />
+                    ))}
+                  </Picker>
+                </View>
+              ) : (
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyEmoji}>📝</Text>
+                  <Text style={styles.emptyTitle}>No Topics Available</Text>
+                  <Text style={styles.emptyText}>No topics found for this subject.</Text>
+                </View>
+              )
             )}
           </View>
         )}
