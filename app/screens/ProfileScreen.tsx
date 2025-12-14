@@ -48,7 +48,7 @@ const ProfileScreen = ({ navigation }: any) => {
 
     Alert.alert(
       'Confirm Class Upgrade',
-      `⚠️ WARNING ⚠️\n\nUpgrading to ${selectedClass} will:\n❌ DELETE ALL YOUR QUIZ ATTEMPTS\n❌ COUNT TOWARDS YOUR 2 SWITCHES/YEAR LIMIT\n\nContinue?`,
+      `⚠️ WARNING ⚠️\n\nUpgrading to ${selectedClass} will:\n❌ RESTRICT NEXT UPGRADE FOR 6 MONTHS\n\nContinue?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -60,7 +60,7 @@ const ProfileScreen = ({ navigation }: any) => {
               await useUserStore.getState().fetchUserByEmail(user?.email || '');
               Alert.alert(
                 'Success',
-                `✅ Upgraded to ${result.newClass}\nSwitches remaining: ${result.switchesRemaining}/2\nNext eligible: ${new Date(result.nextEligibleDate).toLocaleDateString()}`
+                `✅ Upgraded to ${result.newClass || selectedClass}\n📅 Next upgrade available: ${result.nextEligibleDate ? new Date(result.nextEligibleDate).toLocaleDateString() : 'In 6 months'}`
               );
             } catch (error: any) {
               Alert.alert('Error', error.message || 'Failed to upgrade class');
@@ -109,7 +109,7 @@ const ProfileScreen = ({ navigation }: any) => {
 
         <View style={styles.upgradeSection}>
           <Text style={styles.sectionTitle}>🔄 Upgrade Class</Text>
-          <Text style={styles.warningText}>⚠️ You can upgrade your class maximum 2 times per year</Text>
+          <Text style={styles.warningText}>⚠️ You can upgrade your class once every 6 months</Text>
           
           {loadingClasses ? (
             <View style={styles.loadingContainer}>
