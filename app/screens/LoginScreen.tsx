@@ -1,6 +1,6 @@
 import React, { useState, memo } from 'react';
 import { View, TextInput, StyleSheet, Alert, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../config/firebase';
 import userStore from '../store/UserStore';
 import { resendVerifiedEmail } from '../services/firebaseAuth';
@@ -10,27 +10,8 @@ const LoginScreen = memo(function LoginScreen({ navigation }: any) {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleForgotPassword = async () => {
-    if (!email) {
-      Alert.alert('Error', 'Please enter your email address');
-      return;
-    }
-    if (!email.includes('@')) {
-      Alert.alert('Error', 'Please enter a valid email address');
-      return;
-    }
-    try {
-      await sendPasswordResetEmail(auth, email);
-      Alert.alert('Success', 'Password reset email sent! Check your inbox and spam folder.');
-    } catch (error: any) {
-      if (error.code === 'auth/user-not-found') {
-        Alert.alert('Error', 'No account found with this email address');
-      } else if (error.code === 'auth/invalid-email') {
-        Alert.alert('Error', 'Invalid email address');
-      } else {
-        Alert.alert('Error', error.message);
-      }
-    }
+  const handleForgotPassword = () => {
+    navigation.navigate('ForgotPassword');
   };
 
   const handleResendEmail = async () => {

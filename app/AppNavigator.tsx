@@ -1,17 +1,20 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { TouchableOpacity, Text, View } from 'react-native';
+import { TouchableOpacity, Text, View, Alert } from 'react-native';
 import { signOut } from 'firebase/auth';
 import { auth } from './config/firebase';
 import LoginScreen from './screens/LoginScreen';
 import SignupScreen from './screens/SignupScreen';
+import ForgotPasswordScreen from './screens/ForgotPasswordScreen';
+import ReviewScreen from './screens/ReviewScreen';
 import HomeScreen from './screens/HomeScreen';
 import QuizScreen from './screens/QuizScreen';
 import ProgressScreen from './screens/ProgressScreen';
 import ProfileScreen from './screens/ProfileScreen';
 
 import useUserStore from './store/UserStore';
+import useQuizStore from './store/QuizStore';
 
 const Stack = createStackNavigator();
 
@@ -49,6 +52,7 @@ const navStyles = {
 
 export default function AppNavigator() {
   const { user } = useUserStore();
+  const { hasActiveQuiz } = useQuizStore();
 
   
   return (
@@ -71,34 +75,91 @@ export default function AppNavigator() {
             fontWeight: 'bold',
             color: '#333',
           },
-          headerTitle: route.name === 'Login' ? '🎓 GradeUp' : route.name === 'Signup' ? '🎓 Sign Up' : '🎓 GradeUp',
-          headerRight: route.name !== 'Login' && route.name !== 'Signup' ? () => (
+          headerTitle: route.name === 'Login' ? '🎓 GradeUp' : route.name === 'Signup' ? '🎓 Sign Up' : route.name === 'ForgotPassword' ? '🔒 Reset Password' : '🎓 GradeUp',
+          headerRight: route.name !== 'Login' && route.name !== 'Signup' && route.name !== 'ForgotPassword' ? () => (
             <View style={navStyles.headerRight}>
               <TouchableOpacity 
-                onPress={() => navigation.navigate('Home')}
+                onPress={() => {
+                  if (hasActiveQuiz()) {
+                    Alert.alert(
+                      'Leave Quiz?',
+                      'You have an active quiz. Your progress will be lost if you leave.',
+                      [
+                        { text: 'Cancel', style: 'cancel' },
+                        { text: 'Leave', onPress: () => navigation.navigate('Home') }
+                      ]
+                    );
+                  } else {
+                    navigation.navigate('Home');
+                  }
+                }}
                 style={[navStyles.iconButton, navStyles.homeButton]}
               >
                 <Text style={navStyles.buttonEmoji}>🏠</Text>
               </TouchableOpacity>
               <TouchableOpacity 
-                onPress={() => navigation.navigate('Progress')}
+                onPress={() => {
+                  if (hasActiveQuiz()) {
+                    Alert.alert(
+                      'Leave Quiz?',
+                      'You have an active quiz. Your progress will be lost if you leave.',
+                      [
+                        { text: 'Cancel', style: 'cancel' },
+                        { text: 'Leave', onPress: () => navigation.navigate('Progress') }
+                      ]
+                    );
+                  } else {
+                    navigation.navigate('Progress');
+                  }
+                }}
                 style={[navStyles.iconButton, navStyles.progressButton]}
               >
                 <Text style={navStyles.buttonEmoji}>📊</Text>
               </TouchableOpacity>
               <TouchableOpacity 
-                onPress={() => navigation.navigate('Profile')}
+                onPress={() => {
+                  if (hasActiveQuiz()) {
+                    Alert.alert(
+                      'Leave Quiz?',
+                      'You have an active quiz. Your progress will be lost if you leave.',
+                      [
+                        { text: 'Cancel', style: 'cancel' },
+                        { text: 'Leave', onPress: () => navigation.navigate('Profile') }
+                      ]
+                    );
+                  } else {
+                    navigation.navigate('Profile');
+                  }
+                }}
                 style={[navStyles.iconButton, navStyles.profileButton]}
               >
                 <Text style={navStyles.buttonEmoji}>👤</Text>
               </TouchableOpacity>
               <TouchableOpacity 
                 onPress={async () => {
-                  try {
-                    await signOut(auth);
-                    navigation.navigate('Login');
-                  } catch (error) {
-                    console.error('Logout error:', error);
+                  if (hasActiveQuiz()) {
+                    Alert.alert(
+                      'Logout During Quiz?',
+                      'You have an active quiz. Your progress will be lost if you logout.',
+                      [
+                        { text: 'Cancel', style: 'cancel' },
+                        { text: 'Logout', onPress: async () => {
+                          try {
+                            await signOut(auth);
+                            navigation.navigate('Login');
+                          } catch (error) {
+                            console.error('Logout error:', error);
+                          }
+                        }}
+                      ]
+                    );
+                  } else {
+                    try {
+                      await signOut(auth);
+                      navigation.navigate('Login');
+                    } catch (error) {
+                      console.error('Logout error:', error);
+                    }
                   }
                 }}
                 style={[navStyles.iconButton, navStyles.logoutButton]}
@@ -111,6 +172,8 @@ export default function AppNavigator() {
       >
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Signup" component={SignupScreen} />
+        <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+        <Stack.Screen name="Review" component={ReviewScreen} />
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="Quiz" component={QuizScreen} />
         <Stack.Screen name="Progress" component={ProgressScreen} />
