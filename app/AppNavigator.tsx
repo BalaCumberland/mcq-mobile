@@ -103,7 +103,7 @@ export default function AppNavigator() {
                 }}
                 style={[navStyles.iconButton, navStyles.logoutButton]}
               >
-                <Text style={navStyles.buttonEmoji}>⏻</Text>
+                <Text style={navStyles.buttonEmoji}>📴</Text>
               </TouchableOpacity>
             </View>
           ) : undefined,

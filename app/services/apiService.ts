@@ -66,7 +66,8 @@ class ApiService {
     topic: string, 
     quizName: string, 
     studentId: string,
-    answers: { questionId: string; selectedAnswer: string }[]
+    answers: { questionId: string; selectedAnswer: string }[],
+    quiz: any
   ): Promise<QuizSubmitResponse> {
     const params = new URLSearchParams({ 
       quizName: decodeURIComponent(quizName),
@@ -75,11 +76,25 @@ class ApiService {
       topic 
     });
     
-    // Convert to old format that server expects
-    const oldFormatAnswers = answers.map((answer, index) => ({
-      qno: index + 1,
-      options: answer.selectedAnswer ? [answer.selectedAnswer] : []
-    }));
+    // Convert to old format that server expects with option letters
+    const oldFormatAnswers = answers.map((answer, index) => {
+      if (!answer.selectedAnswer) {
+        return { qno: index + 1, options: [] };
+      }
+      
+      // Get the question to find all answers
+      const question = quiz.questions[index];
+      const allAnswers = question.allAnswers || [];
+      const answerIndex = allAnswers.indexOf(answer.selectedAnswer);
+      
+      if (answerIndex !== -1) {
+        // Convert index to option letter (0->A, 1->B, 2->C, 3->D)
+        const optionLetter = String.fromCharCode(65 + answerIndex);
+        return { qno: index + 1, options: [optionLetter] };
+      }
+      
+      return { qno: index + 1, options: [] };
+    });
     
     const requestBody = {
       answers: oldFormatAnswers
