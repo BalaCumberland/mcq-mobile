@@ -103,17 +103,18 @@ const LoginScreen = memo(function LoginScreen({ navigation }: any) {
           )}
         </TouchableOpacity>
         
-        <View style={styles.linkContainer}>
-          <Text style={styles.linkText}>
-            Don't have an account?
-            <Text style={styles.link} onPress={() => navigation.navigate('Signup')}>
-              {' '}Sign Up
-            </Text>
+      </View>
+      
+      <View style={styles.linkContainer}>
+        <Text style={styles.linkText}>
+          Don't have an account?
+          <Text style={styles.link} onPress={() => navigation.navigate('Signup')}>
+            {' '}Sign Up
           </Text>
-          <TouchableOpacity onPress={handleForgotPassword} style={styles.forgotButton}>
-            <Text style={styles.link}>Forgot Password?</Text>
-          </TouchableOpacity>
-        </View>
+        </Text>
+        <TouchableOpacity onPress={handleForgotPassword} style={styles.forgotButton}>
+          <Text style={styles.link}>Forgot Password?</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -185,10 +186,14 @@ const styles = StyleSheet.create({
   },
   linkContainer: {
     marginTop: 20,
+    marginBottom: 20,
     alignItems: 'center',
+    paddingHorizontal: 20,
+    backgroundColor: '#f5f5f5',
+    paddingVertical: 16,
   },
   linkText: {
-    color: '#666',
+    color: '#374151',
     fontSize: 16,
   },
   link: {

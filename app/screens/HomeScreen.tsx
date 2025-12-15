@@ -328,7 +328,7 @@ const styles = StyleSheet.create({
   },
   welcomeSubtitle: {
     fontSize: 14,
-    color: '#64748b',
+    color: '#374151',
     textAlign: 'center',
   },
   mainCard: {
@@ -383,7 +383,7 @@ const styles = StyleSheet.create({
   picker: {
     height: 56,
     width: '100%',
-    color: '#374151',
+    color: '#1f2937',
   },
   beginButton: {
     backgroundColor: '#2196F3',
@@ -423,7 +423,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginLeft: 10,
-    color: '#1e40af',
+    color: '#1f2937',
     fontSize: 18,
     fontWeight: '600',
   },

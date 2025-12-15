@@ -1,5 +1,6 @@
 import React, { useState, memo, useCallback, useEffect } from 'react';
 import { View, TextInput, StyleSheet, Alert, Text, TouchableOpacity, ActivityIndicator, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../config/firebase';
 import { Picker } from '@react-native-picker/picker';
@@ -93,7 +94,8 @@ const SignupScreen = memo(function SignupScreen({ navigation }: any) {
   }, [email, name, phoneNumber, password, confirmPassword, studentClass, navigation, isValidIndianPhone]);
 
   return (
-    <ScrollView style={styles.container}>
+    <SafeAreaView style={styles.safeArea} edges={['bottom']}>
+      <ScrollView style={styles.container}>
       <View style={styles.formContainer}>
         <Text style={styles.title}>🎓 Create Account</Text>
         
@@ -204,20 +206,26 @@ const SignupScreen = memo(function SignupScreen({ navigation }: any) {
           )}
         </TouchableOpacity>
         
-        <View style={styles.linkContainer}>
-          <Text style={styles.linkText}>
-            Already have an account?
-            <Text style={styles.link} onPress={() => navigation.navigate('Login')}>
-              {' '}Sign In
-            </Text>
-          </Text>
-        </View>
       </View>
-    </ScrollView>
+      
+      <View style={styles.linkContainer}>
+        <Text style={styles.linkText}>
+          Already have an account?
+          <Text style={styles.link} onPress={() => navigation.navigate('Login')}>
+            {' '}Sign In
+          </Text>
+        </Text>
+      </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 });
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+  },
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
@@ -300,10 +308,14 @@ const styles = StyleSheet.create({
   },
   linkContainer: {
     marginTop: 20,
+    marginBottom: 20,
     alignItems: 'center',
+    paddingHorizontal: 16,
+    backgroundColor: '#f5f5f5',
+    paddingVertical: 16,
   },
   linkText: {
-    color: '#666',
+    color: '#374151',
     fontSize: 16,
   },
   link: {

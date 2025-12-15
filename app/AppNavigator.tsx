@@ -141,36 +141,26 @@ export default function AppNavigator() {
               </TouchableOpacity>
               <TouchableOpacity 
                 onPress={async () => {
-                  if (hasActiveQuiz()) {
-                    Alert.alert(
-                      'Logout During Quiz?',
-                      'You have an active quiz. Your progress will be lost if you logout.',
-                      [
-                        { text: 'Cancel', style: 'cancel' },
-                        { text: 'Logout', onPress: async () => {
-                          try {
-                            await signOut(auth);
-                            navigation.reset({
-                              index: 0,
-                              routes: [{ name: 'Login' }],
-                            });
-                          } catch (error) {
-                            console.error('Logout error:', error);
-                          }
-                        }}
-                      ]
-                    );
-                  } else {
-                    try {
-                      await signOut(auth);
-                      navigation.reset({
-                        index: 0,
-                        routes: [{ name: 'Login' }],
-                      });
-                    } catch (error) {
-                      console.error('Logout error:', error);
-                    }
-                  }
+                  Alert.alert(
+                    hasActiveQuiz() ? 'Logout During Quiz?' : 'Logout',
+                    hasActiveQuiz() 
+                      ? 'You have an active quiz. Your progress will be lost if you logout.' 
+                      : 'Are you sure you want to logout?',
+                    [
+                      { text: 'Cancel', style: 'cancel' },
+                      { text: 'Logout', onPress: async () => {
+                        try {
+                          await signOut(auth);
+                          navigation.reset({
+                            index: 0,
+                            routes: [{ name: 'Login' }],
+                          });
+                        } catch (error) {
+                          console.error('Logout error:', error);
+                        }
+                      }}
+                    ]
+                  );
                 }}
                 style={[navStyles.iconButton, navStyles.logoutButton]}
               >

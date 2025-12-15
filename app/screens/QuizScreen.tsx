@@ -474,9 +474,9 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   progressText: {
-    fontSize: 12,
-    color: '#666',
-    fontWeight: '500',
+    fontSize: 14,
+    color: '#000',
+    fontWeight: 'bold',
   },
   progressBar: {
     height: 4,
@@ -572,18 +572,21 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   title: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 22,
+    fontWeight: '900',
+    color: '#000',
   },
   timer: {
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 18,
+    fontWeight: '900',
     color: '#dc2626',
   },
   question: {
-    fontSize: 18,
+    fontSize: 20,
     marginBottom: 20,
-    lineHeight: 24,
+    lineHeight: 28,
+    color: '#000',
+    fontWeight: 'bold',
   },
   answersContainer: {
     flex: 1,
@@ -617,7 +620,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#e3f2fd',
   },
   answerText: {
-    fontSize: 16,
+    fontSize: 18,
+    color: '#000',
+    fontWeight: '600',
+    lineHeight: 24,
   },
   navigationContainer: {
     flexDirection: 'row',
