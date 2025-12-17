@@ -5,6 +5,7 @@ import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../config/firebase';
 import { Picker } from '@react-native-picker/picker';
 import ApiService from '../services/apiService';
+import { designSystem, colors, spacing, borderRadius } from '../styles/designSystem';
 
 const SignupScreen = memo(function SignupScreen({ navigation }: any) {
   const [name, setName] = useState('');
@@ -224,118 +225,89 @@ const SignupScreen = memo(function SignupScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f8fafc',
   },
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f8fafc',
   },
   formContainer: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: 20,
-    marginHorizontal: 16,
-    marginVertical: 16,
-    elevation: 2,
+    ...designSystem.cardElevated,
+    marginHorizontal: spacing.lg,
+    marginVertical: spacing.lg,
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    ...designSystem.headingLarge,
     textAlign: 'center',
-    marginBottom: 20,
-    color: '#333',
+    marginBottom: spacing.xl,
   },
   inputContainer: {
-    marginBottom: 20,
+    marginBottom: spacing.xl,
   },
   label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 6,
+    ...designSystem.formLabel,
   },
   input: {
-    backgroundColor: '#f9f9f9',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: '#333',
+    ...designSystem.formInput,
   },
   inputError: {
-    borderColor: '#ef4444',
+    borderColor: colors.error[500],
   },
   errorText: {
-    color: '#ef4444',
+    color: colors.error[500],
     fontSize: 12,
-    marginTop: 4,
+    marginTop: spacing.xs,
   },
   pickerContainer: {
-    backgroundColor: '#f9f9f9',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 4,
+    backgroundColor: colors.neutral[50],
+    borderWidth: 2,
+    borderColor: colors.neutral[200],
+    borderRadius: borderRadius.lg,
   },
   picker: {
-    height: 50,
+    height: 48,
   },
   button: {
-    backgroundColor: '#4CAF50',
-    borderRadius: 4,
-    paddingVertical: 12,
-    marginTop: 16,
-    elevation: 2,
+    ...designSystem.buttonPurple,
+    marginTop: spacing.lg,
   },
   buttonDisabled: {
-    backgroundColor: '#ccc',
+    ...designSystem.buttonDisabled,
     elevation: 0,
   },
   buttonContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: spacing.sm,
   },
   buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
+    ...designSystem.buttonText,
   },
   buttonEmoji: {
-    fontSize: 18,
+    fontSize: 20,
   },
   linkContainer: {
-    marginTop: 20,
-    marginBottom: 20,
+    marginTop: spacing.xl,
+    marginBottom: spacing.xl,
     alignItems: 'center',
-    paddingHorizontal: 16,
-    backgroundColor: '#f5f5f5',
-    paddingVertical: 16,
+    paddingHorizontal: spacing.lg,
+    backgroundColor: '#f8fafc',
+    paddingVertical: spacing.lg,
   },
   linkText: {
-    color: '#374151',
-    fontSize: 16,
+    ...designSystem.bodyMedium,
   },
   link: {
-    color: '#2196F3',
-    fontWeight: 'bold',
+    color: colors.secondary[600],
+    fontWeight: '600',
   },
   loadingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
-    backgroundColor: '#f9f9f9',
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: '#ddd',
+    ...designSystem.loadingContainer,
   },
   loadingText: {
-    marginLeft: 8,
-    color: '#4CAF50',
-    fontSize: 14,
+    ...designSystem.loadingText,
+    color: colors.purple[500],
   },
 });
 

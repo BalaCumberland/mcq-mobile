@@ -4,8 +4,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import useQuizStore from '../store/QuizStore';
 import ApiService from '../services/apiService';
-
 import LaTeXRenderer from '../components/LaTeXRenderer';
+import { designSystem, colors, spacing, borderRadius, shadows } from '../styles/designSystem';
 
 const QuizScreen = ({ navigation, route }) => {
   const { 
@@ -433,61 +433,57 @@ const QuizScreen = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
-    backgroundColor: '#fff',
+    padding: spacing.xl,
+    backgroundColor: '#f8fafc',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: spacing.xl,
   },
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: spacing.sm,
   },
   questionsButton: {
-    backgroundColor: '#FF9800',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+    backgroundColor: colors.secondary[500], // blue-100 background with blue-700 text
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
+    ...shadows.sm,
   },
   questionsButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: 'bold',
+    color: '#ffffff', // text-blue-700
+    fontSize: 12, // text-xs
+    fontWeight: '500', // font-medium
   },
 
   progressContainer: {
-    paddingHorizontal: 20,
-    marginBottom: 15,
+    paddingHorizontal: spacing.xl,
+    marginBottom: spacing.lg,
   },
   progressStats: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   progressText: {
     fontSize: 14,
-    color: '#000',
-    fontWeight: 'bold',
+    color: colors.neutral[800],
+    fontWeight: '600',
   },
   progressBar: {
-    height: 4,
-    backgroundColor: '#e0e0e0',
-    borderRadius: 2,
+    height: 6,
+    backgroundColor: colors.neutral[200],
+    borderRadius: borderRadius.full,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#2196F3',
-    borderRadius: 2,
+    backgroundColor: colors.primary[500], // orange-500 to red-500 gradient
+    borderRadius: borderRadius.full,
   },
   modalOverlay: {
     flex: 1,
@@ -572,30 +568,29 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   title: {
-    fontSize: 22,
-    fontWeight: '900',
-    color: '#000',
+    ...designSystem.headingMedium,
+    fontWeight: '700',
   },
   timer: {
     fontSize: 18,
-    fontWeight: '900',
-    color: '#dc2626',
+    fontWeight: '700',
+    color: colors.error[500],
   },
   question: {
-    fontSize: 20,
-    marginBottom: 20,
-    lineHeight: 28,
-    color: '#000',
-    fontWeight: 'bold',
+    fontSize: 18,
+    marginBottom: spacing.xl,
+    lineHeight: 26,
+    color: colors.neutral[800],
+    fontWeight: '600',
   },
   answersContainer: {
     flex: 1,
   },
   answerButton: {
-    backgroundColor: '#f0f0f0',
-    padding: 15,
-    marginVertical: 5,
-    borderRadius: 8,
+    backgroundColor: colors.neutral[100],
+    padding: spacing.lg,
+    marginVertical: spacing.xs,
+    borderRadius: borderRadius.lg,
     borderWidth: 2,
     borderColor: 'transparent',
   },
@@ -616,14 +611,14 @@ const styles = StyleSheet.create({
     borderColor: '#007bff',
   },
   selectedAnswer: {
-    borderColor: '#007bff',
-    backgroundColor: '#e3f2fd',
+    borderColor: colors.primary[500], // border-orange-400
+    backgroundColor: colors.primary[50], // bg-orange-50 to red-50 gradient
   },
   answerText: {
-    fontSize: 18,
-    color: '#000',
-    fontWeight: '600',
-    lineHeight: 24,
+    fontSize: 16,
+    color: colors.neutral[800],
+    fontWeight: '500',
+    lineHeight: 22,
   },
   navigationContainer: {
     flexDirection: 'row',
@@ -631,17 +626,15 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   navButton: {
-    backgroundColor: '#007bff',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
+    ...designSystem.buttonSecondary,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
   },
   disabledButton: {
-    backgroundColor: '#ccc',
+    ...designSystem.buttonDisabled,
   },
   navButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+    ...designSystem.buttonText,
   },
   rightButtons: {
     flexDirection: 'row',

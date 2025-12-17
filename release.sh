@@ -1,15 +1,10 @@
 #!/bin/bash
 
 # MCQ Mobile Release Script
-# This script builds a release APK for the MCQ Mobile app
+# Professional UI Release v1.1.0
 
-set -e
-
-echo "🚀 Starting MCQ Mobile Release Build..."
-
-# Get version from package.json
-VERSION=$(node -p "require('./package.json').version")
-echo "📦 Building version: $VERSION"
+echo "🚀 MCQ Mobile Professional UI Release v1.1.0"
+echo "=============================================="
 
 # Clean previous builds
 echo "🧹 Cleaning previous builds..."
@@ -17,22 +12,27 @@ cd android
 ./gradlew clean
 
 # Build release APK
-echo "🔨 Building release APK..."
+echo "📦 Building release APK..."
 ./gradlew assembleRelease
 
 # Copy APK to root with version name
-echo "📱 Copying APK to root directory..."
+echo "📋 Copying APK to root directory..."
 cd ..
-cp android/app/build/outputs/apk/release/app-release.apk "./MCQMobile-v${VERSION}-release.apk"
+cp android/app/build/outputs/apk/release/app-release.apk ./MCQMobile-v1.1.0-professional-ui-release.apk
 
-echo "✅ Release APK created successfully!"
-echo "📍 Location: MCQMobile-v${VERSION}-release.apk"
-echo "📊 APK Size: $(du -h MCQMobile-v${VERSION}-release.apk | cut -f1)"
+# Get APK size
+APK_SIZE=$(du -h MCQMobile-v1.1.0-professional-ui-release.apk | cut -f1)
 
-# Show APK info
-if command -v aapt &> /dev/null; then
-    echo "📋 APK Info:"
-    aapt dump badging "MCQMobile-v${VERSION}-release.apk" | grep -E "(package|application-label|sdkVersion|targetSdkVersion)"
-fi
-
-echo "🎉 Release build completed!"
+echo ""
+echo "✅ Release build completed successfully!"
+echo "📱 APK: MCQMobile-v1.1.0-professional-ui-release.apk"
+echo "📏 Size: $APK_SIZE"
+echo ""
+echo "🎨 New Features in v1.1.0:"
+echo "• Professional design system with web UI parity"
+echo "• Enhanced user interface with modern styling"
+echo "• Improved form elements and button designs"
+echo "• Better color consistency and typography"
+echo "• Professional card layouts and shadows"
+echo ""
+echo "📋 Ready for distribution!"

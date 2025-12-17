@@ -4,6 +4,7 @@ import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../config/firebase';
 import userStore from '../store/UserStore';
 import { resendVerifiedEmail } from '../services/firebaseAuth';
+import { designSystem, colors, spacing, borderRadius } from '../styles/designSystem';
 
 const LoginScreen = memo(function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
@@ -123,85 +124,64 @@ const LoginScreen = memo(function LoginScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f8fafc',
     justifyContent: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: spacing.xl,
   },
   formContainer: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: 24,
-    elevation: 2,
+    ...designSystem.cardElevated,
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    ...designSystem.headingLarge,
     textAlign: 'center',
-    marginBottom: 24,
-    color: '#333',
+    marginBottom: spacing['2xl'],
   },
   inputContainer: {
-    marginBottom: 20,
+    marginBottom: spacing.xl,
   },
   label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 6,
+    ...designSystem.formLabel,
   },
   input: {
-    backgroundColor: '#f9f9f9',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: '#333',
+    ...designSystem.formInput,
   },
   button: {
-    backgroundColor: '#2196F3',
-    borderRadius: 4,
-    paddingVertical: 12,
-    marginTop: 16,
-    elevation: 2,
+    ...designSystem.buttonSecondary,
+    marginTop: spacing.lg,
   },
   buttonDisabled: {
-    backgroundColor: '#ccc',
+    ...designSystem.buttonDisabled,
     elevation: 0,
   },
   buttonContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: spacing.sm,
   },
   buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
+    ...designSystem.buttonText,
   },
   buttonEmoji: {
-    fontSize: 18,
+    fontSize: 20,
   },
   linkContainer: {
-    marginTop: 20,
-    marginBottom: 20,
+    marginTop: spacing.xl,
+    marginBottom: spacing.xl,
     alignItems: 'center',
-    paddingHorizontal: 20,
-    backgroundColor: '#f5f5f5',
-    paddingVertical: 16,
+    paddingHorizontal: spacing.xl,
+    backgroundColor: '#f8fafc',
+    paddingVertical: spacing.lg,
   },
   linkText: {
-    color: '#374151',
-    fontSize: 16,
+    ...designSystem.bodyMedium,
   },
   link: {
-    color: '#2196F3',
-    fontWeight: 'bold',
+    color: colors.secondary[600],
+    fontWeight: '600',
   },
   forgotButton: {
-    marginTop: 12,
+    marginTop: spacing.md,
     alignItems: 'center',
   },
 });
