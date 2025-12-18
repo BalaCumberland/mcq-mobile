@@ -26,6 +26,8 @@ const QuizScreen = ({ navigation, route }) => {
   const [showQuestionPanel, setShowQuestionPanel] = useState(false);
   const [forceResults, setForceResults] = useState(false);
   const [quizResults, setQuizResults] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   // Force results if we have quiz data but showResults is false after finish
   React.useEffect(() => {
@@ -143,7 +145,23 @@ const QuizScreen = ({ navigation, route }) => {
           }
         } catch (error) {
           console.error('Quiz submission failed:', error);
-          alert('Failed to submit quiz. Please try again.');
+          // Create fallback results if API fails
+          const fallbackResults = {
+            correctCount: 0,
+            wrongCount: 0,
+            skippedCount: quiz.questions.length,
+            totalCount: quiz.questions.length,
+            percentage: 0,
+            results: quiz.questions.map((question, index) => ({
+              qno: index + 1,
+              question: question.question,
+              status: 'skipped',
+              correctAnswer: [question.correctAnswer],
+              studentAnswer: [userAnswers[index] || 'Not answered'],
+              explanation: 'Results could not be loaded from server'
+            }))
+          };
+          setQuizResults(fallbackResults);
         }
       };
       
@@ -183,16 +201,21 @@ const QuizScreen = ({ navigation, route }) => {
     }
     
     const { correctCount = 0, wrongCount = 0, skippedCount = 0, totalCount = 0, percentage = 0, results = [] } = quizResults;
+    
+    const totalPages = Math.ceil(results.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const paginatedResults = results.slice(startIndex, startIndex + itemsPerPage);
 
     return (
       <SafeAreaView style={styles.container} edges={['bottom']}>
         <View style={styles.resultsHeader}>
           <Text style={styles.title}>Quiz Results</Text>
           <Text style={styles.score}>Score: {correctCount}/{totalCount} ({Math.round(percentage)}%)</Text>
+          <Text style={styles.pageInfo}>Page {currentPage} of {totalPages}</Text>
         </View>
         
         <ScrollView style={styles.scrollView}>
-          {results.map((result, index) => {
+          {paginatedResults.map((result, index) => {
             const isCorrect = result.status === 'correct';
             const isSkipped = result.status === 'skipped';
             const correctAnswers = Array.isArray(result.correctAnswer) ? result.correctAnswer : [result.correctAnswer];
@@ -238,6 +261,26 @@ const QuizScreen = ({ navigation, route }) => {
             );
           })}
         </ScrollView>
+        
+        {totalPages > 1 && (
+          <View style={styles.paginationContainer}>
+            <TouchableOpacity 
+              style={[styles.paginationButton, currentPage === 1 && styles.disabledButton]}
+              onPress={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+            >
+              <Text style={styles.paginationButtonText}>Previous</Text>
+            </TouchableOpacity>
+            <Text style={styles.paginationText}>Page {currentPage} of {totalPages}</Text>
+            <TouchableOpacity 
+              style={[styles.paginationButton, currentPage === totalPages && styles.disabledButton]}
+              onPress={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+            >
+              <Text style={styles.paginationButtonText}>Next</Text>
+            </TouchableOpacity>
+          </View>
+        )}
         
         <View style={{ alignItems: 'center', marginTop: 20 }}>
           <TouchableOpacity 
@@ -817,6 +860,36 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     fontStyle: 'italic',
+  },
+  pageInfo: {
+    fontSize: 14,
+    color: '#64748b',
+    marginTop: 8,
+  },
+  paginationContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    paddingBottom: 80,
+    borderTopWidth: 1,
+    borderTopColor: '#e2e8f0',
+  },
+  paginationButton: {
+    backgroundColor: '#1e40af',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  paginationButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  paginationText: {
+    fontSize: 14,
+    color: '#64748b',
   },
 });
 

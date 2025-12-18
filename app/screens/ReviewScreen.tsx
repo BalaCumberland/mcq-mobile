@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { getAuthToken } from '../services/firebaseAuth';
 import { LAMBDA_MCQ_GO_API_URL } from '../config/env';
+import LaTeXRenderer from '../components/LaTeXRenderer';
 
 export default function ReviewScreen({ route }) {
   const { quizName, className, subjectName, topic } = route.params;
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   useEffect(() => {
     fetchResults();
@@ -69,7 +72,13 @@ export default function ReviewScreen({ route }) {
         </View>
       </View>
 
-      {results.results.map((result, index) => (
+      <View style={styles.paginationInfo}>
+        <Text style={styles.paginationInfoText}>
+          Showing {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, results.results.length)} of {results.results.length} questions
+        </Text>
+      </View>
+      
+      {results.results.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((result, index) => (
         <View key={index} style={[
           styles.questionCard,
           result.status === 'correct' && styles.correctCard,
@@ -88,28 +97,59 @@ export default function ReviewScreen({ route }) {
             </Text>
           </View>
           
-          <Text style={styles.question}>{result.question}</Text>
+          <LaTeXRenderer text={result.question} style={styles.question} />
           
           {result.studentAnswer && (
             <View style={styles.answerSection}>
               <Text style={styles.answerLabel}>Your Answer:</Text>
-              <Text style={styles.studentAnswer}>{result.studentAnswer[0]}</Text>
+              <LaTeXRenderer text={result.studentAnswer[0]} style={styles.studentAnswer} />
             </View>
           )}
           
           <View style={styles.answerSection}>
             <Text style={styles.answerLabel}>Correct Answer:</Text>
-            <Text style={styles.correctAnswer}>{result.correctAnswer[0]}</Text>
+            <LaTeXRenderer text={result.correctAnswer[0]} style={styles.correctAnswer} />
           </View>
           
           {result.explanation && (
             <View style={styles.explanationSection}>
               <Text style={styles.explanationLabel}>💡 Explanation:</Text>
-              <Text style={styles.explanation}>{result.explanation}</Text>
+              <LaTeXRenderer text={result.explanation} style={styles.explanation} />
             </View>
           )}
         </View>
       ))}
+      
+      {Math.ceil(results.results.length / itemsPerPage) > 1 && (
+        <View style={styles.paginationContainer}>
+          <TouchableOpacity 
+            style={[styles.paginationButton, currentPage === 1 && styles.disabledButton]}
+            onPress={() => {
+              if (results?.results && currentPage > 1) {
+                setCurrentPage(prev => Math.max(prev - 1, 1));
+              }
+            }}
+            disabled={currentPage === 1 || !results?.results}
+          >
+            <Text style={styles.paginationButtonText}>Previous</Text>
+          </TouchableOpacity>
+          <Text style={styles.paginationText}>Page {currentPage} of {results?.results ? Math.ceil(results.results.length / itemsPerPage) : 1}</Text>
+          <TouchableOpacity 
+            style={[styles.paginationButton, (!results?.results || currentPage === Math.ceil(results.results.length / itemsPerPage)) && styles.disabledButton]}
+            onPress={() => {
+              if (results?.results) {
+                const totalPages = Math.ceil(results.results.length / itemsPerPage);
+                if (currentPage < totalPages) {
+                  setCurrentPage(prev => Math.min(prev + 1, totalPages));
+                }
+              }
+            }}
+            disabled={!results?.results || currentPage === Math.ceil(results.results.length / itemsPerPage)}
+          >
+            <Text style={styles.paginationButtonText}>Next</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </ScrollView>
   );
 }
@@ -263,5 +303,44 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#475569',
     lineHeight: 20,
+  },
+  paginationInfo: {
+    backgroundColor: '#f1f5f9',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  paginationInfoText: {
+    fontSize: 14,
+    color: '#64748b',
+    fontWeight: '500',
+  },
+  paginationContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 20,
+    paddingBottom: 80,
+    marginTop: 16,
+  },
+  paginationButton: {
+    backgroundColor: '#1e40af',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  disabledButton: {
+    backgroundColor: '#94a3b8',
+  },
+  paginationButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  paginationText: {
+    fontSize: 14,
+    color: '#64748b',
+    fontWeight: '500',
   },
 });

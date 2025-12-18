@@ -123,6 +123,12 @@ const HomeScreen = memo(({ route, navigation }) => {
     try {
       setLoading(true);
       const data = await ApiService.getQuiz(user.student_class, selectedSubject, selectedTopic, selectedQuiz);
+      
+      if (!data || !data.quiz || !data.quiz.questions || data.quiz.questions.length === 0) {
+        Alert.alert('Error', 'Quiz data is not available. Please try again later.');
+        return;
+      }
+      
       setQuiz(data.quiz);
       navigation.navigate('Quiz', {
         className: user.student_class,
@@ -132,6 +138,7 @@ const HomeScreen = memo(({ route, navigation }) => {
       });
     } catch (error) {
       console.error('Error fetching quiz:', error);
+      Alert.alert('Error', 'Failed to load quiz. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }
