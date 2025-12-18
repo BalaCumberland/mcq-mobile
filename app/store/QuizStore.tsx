@@ -66,6 +66,7 @@ const useQuizStore = create<QuizState>()(persist((set, get) => ({
   })),
   
   selectAnswer: (answer) => set((state) => {
+    if (state.userAnswers[state.currentQuestionIndex] === answer) return state;
     const newAnswers = [...state.userAnswers];
     newAnswers[state.currentQuestionIndex] = answer;
     return { userAnswers: newAnswers };
@@ -140,7 +141,7 @@ const useQuizStore = create<QuizState>()(persist((set, get) => ({
     
     if (remaining <= 0) {
       set({ showResults: true, timeRemaining: 0 });
-    } else if (Math.abs(remaining - (state.timeRemaining || 0)) > 0) {
+    } else if (Math.abs(remaining - (state.timeRemaining || 0)) >= 1) {
       set({ timeRemaining: remaining });
     }
   },

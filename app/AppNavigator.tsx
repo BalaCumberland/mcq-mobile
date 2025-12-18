@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, memo } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { TouchableOpacity, Text, View, Alert, Modal, StyleSheet } from 'react-native';
@@ -18,10 +18,10 @@ import useQuizStore from './store/QuizStore';
 
 const Stack = createStackNavigator();
 
-const HamburgerMenu = ({ navigation, hasActiveQuiz }) => {
+const HamburgerMenu = memo(({ navigation, hasActiveQuiz }) => {
   const [isMenuVisible, setIsMenuVisible] = useState(false);
 
-  const navigateWithQuizCheck = (screenName) => {
+  const navigateWithQuizCheck = useCallback((screenName) => {
     if (hasActiveQuiz()) {
       Alert.alert(
         'Leave Quiz?',
@@ -38,9 +38,9 @@ const HamburgerMenu = ({ navigation, hasActiveQuiz }) => {
       setIsMenuVisible(false);
       navigation.navigate(screenName);
     }
-  };
+  }, [hasActiveQuiz, navigation]);
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     Alert.alert(
       hasActiveQuiz() ? 'Logout During Quiz?' : 'Logout',
       hasActiveQuiz() 
@@ -62,7 +62,7 @@ const HamburgerMenu = ({ navigation, hasActiveQuiz }) => {
         }}
       ]
     );
-  };
+  }, [hasActiveQuiz, navigation]);
 
   return (
     <>
@@ -73,54 +73,57 @@ const HamburgerMenu = ({ navigation, hasActiveQuiz }) => {
         <Text style={styles.hamburgerIcon}>☰</Text>
       </TouchableOpacity>
       
-      <Modal
-        visible={isMenuVisible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setIsMenuVisible(false)}
-      >
-        <TouchableOpacity 
-          style={styles.modalOverlay}
-          onPress={() => setIsMenuVisible(false)}
+      {isMenuVisible && (
+        <Modal
+          visible={true}
+          transparent={true}
+          animationType="none"
+          onRequestClose={() => setIsMenuVisible(false)}
         >
-          <View style={styles.menuContainer}>
-            <TouchableOpacity 
-              style={styles.menuItem}
-              onPress={() => navigateWithQuizCheck('Home')}
-            >
-              <Text style={styles.menuIcon}>🏠</Text>
-              <Text style={styles.menuText}>Home</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.menuItem}
-              onPress={() => navigateWithQuizCheck('Progress')}
-            >
-              <Text style={styles.menuIcon}>📊</Text>
-              <Text style={styles.menuText}>Progress</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.menuItem}
-              onPress={() => navigateWithQuizCheck('Profile')}
-            >
-              <Text style={styles.menuIcon}>👤</Text>
-              <Text style={styles.menuText}>Profile</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={[styles.menuItem, styles.logoutItem]}
-              onPress={handleLogout}
-            >
-              <Text style={styles.menuIcon}>📴</Text>
-              <Text style={styles.menuText}>Logout</Text>
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
-      </Modal>
+          <TouchableOpacity 
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => setIsMenuVisible(false)}
+          >
+            <View style={styles.menuContainer}>
+              <TouchableOpacity 
+                style={styles.menuItem}
+                onPress={() => navigateWithQuizCheck('Home')}
+              >
+                <Text style={styles.menuIcon}>🏠</Text>
+                <Text style={styles.menuText}>Home</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.menuItem}
+                onPress={() => navigateWithQuizCheck('Progress')}
+              >
+                <Text style={styles.menuIcon}>📊</Text>
+                <Text style={styles.menuText}>Progress</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.menuItem}
+                onPress={() => navigateWithQuizCheck('Profile')}
+              >
+                <Text style={styles.menuIcon}>👤</Text>
+                <Text style={styles.menuText}>Profile</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.menuItem, styles.logoutItem]}
+                onPress={handleLogout}
+              >
+                <Text style={styles.menuIcon}>📴</Text>
+                <Text style={styles.menuText}>Logout</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </Modal>
+      )}
     </>
   );
-};
+});
 
 const styles = StyleSheet.create({
   hamburgerButton: {
@@ -139,7 +142,7 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
     justifyContent: 'flex-start',
     alignItems: 'flex-start',
   },
@@ -147,14 +150,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     marginTop: 60,
     marginLeft: 16,
-    borderRadius: 12,
-    paddingVertical: 8,
-    minWidth: 160,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    borderRadius: 8,
+    paddingVertical: 4,
+    minWidth: 140,
+    elevation: 4,
   },
   menuItem: {
     flexDirection: 'row',
@@ -178,37 +177,52 @@ const styles = StyleSheet.create({
   },
 });
 
+const headerStyle = {
+  backgroundColor: '#1e40af',
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.1,
+  shadowRadius: 4,
+  elevation: 4,
+};
+
+const headerTitleStyle = {
+  fontSize: 18,
+  fontWeight: '600',
+  color: '#ffffff',
+  letterSpacing: 0.3,
+};
+
+const getHeaderTitle = (routeName) => {
+  switch (routeName) {
+    case 'Login': return '🎓 GradeUp';
+    case 'Signup': return '🎓 Sign Up';
+    case 'ForgotPassword': return '🔒 Reset Password';
+    case 'Review': return '📋 Quiz Review';
+    default: return '🎓 GradeUp';
+  }
+};
+
 export default function AppNavigator() {
-  const { user } = useUserStore();
   const { hasActiveQuiz } = useQuizStore();
+
+  const screenOptions = useCallback(({ navigation, route }) => ({
+    headerLeft: () => null,
+    gestureEnabled: false,
+    headerStyle,
+    headerTitleStyle,
+    headerTitle: getHeaderTitle(route.name),
+    headerLeft: route.name !== 'Login' && route.name !== 'Signup' && route.name !== 'ForgotPassword' ? () => (
+      <HamburgerMenu navigation={navigation} hasActiveQuiz={hasActiveQuiz} />
+    ) : route.name === 'Review' ? undefined : () => null,
+    gestureEnabled: route.name === 'Review',
+  }), [hasActiveQuiz]);
 
   return (
     <NavigationContainer>
       <Stack.Navigator 
         initialRouteName="Login"
-        screenOptions={({ navigation, route }) => ({
-          headerLeft: () => null,
-          gestureEnabled: false,
-          headerStyle: {
-            backgroundColor: '#1e40af',
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 4,
-            elevation: 4,
-          },
-          headerTitleStyle: {
-            fontSize: 18,
-            fontWeight: '600',
-            color: '#ffffff',
-            letterSpacing: 0.3,
-          },
-          headerTitle: route.name === 'Login' ? '🎓 GradeUp' : route.name === 'Signup' ? '🎓 Sign Up' : route.name === 'ForgotPassword' ? '🔒 Reset Password' : route.name === 'Review' ? '📋 Quiz Review' : '🎓 GradeUp',
-          headerLeft: route.name !== 'Login' && route.name !== 'Signup' && route.name !== 'ForgotPassword' ? () => (
-            <HamburgerMenu navigation={navigation} hasActiveQuiz={hasActiveQuiz} />
-          ) : route.name === 'Review' ? undefined : () => null,
-          gestureEnabled: route.name === 'Review',
-        })}
+        screenOptions={screenOptions}
       >
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Signup" component={SignupScreen} />

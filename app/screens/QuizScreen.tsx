@@ -207,14 +207,14 @@ const QuizScreen = ({ navigation, route }) => {
     const paginatedResults = results.slice(startIndex, startIndex + itemsPerPage);
 
     return (
-      <SafeAreaView style={styles.container} edges={['bottom']}>
+      <View style={styles.resultsContainer}>
         <View style={styles.resultsHeader}>
           <Text style={styles.title}>Quiz Results</Text>
           <Text style={styles.score}>Score: {correctCount}/{totalCount} ({Math.round(percentage)}%)</Text>
-          <Text style={styles.pageInfo}>Page {currentPage} of {totalPages}</Text>
+          {totalPages > 1 && <Text style={styles.pageInfo}>Page {currentPage} of {totalPages}</Text>}
         </View>
         
-        <ScrollView style={styles.scrollView}>
+        <ScrollView style={styles.resultsScrollView} contentContainerStyle={styles.scrollContent}>
           {paginatedResults.map((result, index) => {
             const isCorrect = result.status === 'correct';
             const isSkipped = result.status === 'skipped';
@@ -255,36 +255,35 @@ const QuizScreen = ({ navigation, route }) => {
                 <View style={styles.answerSection}>
                   <Text style={styles.explanationLabel}>Explanation:</Text>
                   <LaTeXRenderer text={result.explanation || 'No explanation available'} style={styles.explanation} />
-
                 </View>
               </View>
             );
           })}
         </ScrollView>
         
-        {totalPages > 1 && (
-          <View style={styles.paginationContainer}>
-            <TouchableOpacity 
-              style={[styles.paginationButton, currentPage === 1 && styles.disabledButton]}
-              onPress={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-            >
-              <Text style={styles.paginationButtonText}>Previous</Text>
-            </TouchableOpacity>
-            <Text style={styles.paginationText}>Page {currentPage} of {totalPages}</Text>
-            <TouchableOpacity 
-              style={[styles.paginationButton, currentPage === totalPages && styles.disabledButton]}
-              onPress={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages}
-            >
-              <Text style={styles.paginationButtonText}>Next</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-        
-        <View style={{ alignItems: 'center', marginTop: 20 }}>
+        <SafeAreaView style={styles.resultsFooter} edges={['bottom']}>
+          {totalPages > 1 && (
+            <View style={styles.paginationContainer}>
+              <TouchableOpacity 
+                style={[styles.paginationButton, currentPage === 1 && styles.disabledButton]}
+                onPress={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+              >
+                <Text style={styles.paginationButtonText}>Previous</Text>
+              </TouchableOpacity>
+              <Text style={styles.paginationText}>Page {currentPage} of {totalPages}</Text>
+              <TouchableOpacity 
+                style={[styles.paginationButton, currentPage === totalPages && styles.disabledButton]}
+                onPress={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+              >
+                <Text style={styles.paginationButtonText}>Next</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+          
           <TouchableOpacity 
-            style={styles.navButton} 
+            style={styles.homeButton} 
             onPress={() => {
               Alert.alert(
                 'Leave Quiz Results?',
@@ -292,7 +291,6 @@ const QuizScreen = ({ navigation, route }) => {
                 [
                   { text: 'Cancel', style: 'cancel' },
                   { text: 'Yes', onPress: () => {
-                    // Clear quiz state before navigating
                     useQuizStore.getState().resetQuiz();
                     navigation.navigate('Home');
                   }}
@@ -300,10 +298,10 @@ const QuizScreen = ({ navigation, route }) => {
               );
             }}
           >
-            <Text style={styles.navButtonText}>🏠 Back to Home</Text>
+            <Text style={styles.homeButtonText}>🏠 Back to Home</Text>
           </TouchableOpacity>
-        </View>
-      </SafeAreaView>
+        </SafeAreaView>
+      </View>
     );
   }
 
@@ -866,15 +864,41 @@ const styles = StyleSheet.create({
     color: '#64748b',
     marginTop: 8,
   },
+  resultsContainer: {
+    flex: 1,
+    backgroundColor: '#f8fafc',
+  },
+  resultsScrollView: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+  scrollContent: {
+    paddingBottom: 20,
+  },
+  resultsFooter: {
+    backgroundColor: '#ffffff',
+    borderTopWidth: 1,
+    borderTopColor: '#e2e8f0',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
   paginationContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    paddingBottom: 80,
-    borderTopWidth: 1,
-    borderTopColor: '#e2e8f0',
+    marginBottom: 12,
+  },
+  homeButton: {
+    backgroundColor: '#1e40af',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  homeButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
   },
   paginationButton: {
     backgroundColor: '#1e40af',
