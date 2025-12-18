@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { TouchableOpacity, Text, View, Alert } from 'react-native';
+import { TouchableOpacity, Text, View, Alert, Modal, StyleSheet } from 'react-native';
 import { signOut } from 'firebase/auth';
 import { auth } from './config/firebase';
 import LoginScreen from './screens/LoginScreen';
@@ -18,37 +18,165 @@ import useQuizStore from './store/QuizStore';
 
 const Stack = createStackNavigator();
 
-const navStyles = {
-  headerRight: {
-    flexDirection: 'row',
-    gap: 8,
-    marginRight: 16,
-  },
-  iconButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+const HamburgerMenu = ({ navigation, hasActiveQuiz }) => {
+  const [isMenuVisible, setIsMenuVisible] = useState(false);
+
+  const navigateWithQuizCheck = (screenName) => {
+    if (hasActiveQuiz()) {
+      Alert.alert(
+        'Leave Quiz?',
+        'You have an active quiz. Your progress will be lost if you leave.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Leave', onPress: () => {
+            setIsMenuVisible(false);
+            navigation.navigate(screenName);
+          }}
+        ]
+      );
+    } else {
+      setIsMenuVisible(false);
+      navigation.navigate(screenName);
+    }
+  };
+
+  const handleLogout = () => {
+    Alert.alert(
+      hasActiveQuiz() ? 'Logout During Quiz?' : 'Logout',
+      hasActiveQuiz() 
+        ? 'You have an active quiz. Your progress will be lost if you logout.' 
+        : 'Are you sure you want to logout?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Logout', onPress: async () => {
+          try {
+            setIsMenuVisible(false);
+            await signOut(auth);
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'Login' }],
+            });
+          } catch (error) {
+            console.error('Logout error:', error);
+          }
+        }}
+      ]
+    );
+  };
+
+  return (
+    <>
+      <TouchableOpacity 
+        onPress={() => setIsMenuVisible(true)}
+        style={styles.hamburgerButton}
+      >
+        <Text style={styles.hamburgerIcon}>☰</Text>
+      </TouchableOpacity>
+      
+      <Modal
+        visible={isMenuVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setIsMenuVisible(false)}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay}
+          onPress={() => setIsMenuVisible(false)}
+        >
+          <View style={styles.menuContainer}>
+            <TouchableOpacity 
+              style={styles.menuItem}
+              onPress={() => navigateWithQuizCheck('Home')}
+            >
+              <Text style={styles.menuIcon}>🏠</Text>
+              <Text style={styles.menuText}>Home</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.menuItem}
+              onPress={() => navigateWithQuizCheck('Progress')}
+            >
+              <Text style={styles.menuIcon}>📊</Text>
+              <Text style={styles.menuText}>Progress</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.menuItem}
+              onPress={() => navigateWithQuizCheck('Profile')}
+            >
+              <Text style={styles.menuIcon}>👤</Text>
+              <Text style={styles.menuText}>Profile</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.menuItem, styles.logoutItem]}
+              onPress={handleLogout}
+            >
+              <Text style={styles.menuIcon}>📴</Text>
+              <Text style={styles.menuText}>Logout</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+    </>
+  );
+};
+
+const styles = StyleSheet.create({
+  hamburgerButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#ffffff20',
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 8,
-    elevation: 2,
+    marginLeft: 16,
   },
-  homeButton: {
-    backgroundColor: '#059669',
+  hamburgerIcon: {
+    fontSize: 24,
+    color: '#ffffff',
+    fontWeight: 'bold',
   },
-  progressButton: {
-    backgroundColor: '#7c3aed',
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-start',
+    alignItems: 'flex-start',
   },
-  profileButton: {
-    backgroundColor: '#dc2626',
+  menuContainer: {
+    backgroundColor: '#ffffff',
+    marginTop: 60,
+    marginLeft: 16,
+    borderRadius: 12,
+    paddingVertical: 8,
+    minWidth: 160,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
-  logoutButton: {
-    backgroundColor: '#ea580c',
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
-  buttonEmoji: {
+  logoutItem: {
+    borderTopWidth: 1,
+    borderTopColor: '#e5e7eb',
+    marginTop: 4,
+  },
+  menuIcon: {
     fontSize: 20,
+    marginRight: 12,
   },
-};
+  menuText: {
+    fontSize: 16,
+    color: '#374151',
+    fontWeight: '500',
+  },
+});
 
 export default function AppNavigator() {
   const { user } = useUserStore();
@@ -76,96 +204,10 @@ export default function AppNavigator() {
             letterSpacing: 0.3,
           },
           headerTitle: route.name === 'Login' ? '🎓 GradeUp' : route.name === 'Signup' ? '🎓 Sign Up' : route.name === 'ForgotPassword' ? '🔒 Reset Password' : route.name === 'Review' ? '📋 Quiz Review' : '🎓 GradeUp',
-          headerLeft: route.name === 'Review' ? undefined : () => null,
+          headerLeft: route.name !== 'Login' && route.name !== 'Signup' && route.name !== 'ForgotPassword' ? () => (
+            <HamburgerMenu navigation={navigation} hasActiveQuiz={hasActiveQuiz} />
+          ) : route.name === 'Review' ? undefined : () => null,
           gestureEnabled: route.name === 'Review',
-          headerRight: route.name !== 'Login' && route.name !== 'Signup' && route.name !== 'ForgotPassword' ? () => (
-            <View style={navStyles.headerRight}>
-              <TouchableOpacity 
-                onPress={() => {
-                  if (hasActiveQuiz()) {
-                    Alert.alert(
-                      'Leave Quiz?',
-                      'You have an active quiz. Your progress will be lost if you leave.',
-                      [
-                        { text: 'Cancel', style: 'cancel' },
-                        { text: 'Leave', onPress: () => navigation.navigate('Home') }
-                      ]
-                    );
-                  } else {
-                    navigation.navigate('Home');
-                  }
-                }}
-                style={[navStyles.iconButton, navStyles.homeButton]}
-              >
-                <Text style={navStyles.buttonEmoji}>🏠</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                onPress={() => {
-                  if (hasActiveQuiz()) {
-                    Alert.alert(
-                      'Leave Quiz?',
-                      'You have an active quiz. Your progress will be lost if you leave.',
-                      [
-                        { text: 'Cancel', style: 'cancel' },
-                        { text: 'Leave', onPress: () => navigation.navigate('Progress') }
-                      ]
-                    );
-                  } else {
-                    navigation.navigate('Progress');
-                  }
-                }}
-                style={[navStyles.iconButton, navStyles.progressButton]}
-              >
-                <Text style={navStyles.buttonEmoji}>📊</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                onPress={() => {
-                  if (hasActiveQuiz()) {
-                    Alert.alert(
-                      'Leave Quiz?',
-                      'You have an active quiz. Your progress will be lost if you leave.',
-                      [
-                        { text: 'Cancel', style: 'cancel' },
-                        { text: 'Leave', onPress: () => navigation.navigate('Profile') }
-                      ]
-                    );
-                  } else {
-                    navigation.navigate('Profile');
-                  }
-                }}
-                style={[navStyles.iconButton, navStyles.profileButton]}
-              >
-                <Text style={navStyles.buttonEmoji}>👤</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                onPress={async () => {
-                  Alert.alert(
-                    hasActiveQuiz() ? 'Logout During Quiz?' : 'Logout',
-                    hasActiveQuiz() 
-                      ? 'You have an active quiz. Your progress will be lost if you logout.' 
-                      : 'Are you sure you want to logout?',
-                    [
-                      { text: 'Cancel', style: 'cancel' },
-                      { text: 'Logout', onPress: async () => {
-                        try {
-                          await signOut(auth);
-                          navigation.reset({
-                            index: 0,
-                            routes: [{ name: 'Login' }],
-                          });
-                        } catch (error) {
-                          console.error('Logout error:', error);
-                        }
-                      }}
-                    ]
-                  );
-                }}
-                style={[navStyles.iconButton, navStyles.logoutButton]}
-              >
-                <Text style={navStyles.buttonEmoji}>📴</Text>
-              </TouchableOpacity>
-            </View>
-          ) : undefined,
         })}
       >
         <Stack.Screen name="Login" component={LoginScreen} />
