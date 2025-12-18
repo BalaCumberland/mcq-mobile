@@ -1,7 +1,7 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { TouchableOpacity, Text, View, Alert, BackHandler } from 'react-native';
+import { TouchableOpacity, Text, View, Alert } from 'react-native';
 import { signOut } from 'firebase/auth';
 import { auth } from './config/firebase';
 import LoginScreen from './screens/LoginScreen';
@@ -34,16 +34,16 @@ const navStyles = {
     elevation: 2,
   },
   homeButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#059669',
   },
   progressButton: {
-    backgroundColor: '#9C27B0',
+    backgroundColor: '#7c3aed',
   },
   profileButton: {
-    backgroundColor: '#FF5722',
+    backgroundColor: '#dc2626',
   },
   logoutButton: {
-    backgroundColor: '#FF9800',
+    backgroundColor: '#ea580c',
   },
   buttonEmoji: {
     fontSize: 20,
@@ -54,9 +54,6 @@ export default function AppNavigator() {
   const { user } = useUserStore();
   const { hasActiveQuiz } = useQuizStore();
 
-
-
-  
   return (
     <NavigationContainer>
       <Stack.Navigator 
@@ -65,17 +62,18 @@ export default function AppNavigator() {
           headerLeft: () => null,
           gestureEnabled: false,
           headerStyle: {
-            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            backgroundColor: '#1e40af',
             shadowColor: '#000',
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.1,
-            shadowRadius: 8,
-            elevation: 8,
+            shadowRadius: 4,
+            elevation: 4,
           },
           headerTitleStyle: {
-            fontSize: 20,
-            fontWeight: 'bold',
-            color: '#333',
+            fontSize: 18,
+            fontWeight: '600',
+            color: '#ffffff',
+            letterSpacing: 0.3,
           },
           headerTitle: route.name === 'Login' ? '🎓 GradeUp' : route.name === 'Signup' ? '🎓 Sign Up' : route.name === 'ForgotPassword' ? '🔒 Reset Password' : route.name === 'Review' ? '📋 Quiz Review' : '🎓 GradeUp',
           headerLeft: route.name === 'Review' ? undefined : () => null,

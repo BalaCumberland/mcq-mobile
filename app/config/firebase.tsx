@@ -13,7 +13,6 @@ const firebaseConfig = {
 
 // ✅ Initialize app only once (avoids "No default app" error)
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-
 const auth = getAuth(app);
 
 export { auth };

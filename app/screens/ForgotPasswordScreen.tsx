@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { View, TextInput, StyleSheet, Alert, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, TextInput, StyleSheet, Alert, Text, TouchableOpacity, ActivityIndicator, StatusBar, Dimensions } from 'react-native';
+
+const { width, height } = Dimensions.get('window');
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '../config/firebase';
 
@@ -40,20 +42,32 @@ export default function ForgotPasswordScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.formContainer}>
-        <Text style={styles.title}>Reset Password</Text>
-        <Text style={styles.subtitle}>Enter your email to receive reset instructions</Text>
+      <StatusBar barStyle="light-content" backgroundColor="#1e293b" />
+      
+      {/* Header Section */}
+      <View style={styles.header}>
+        <Text style={styles.appTitle}>🔒 Reset Password</Text>
+        <Text style={styles.subtitle}>We'll help you get back in</Text>
+      </View>
+      
+      {/* Form Section */}
+      <View style={styles.formSection}>
+        <Text style={styles.title}>Forgot Password?</Text>
+        <Text style={styles.description}>Enter your email to receive reset instructions</Text>
         
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>📧 Email Address</Text>
-          <TextInput
-            placeholder="Enter your email"
-            value={email}
-            onChangeText={setEmail}
-            style={styles.input}
-            autoCapitalize="none"
-            keyboardType="email-address"
-          />
+          <View style={styles.inputWrapper}>
+            <Text style={styles.inputIcon}>📧</Text>
+            <TextInput
+              placeholder="Email address"
+              placeholderTextColor="#9CA3AF"
+              value={email}
+              onChangeText={setEmail}
+              style={styles.input}
+              autoCapitalize="none"
+              keyboardType="email-address"
+            />
+          </View>
         </View>
         
         <TouchableOpacity
@@ -67,10 +81,7 @@ export default function ForgotPasswordScreen({ navigation }: any) {
               <Text style={styles.buttonText}>Sending...</Text>
             </View>
           ) : (
-            <View style={styles.buttonContent}>
-              <Text style={styles.buttonEmoji}>🔄</Text>
-              <Text style={styles.buttonText}>Send Reset Email</Text>
-            </View>
+            <Text style={styles.buttonText}>Send Reset Email</Text>
           )}
         </TouchableOpacity>
         
@@ -85,80 +96,107 @@ export default function ForgotPasswordScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
+    backgroundColor: '#1e40af',
   },
-  formContainer: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: 24,
-    elevation: 2,
+  header: {
+    flex: 0.3,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 40,
+  },
+  appTitle: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#ffffff',
+    marginBottom: 6,
+    letterSpacing: 0.5,
+  },
+  subtitle: {
+    fontSize: 15,
+    color: '#cbd5e1',
+    fontWeight: '400',
+  },
+  formSection: {
+    flex: 0.7,
+    backgroundColor: '#ffffff',
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    paddingTop: 40,
+    paddingHorizontal: 24,
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: '600',
+    color: '#0f172a',
     textAlign: 'center',
-    marginBottom: 8,
-    color: '#333',
+    marginBottom: 6,
   },
-  subtitle: {
-    fontSize: 16,
+  description: {
+    fontSize: 15,
+    color: '#64748b',
     textAlign: 'center',
-    marginBottom: 24,
-    color: '#666',
+    marginBottom: 32,
   },
   inputContainer: {
     marginBottom: 20,
   },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 6,
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f8fafc',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  inputIcon: {
+    fontSize: 18,
+    marginRight: 12,
+    color: '#64748b',
   },
   input: {
-    backgroundColor: '#f9f9f9',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
+    flex: 1,
     fontSize: 16,
-    color: '#333',
+    color: '#0f172a',
+    paddingVertical: 16,
+    fontWeight: '400',
   },
   button: {
-    backgroundColor: '#FF9800',
-    borderRadius: 4,
-    paddingVertical: 12,
-    marginTop: 16,
-    elevation: 2,
+    backgroundColor: '#1e40af',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginTop: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   buttonDisabled: {
-    backgroundColor: '#ccc',
+    backgroundColor: '#94a3b8',
+    shadowOpacity: 0,
     elevation: 0,
   },
   buttonContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     gap: 8,
   },
   buttonText: {
-    color: '#fff',
+    color: '#ffffff',
     fontSize: 16,
-    fontWeight: 'bold',
-  },
-  buttonEmoji: {
-    fontSize: 18,
+    fontWeight: '600',
+    letterSpacing: 0.3,
   },
   backButton: {
-    marginTop: 20,
     alignItems: 'center',
+    marginTop: 24,
   },
   backText: {
-    color: '#2196F3',
-    fontSize: 16,
-    fontWeight: 'bold',
+    color: '#475569',
+    fontSize: 15,
+    fontWeight: '500',
   },
 });

@@ -33,6 +33,12 @@ class MainApplication : Application(), ReactApplication {
 
   override fun onCreate() {
     super.onCreate()
-    loadReactNative(this)
+    try {
+      loadReactNative(this)
+    } catch (e: Exception) {
+      // Handle React Native initialization errors
+      e.printStackTrace()
+      // You might want to show a fallback UI or restart the app
+    }
   }
 }
