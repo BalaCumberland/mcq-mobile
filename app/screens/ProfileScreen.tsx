@@ -74,7 +74,11 @@ const ProfileScreen = ({ navigation }: any) => {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView 
+      style={styles.container}
+      removeClippedSubviews={true}
+      maxToRenderPerBatch={2}
+    >
       <View style={styles.card}>
         <View style={styles.header}>
           <View style={styles.avatar}>

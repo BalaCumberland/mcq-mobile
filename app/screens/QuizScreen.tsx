@@ -56,7 +56,8 @@ const QuizScreen = ({ navigation, route }) => {
               { text: 'Cancel', style: 'cancel' },
               { text: 'Exit', onPress: () => {
                 // Clear quiz state before navigating
-                useQuizStore.getState().resetQuiz();
+                const { resetQuiz } = useQuizStore.getState();
+                resetQuiz();
                 navigation.navigate('Home');
               }}
             ]
@@ -217,7 +218,14 @@ const QuizScreen = ({ navigation, route }) => {
           {totalPages > 1 && <Text style={styles.pageInfo}>Page {currentPage} of {totalPages}</Text>}
         </View>
         
-        <ScrollView ref={scrollViewRef} style={styles.resultsScrollView} contentContainerStyle={styles.scrollContent}>
+        <ScrollView 
+          ref={scrollViewRef} 
+          style={styles.resultsScrollView} 
+          contentContainerStyle={styles.scrollContent}
+          removeClippedSubviews={true}
+          maxToRenderPerBatch={3}
+          windowSize={5}
+        >
           {paginatedResults.map((result, index) => {
             const isCorrect = result.status === 'correct';
             const isSkipped = result.status === 'skipped';
@@ -310,7 +318,8 @@ const QuizScreen = ({ navigation, route }) => {
                 [
                   { text: 'Cancel', style: 'cancel' },
                   { text: 'Yes', onPress: () => {
-                    useQuizStore.getState().resetQuiz();
+                    const { resetQuiz } = useQuizStore.getState();
+                    resetQuiz();
                     navigation.navigate('Home');
                   }}
                 ]
@@ -368,7 +377,12 @@ const QuizScreen = ({ navigation, route }) => {
       
       <LaTeXRenderer text={currentQuestion.question} style={styles.question} />
       
-      <ScrollView style={styles.answersContainer} showsVerticalScrollIndicator={true}>
+      <ScrollView 
+        style={styles.answersContainer} 
+        showsVerticalScrollIndicator={true}
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={4}
+      >
         {allAnswers.map((answer, index) => (
           <TouchableOpacity
             key={index}
@@ -446,7 +460,13 @@ const QuizScreen = ({ navigation, route }) => {
               </View>
             </View>
             
-            <ScrollView style={styles.questionGrid} nestedScrollEnabled={true} showsVerticalScrollIndicator={true}>
+            <ScrollView 
+              style={styles.questionGrid} 
+              nestedScrollEnabled={true} 
+              showsVerticalScrollIndicator={true}
+              removeClippedSubviews={true}
+              maxToRenderPerBatch={10}
+            >
               <View style={styles.gridContainer}>
                 {console.log('Rendering question buttons, total questions:', quiz.questions.length)}
                 {Array.from({ length: quiz.questions.length }, (_, index) => {

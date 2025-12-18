@@ -65,7 +65,13 @@ export default function ReviewScreen({ route }) {
   }
 
   return (
-    <ScrollView ref={scrollViewRef} style={styles.container}>
+    <ScrollView 
+      ref={scrollViewRef} 
+      style={styles.container}
+      removeClippedSubviews={true}
+      maxToRenderPerBatch={2}
+      windowSize={3}
+    >
       <View style={styles.header}>
         <Text style={styles.title}>📋 Quiz Review</Text>
         <Text style={styles.score}>{results.percentage}%</Text>

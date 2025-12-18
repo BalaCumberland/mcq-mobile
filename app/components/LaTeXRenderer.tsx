@@ -9,6 +9,15 @@ interface LaTeXRendererProps {
 
 const LaTeXRenderer: React.FC<LaTeXRendererProps> = memo(({ text, style }) => {
   const [webViewHeights, setWebViewHeights] = React.useState<{[key: number]: number}>({});
+  
+  const handleMessage = React.useCallback((index: number, isBlock: boolean) => {
+    return (event: any) => {
+      const height = parseInt(event.nativeEvent.data);
+      if (height > 0) {
+        setWebViewHeights(prev => ({ ...prev, [index]: Math.max(height, isBlock ? 200 : 80) }));
+      }
+    };
+  }, []);
   const isImageUrl = useCallback((str: string) => {
     return /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(str);
   }, []);
@@ -63,12 +72,9 @@ const LaTeXRenderer: React.FC<LaTeXRendererProps> = memo(({ text, style }) => {
             androidLayerType="hardware"
             cacheEnabled={true}
             cacheMode="LOAD_CACHE_ELSE_NETWORK"
-            onMessage={(event) => {
-              const height = parseInt(event.nativeEvent.data);
-              if (height > 0) {
-                setWebViewHeights(prev => ({ ...prev, [index]: Math.max(height, isBlock ? 200 : 80) }));
-              }
-            }}
+            incognito={false}
+            thirdPartyCookiesEnabled={false}
+            onMessage={handleMessage(index, isBlock)}
           />
         );
       }
@@ -78,8 +84,9 @@ const LaTeXRenderer: React.FC<LaTeXRendererProps> = memo(({ text, style }) => {
         return (
           <Image
             key={index}
-            source={{ uri: smilesUrl }}
+            source={{ uri: smilesUrl, cache: 'force-cache' }}
             style={{ width: 300, height: 200, resizeMode: 'contain', marginVertical: 8 }}
+            loadingIndicatorSource={{ uri: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==' }}
           />
         );
       }
@@ -88,8 +95,9 @@ const LaTeXRenderer: React.FC<LaTeXRendererProps> = memo(({ text, style }) => {
         return (
           <Image
             key={index}
-            source={{ uri: part.trim() }}
+            source={{ uri: part.trim(), cache: 'force-cache' }}
             style={{ width: 200, height: 150, resizeMode: 'contain', marginVertical: 8 }}
+            loadingIndicatorSource={{ uri: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==' }}
           />
         );
       }
