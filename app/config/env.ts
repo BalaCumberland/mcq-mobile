@@ -63,17 +63,7 @@ export const Types = [
   { id: 60, name: "CLS12-BIPC-NEET" }
 ];
 
-export const CLASS_OPTIONS = [
-  "CLS6",
-  "CLS7",
-  "CLS8",
-  "CLS9",
-  "CLS10",
-  "CLS11-MPC",
-  "CLS12-MPC",
-  "CLS11-BIPC",
-  "CLS12-BIPC"
-];
+
 
 export default LAMBDA_MCQ_NODE_API_URL;
 export { LAMBDA_MCQ_GO_API_URL };

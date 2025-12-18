@@ -120,9 +120,7 @@ android {
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
             zipAlignEnabled true
             crunchPngs false
-            ndk {
-                abiFilters "arm64-v8a"
-            }
+
         }
     }
 }
