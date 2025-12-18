@@ -7,6 +7,8 @@ import ApiService from '../services/apiService';
 import LaTeXRenderer from '../components/LaTeXRenderer';
 import { designSystem, colors, spacing, borderRadius, shadows } from '../styles/designSystem';
 
+
+
 const QuizScreen = ({ navigation, route }) => {
   const { 
     quiz, 

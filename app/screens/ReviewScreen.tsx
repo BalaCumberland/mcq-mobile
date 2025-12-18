@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { getAuthToken } from '../services/firebaseAuth';
 import { LAMBDA_MCQ_GO_API_URL } from '../config/env';
 import LaTeXRenderer from '../components/LaTeXRenderer';
+
+
 
 export default function ReviewScreen({ route }) {
   const { quizName, className, subjectName, topic } = route.params;
@@ -121,7 +124,7 @@ export default function ReviewScreen({ route }) {
       ))}
       
       {Math.ceil(results.results.length / itemsPerPage) > 1 && (
-        <View style={styles.paginationContainer}>
+        <SafeAreaView style={styles.paginationContainer} edges={['bottom']}>
           <TouchableOpacity 
             style={[styles.paginationButton, currentPage === 1 && styles.disabledButton]}
             onPress={() => {
@@ -148,7 +151,7 @@ export default function ReviewScreen({ route }) {
           >
             <Text style={styles.paginationButtonText}>Next</Text>
           </TouchableOpacity>
-        </View>
+        </SafeAreaView>
       )}
     </ScrollView>
   );
@@ -321,7 +324,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 20,
-    paddingBottom: 80,
     marginTop: 16,
   },
   paginationButton: {

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import ApiService from '../services/apiService';
 import useUserStore from '../store/UserStore';
@@ -56,7 +57,8 @@ const ProgressScreen = ({ navigation }) => {
   }
 
   return (
-    <ScrollView style={styles.container}>
+    <SafeAreaView style={styles.safeArea} edges={['bottom']}>
+      <ScrollView style={styles.container}>
       <Text style={styles.title}>📊 Your Progress</Text>
       
       {/* Subject Progress */}
@@ -115,14 +117,18 @@ const ProgressScreen = ({ navigation }) => {
           <Text style={styles.emptyText}>Complete some quizzes to see your progress!</Text>
         </View>
       )}
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
     backgroundColor: '#f8fafc',
+  },
+  container: {
+    flex: 1,
     padding: 20,
   },
   loadingContainer: {
