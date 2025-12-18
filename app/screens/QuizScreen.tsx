@@ -213,9 +213,14 @@ const QuizScreen = ({ navigation, route }) => {
     return (
       <View style={styles.resultsContainer}>
         <View style={styles.resultsHeader}>
-          <Text style={styles.title}>Quiz Results</Text>
-          <Text style={styles.score}>Score: {correctCount}/{totalCount} ({Math.round(percentage)}%)</Text>
-          {totalPages > 1 && <Text style={styles.pageInfo}>Page {currentPage} of {totalPages}</Text>}
+          <Text style={styles.title}>🎯 Quiz Results</Text>
+          <View style={styles.scoreContainer}>
+            <View style={[styles.scoreCircle, { borderColor: percentage >= 80 ? '#4CAF50' : percentage >= 60 ? '#FF9800' : '#f44336' }]}>
+              <Text style={[styles.scorePercentage, { color: percentage >= 80 ? '#4CAF50' : percentage >= 60 ? '#FF9800' : '#f44336' }]}>{Math.round(percentage)}%</Text>
+            </View>
+            <Text style={styles.scoreText}>{correctCount}/{totalCount} Correct</Text>
+          </View>
+          {totalPages > 1 && <Text style={styles.pageInfo}>📄 Page {currentPage} of {totalPages}</Text>}
         </View>
         
         <ScrollView 
@@ -235,8 +240,13 @@ const QuizScreen = ({ navigation, route }) => {
               : 'Not answered';
             
             return (
-              <View key={index} style={styles.resultCard}>
-                <Text style={styles.questionNumber}>Question {result.qno}</Text>
+              <View key={index} style={[styles.resultCard, isCorrect ? styles.correctCard : isSkipped ? styles.skippedCard : styles.incorrectCard]}>
+                <View style={styles.questionHeader}>
+                  <Text style={styles.questionNumber}>Q{result.qno}</Text>
+                  <View style={[styles.statusBadge, isCorrect ? styles.correctBadge : isSkipped ? styles.skippedBadge : styles.incorrectBadge]}>
+                    <Text style={styles.statusText}>{isCorrect ? '✓' : isSkipped ? '⏭' : '✗'}</Text>
+                  </View>
+                </View>
                 <LaTeXRenderer text={result.question} style={styles.questionText} />
                 
                 <Text style={[
@@ -310,7 +320,7 @@ const QuizScreen = ({ navigation, route }) => {
           )}
           
           <TouchableOpacity 
-            style={styles.homeButton} 
+            style={[styles.homeButton, { backgroundColor: percentage >= 80 ? '#4CAF50' : '#1e40af' }]} 
             onPress={() => {
               Alert.alert(
                 'Leave Quiz Results?',
@@ -906,6 +916,67 @@ const styles = StyleSheet.create({
   resultsContainer: {
     flex: 1,
     backgroundColor: '#f8fafc',
+  },
+  scoreContainer: {
+    alignItems: 'center',
+    marginVertical: 16,
+  },
+  scoreCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  scorePercentage: {
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  scoreText: {
+    fontSize: 16,
+    color: '#666',
+    fontWeight: '500',
+  },
+  questionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  statusBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  correctBadge: {
+    backgroundColor: '#4CAF50',
+  },
+  incorrectBadge: {
+    backgroundColor: '#f44336',
+  },
+  skippedBadge: {
+    backgroundColor: '#FF9800',
+  },
+  statusText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  correctCard: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#4CAF50',
+  },
+  incorrectCard: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#f44336',
+  },
+  skippedCard: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#FF9800',
   },
   resultsScrollView: {
     flex: 1,
