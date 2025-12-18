@@ -1,4 +1,4 @@
-import React, { memo, useMemo } from 'react';
+import React, { memo, useMemo, useCallback } from 'react';
 import { Text, View, Dimensions, Image } from 'react-native';
 import { WebView } from 'react-native-webview';
 
@@ -8,9 +8,9 @@ interface LaTeXRendererProps {
 }
 
 const LaTeXRenderer: React.FC<LaTeXRendererProps> = memo(({ text, style }) => {
-  const isImageUrl = (str: string) => {
+  const isImageUrl = useCallback((str: string) => {
     return /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(str);
-  };
+  }, []);
 
 
 
@@ -45,6 +45,9 @@ const LaTeXRenderer: React.FC<LaTeXRendererProps> = memo(({ text, style }) => {
             scrollEnabled={false}
             showsVerticalScrollIndicator={false}
             showsHorizontalScrollIndicator={false}
+            androidLayerType="hardware"
+            cacheEnabled={true}
+            cacheMode="LOAD_CACHE_ELSE_NETWORK"
           />
         );
       }
