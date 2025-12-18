@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getAuthToken } from '../services/firebaseAuth';
@@ -13,6 +13,7 @@ export default function ReviewScreen({ route }) {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+  const scrollViewRef = useRef(null);
 
   useEffect(() => {
     fetchResults();
@@ -64,7 +65,7 @@ export default function ReviewScreen({ route }) {
   }
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView ref={scrollViewRef} style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>📋 Quiz Review</Text>
         <Text style={styles.score}>{results.percentage}%</Text>
@@ -117,7 +118,11 @@ export default function ReviewScreen({ route }) {
           {result.explanation && (
             <View style={styles.explanationSection}>
               <Text style={styles.explanationLabel}>💡 Explanation:</Text>
-              <LaTeXRenderer text={result.explanation} style={styles.explanation} />
+              <ScrollView horizontal showsHorizontalScrollIndicator={true} style={styles.explanationScroll}>
+                <View style={styles.explanationContent}>
+                  <LaTeXRenderer text={result.explanation} style={styles.explanation} />
+                </View>
+              </ScrollView>
             </View>
           )}
         </View>
@@ -130,6 +135,7 @@ export default function ReviewScreen({ route }) {
             onPress={() => {
               if (results?.results && currentPage > 1) {
                 setCurrentPage(prev => Math.max(prev - 1, 1));
+                scrollViewRef.current?.scrollTo({ y: 0, animated: true });
               }
             }}
             disabled={currentPage === 1 || !results?.results}
@@ -144,6 +150,7 @@ export default function ReviewScreen({ route }) {
                 const totalPages = Math.ceil(results.results.length / itemsPerPage);
                 if (currentPage < totalPages) {
                   setCurrentPage(prev => Math.min(prev + 1, totalPages));
+                  scrollViewRef.current?.scrollTo({ y: 0, animated: true });
                 }
               }
             }}
@@ -291,10 +298,16 @@ const styles = StyleSheet.create({
   explanationSection: {
     marginTop: 12,
     backgroundColor: '#f8fafc',
-    padding: 16,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#e2e8f0',
+    padding: 16,
+  },
+  explanationScroll: {
+    marginTop: 6,
+  },
+  explanationContent: {
+    minWidth: 400,
   },
   explanationLabel: {
     fontSize: 12,
@@ -305,7 +318,8 @@ const styles = StyleSheet.create({
   explanation: {
     fontSize: 14,
     color: '#475569',
-    lineHeight: 20,
+    lineHeight: 22,
+    flexWrap: 'wrap',
   },
   paginationInfo: {
     backgroundColor: '#f1f5f9',

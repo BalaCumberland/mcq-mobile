@@ -30,6 +30,7 @@ const QuizScreen = ({ navigation, route }) => {
   const [quizResults, setQuizResults] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+  const scrollViewRef = React.useRef(null);
 
   // Force results if we have quiz data but showResults is false after finish
   React.useEffect(() => {
@@ -216,7 +217,7 @@ const QuizScreen = ({ navigation, route }) => {
           {totalPages > 1 && <Text style={styles.pageInfo}>Page {currentPage} of {totalPages}</Text>}
         </View>
         
-        <ScrollView style={styles.resultsScrollView} contentContainerStyle={styles.scrollContent}>
+        <ScrollView ref={scrollViewRef} style={styles.resultsScrollView} contentContainerStyle={styles.scrollContent}>
           {paginatedResults.map((result, index) => {
             const isCorrect = result.status === 'correct';
             const isSkipped = result.status === 'skipped';
@@ -268,7 +269,15 @@ const QuizScreen = ({ navigation, route }) => {
             <View style={styles.paginationContainer}>
               <TouchableOpacity 
                 style={[styles.paginationButton, currentPage === 1 && styles.disabledButton]}
-                onPress={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                onPress={() => {
+                  setCurrentPage(prev => Math.max(prev - 1, 1));
+                  // Scroll to top when changing pages
+                  setTimeout(() => {
+                    if (scrollViewRef.current) {
+                      scrollViewRef.current.scrollTo({ y: 0, animated: true });
+                    }
+                  }, 100);
+                }}
                 disabled={currentPage === 1}
               >
                 <Text style={styles.paginationButtonText}>Previous</Text>
@@ -276,7 +285,15 @@ const QuizScreen = ({ navigation, route }) => {
               <Text style={styles.paginationText}>Page {currentPage} of {totalPages}</Text>
               <TouchableOpacity 
                 style={[styles.paginationButton, currentPage === totalPages && styles.disabledButton]}
-                onPress={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                onPress={() => {
+                  setCurrentPage(prev => Math.min(prev + 1, totalPages));
+                  // Scroll to top when changing pages
+                  setTimeout(() => {
+                    if (scrollViewRef.current) {
+                      scrollViewRef.current.scrollTo({ y: 0, animated: true });
+                    }
+                  }, 100);
+                }}
                 disabled={currentPage === totalPages}
               >
                 <Text style={styles.paginationButtonText}>Next</Text>

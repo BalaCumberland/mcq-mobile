@@ -8,6 +8,7 @@ interface LaTeXRendererProps {
 }
 
 const LaTeXRenderer: React.FC<LaTeXRendererProps> = memo(({ text, style }) => {
+  const [webViewHeights, setWebViewHeights] = React.useState<{[key: number]: number}>({});
   const isImageUrl = useCallback((str: string) => {
     return /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(str);
   }, []);
@@ -15,11 +16,13 @@ const LaTeXRenderer: React.FC<LaTeXRendererProps> = memo(({ text, style }) => {
 
 
   const renderContent = useMemo(() => {
-    const parts = text.split(/(\$\$(?:LATEX|SMILES)::[^:]*::)/g);
+    const parts = text.split(/(\$\$(?:LATEX|SMILES)::[\s\S]*?::)/g);
     
     return parts.map((part, index) => {
       if (part.startsWith('$$LATEX::') && part.endsWith('::')) {
         const latex = part.replace(/^\$\$LATEX::/, '').replace(/::$/, '').trim();
+        const isBlock = latex.includes('\\\\') || latex.length > 40;
+        const mathDelimiter = isBlock ? `\\[${latex}\\]` : `\\(${latex}\\)`;
         const html = `
           <html>
             <head>
@@ -27,13 +30,25 @@ const LaTeXRenderer: React.FC<LaTeXRendererProps> = memo(({ text, style }) => {
               <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
               <script>
                 window.MathJax = {
-                  tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+                  tex: { inlineMath: [['\\\\(', '\\\\)']], displayMath: [['\\\\[', '\\\\]']] },
                   chtml: { scale: 2.0 }
                 };
               </script>
             </head>
             <body style="margin:0; padding:12px; font-size:20px;">
-              $$${latex}$$
+              <div id="math-content">
+                ${mathDelimiter}
+              </div>
+              <script>
+                function sendHeight() {
+                  const content = document.getElementById('math-content');
+                  const height = content.scrollHeight + 24;
+                  window.ReactNativeWebView?.postMessage(height.toString());
+                }
+                MathJax.startup.promise.then(() => {
+                  setTimeout(sendHeight, 100);
+                });
+              </script>
             </body>
           </html>
         `;
@@ -41,13 +56,19 @@ const LaTeXRenderer: React.FC<LaTeXRendererProps> = memo(({ text, style }) => {
           <WebView
             key={index}
             source={{ html }}
-            style={{ height: 100, backgroundColor: 'transparent' }}
-            scrollEnabled={false}
+            style={{ height: webViewHeights[index] || (isBlock ? 200 : 80), backgroundColor: 'transparent' }}
+            scrollEnabled={true}
             showsVerticalScrollIndicator={false}
-            showsHorizontalScrollIndicator={false}
+            showsHorizontalScrollIndicator={true}
             androidLayerType="hardware"
             cacheEnabled={true}
             cacheMode="LOAD_CACHE_ELSE_NETWORK"
+            onMessage={(event) => {
+              const height = parseInt(event.nativeEvent.data);
+              if (height > 0) {
+                setWebViewHeights(prev => ({ ...prev, [index]: Math.max(height, isBlock ? 200 : 80) }));
+              }
+            }}
           />
         );
       }
