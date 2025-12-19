@@ -52,6 +52,13 @@ const HomeScreen = memo(({ route, navigation }) => {
         console.warn('Error clearing quiz state:', error);
       }
       
+      // Reset dropdown selections when coming back from results
+      setSelectedSubject('');
+      setSelectedTopic('');
+      setSelectedQuiz('');
+      setTopics([]);
+      setQuizzes([]);
+      
       const backAction = () => {
         Alert.alert(
           'Exit App?',
