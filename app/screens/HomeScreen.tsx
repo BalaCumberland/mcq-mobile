@@ -35,17 +35,14 @@ const HomeScreen = memo(({ route, navigation }) => {
   const [fetchingQuizzes, setFetchingQuizzes] = useState(false);
 
   React.useEffect(() => {
-    if (!user || user.payment_status !== "PAID") {
-      setQuizzes(["DEMO"]);
-      setSelectedQuiz("DEMO");
-      return;
-    }
-    
     if (user?.student_class) {
       fetchSubjects(user.student_class);
     }
   }, [user, fetchSubjects]);
 
+  // Check if user is paid and subscription is active
+  const isPaidUser = user?.payment_status === "PAID" && user?.sub_exp_date && new Date(user.sub_exp_date) > new Date();
+  
   useFocusEffect(
     React.useCallback(() => {
       // Clear any persisted quiz state when entering Home screen
@@ -121,27 +118,17 @@ const HomeScreen = memo(({ route, navigation }) => {
   const beginTest = useCallback(async () => {
     if (!selectedQuiz || !user?.student_class) return;
     
-    // Handle demo mode
-    if (user.payment_status !== "PAID" && selectedQuiz === "DEMO") {
-      try {
-        setLoading(true);
-        setQuiz(demoData);
-        navigation.navigate('Quiz', {
-          className: user.student_class,
-          subjectName: 'Demo',
-          topic: 'Demo Topic',
-          quizName: 'DEMO'
-        });
-      } catch (error) {
-        console.error('Error loading demo quiz:', error);
-        Alert.alert('Error', 'Failed to load demo quiz.');
-      } finally {
-        setLoading(false);
+    // Check access for free users - only first quiz of first topic
+    if (!isPaidUser) {
+      const isFirstTopic = topics.indexOf(selectedTopic) === 0;
+      const isFirstQuiz = quizzes.indexOf(selectedQuiz) === 0;
+      
+      if (!isFirstTopic || !isFirstQuiz) {
+        Alert.alert('Access Denied', 'Free users can only access the first quiz of the first topic. Upgrade to access all content.');
+        return;
       }
-      return;
     }
     
-    // Handle paid user quiz
     if (!selectedSubject || !selectedTopic) {
       Alert.alert('Error', 'Please select subject and topic first.');
       return;
@@ -163,13 +150,14 @@ const HomeScreen = memo(({ route, navigation }) => {
         topic: selectedTopic,
         quizName: selectedQuiz
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching quiz:', error);
-      Alert.alert('Error', 'Failed to load quiz. Please check your connection and try again.');
+      const errorMessage = error.message || 'Failed to load quiz. Please check your connection and try again.';
+      Alert.alert('Error', errorMessage);
     } finally {
       setLoading(false);
     }
-  }, [selectedQuiz, user, selectedSubject, selectedTopic, setQuiz, navigation, demoData]);
+  }, [selectedQuiz, user, selectedSubject, selectedTopic, setQuiz, navigation, isPaidUser, topics, quizzes]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -184,6 +172,18 @@ const HomeScreen = memo(({ route, navigation }) => {
           <View style={styles.classBadge}>
             <Text style={styles.classBadgeText}>📚 Class: {user.student_class}</Text>
           </View>
+          
+          {!isPaidUser && (
+            <View style={styles.freeTrialCard}>
+              <View style={styles.freeTrialHeader}>
+                <Text style={styles.freeTrialIcon}>🔒</Text>
+                <Text style={styles.freeTrialTitle}>Free Trial Access</Text>
+              </View>
+              <Text style={styles.freeTrialText}>
+                🎯 Free Trial: Try one quiz from each subject to get started. Upgrade for unlimited access!
+              </Text>
+            </View>
+          )}
         </View>
       )}
 
@@ -199,118 +199,81 @@ const HomeScreen = memo(({ route, navigation }) => {
 
         <View style={styles.inputContainer}>
           <Text style={styles.label}>📚 Subject</Text>
-          {user && user.payment_status === "PAID" ? (
-            fetchingSubjects ? (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="small" color="#f97316" />
-                <Text style={styles.loadingText}>Loading subjects...</Text>
-              </View>
-            ) : (
-              <View style={styles.pickerWrapper}>
-                <Picker
-                  selectedValue={selectedSubject}
-                  onValueChange={(value) => {
-                    setSelectedSubject(value);
-                    setSelectedTopic('');
-                    setSelectedQuiz('');
-                    setTopics([]);
-                    setQuizzes([]);
-                    if (value && user?.student_class) {
-                      fetchTopics(user.student_class, value);
-                    }
-                  }}
-                  style={styles.picker}
-                >
-                  <Picker.Item label="Select subject..." value="" />
-                  {subjects.map((subject, index) => (
-                    <Picker.Item key={index} label={subject} value={subject} />
-                  ))}
-                </Picker>
-              </View>
-            )
+          {fetchingSubjects ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color="#f97316" />
+              <Text style={styles.loadingText}>Loading subjects...</Text>
+            </View>
           ) : (
-            <View style={styles.demoContainer}>
-              <Text style={styles.demoText}>📚 Demo Mode - Limited Access</Text>
-              <Text style={styles.demoSubtext}>Upgrade to access all subjects and topics</Text>
+            <View style={styles.pickerWrapper}>
+              <Picker
+                selectedValue={selectedSubject}
+                onValueChange={(value) => {
+                  setSelectedSubject(value);
+                  setSelectedTopic('');
+                  setSelectedQuiz('');
+                  setTopics([]);
+                  setQuizzes([]);
+                  if (value && user?.student_class) {
+                    fetchTopics(user.student_class, value);
+                  }
+                }}
+                style={styles.picker}
+              >
+                <Picker.Item label="Select subject..." value="" />
+                {subjects.map((subject, index) => (
+                  <Picker.Item key={index} label={subject} value={subject} />
+                ))}
+              </Picker>
             </View>
           )}
         </View>
 
         <View style={styles.inputContainer}>
           <Text style={styles.label}>📝 Topic</Text>
-          {user && user.payment_status === "PAID" ? (
-            fetchingTopics ? (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="small" color="#f97316" />
-                <Text style={styles.loadingText}>Loading topics...</Text>
-              </View>
-            ) : (
-              <View style={[styles.pickerWrapper, !selectedSubject && styles.disabledPicker]}>
-                <Picker
-                  selectedValue={selectedTopic}
-                  onValueChange={(value) => {
-                    setSelectedTopic(value);
-                    setSelectedQuiz('');
-                    setQuizzes([]);
-                    if (value && user?.student_class && selectedSubject) {
-                      fetchQuizzes(user.student_class, selectedSubject, value);
-                    }
-                  }}
-                  style={styles.picker}
-                  enabled={!!selectedSubject}
-                >
-                  <Picker.Item 
-                    label={
-                      !selectedSubject ? "Select subject first" :
-                      selectedSubject && topics.length === 0 && !fetchingTopics ? "No topics available" :
-                      "Select topic..."
-                    } 
-                    value="" 
-                  />
-                  {topics.map((topic, index) => (
-                    <Picker.Item key={index} label={topic} value={topic} />
-                  ))}
-                </Picker>
-              </View>
-            )
+          {fetchingTopics ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color="#f97316" />
+              <Text style={styles.loadingText}>Loading topics...</Text>
+            </View>
           ) : (
-            <View style={styles.demoContainer}>
-              <Text style={styles.demoText}>📝 Demo Mode - Limited Access</Text>
-              <Text style={styles.demoSubtext}>Upgrade to access all subjects and topics</Text>
+            <View style={[styles.pickerWrapper, !selectedSubject && styles.disabledPicker]}>
+              <Picker
+                selectedValue={selectedTopic}
+                onValueChange={(value) => {
+                  setSelectedTopic(value);
+                  setSelectedQuiz('');
+                  setQuizzes([]);
+                  if (value && user?.student_class && selectedSubject) {
+                    fetchQuizzes(user.student_class, selectedSubject, value);
+                  }
+                }}
+                style={styles.picker}
+                enabled={!!selectedSubject}
+              >
+                <Picker.Item 
+                  label={
+                    !selectedSubject ? "Select subject first" :
+                    selectedSubject && topics.length === 0 && !fetchingTopics ? "No topics available" :
+                    "Select topic..."
+                  } 
+                  value="" 
+                />
+                {topics.map((topic, index) => (
+                  <Picker.Item key={index} label={topic} value={topic} />
+                ))}
+              </Picker>
             </View>
           )}
         </View>
 
         <View style={styles.inputContainer}>
           <Text style={styles.label}>🎯 Available Quizzes</Text>
-          {user && user.payment_status === "PAID" ? (
-            fetchingQuizzes ? (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="small" color="#f97316" />
-                <Text style={styles.loadingText}>Loading quizzes...</Text>
-              </View>
-            ) : (
-              <View style={[styles.pickerWrapper, !selectedTopic && styles.disabledPicker]}>
-                <Picker
-                  selectedValue={selectedQuiz}
-                  onValueChange={setSelectedQuiz}
-                  style={styles.picker}
-                  enabled={!!selectedTopic}
-                >
-                  <Picker.Item 
-                    label={
-                      !selectedTopic ? "Select topic first" :
-                      selectedTopic && quizzes.length === 0 && !fetchingQuizzes ? "No quizzes available" :
-                      "Select a quiz..."
-                    } 
-                    value="" 
-                  />
-                  {quizzes.map((quiz, index) => (
-                    <Picker.Item key={index} label={quiz} value={quiz} />
-                  ))}
-                </Picker>
-              </View>
-            )
+          {fetchingQuizzes ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color="#f97316" />
+              <Text style={styles.loadingText}>Loading quizzes...</Text>
+            </View>
           ) : (
             <View style={styles.pickerWrapper}>
               <Picker
@@ -318,7 +281,28 @@ const HomeScreen = memo(({ route, navigation }) => {
                 onValueChange={setSelectedQuiz}
                 style={styles.picker}
               >
-                <Picker.Item label="DEMO Quiz" value="DEMO" />
+                <Picker.Item 
+                  label={
+                    !selectedTopic ? "Select topic first" :
+                    selectedTopic && quizzes.length === 0 && !fetchingQuizzes ? "No quizzes available" :
+                    "Select a quiz..."
+                  } 
+                  value="" 
+                />
+                {quizzes.map((quiz, index) => {
+                  const isFirstQuiz = index === 0;
+                  const isFirstTopic = topics.indexOf(selectedTopic) === 0;
+                  const isAccessible = isPaidUser || (isFirstTopic && isFirstQuiz);
+                  const lockSymbol = isPaidUser ? '' : (isFirstTopic && isFirstQuiz) ? '🆓 ' : '🔒 ';
+                  
+                  return (
+                    <Picker.Item 
+                      key={index} 
+                      label={`${lockSymbol}${quiz}`} 
+                      value={quiz}
+                    />
+                  );
+                })}
               </Picker>
             </View>
           )}
@@ -326,14 +310,17 @@ const HomeScreen = memo(({ route, navigation }) => {
 
 
         <TouchableOpacity 
-          style={[styles.beginButton, (loading || !selectedQuiz) && styles.beginButtonDisabled]}
+          style={[styles.beginButton, (loading || !selectedQuiz || (!isPaidUser && selectedQuiz && !(topics.indexOf(selectedTopic) === 0 && quizzes.indexOf(selectedQuiz) === 0))) && styles.beginButtonDisabled]}
           onPress={beginTest}
-          disabled={loading || !selectedQuiz}
+          disabled={loading || !selectedQuiz || (!isPaidUser && selectedQuiz && !(topics.indexOf(selectedTopic) === 0 && quizzes.indexOf(selectedQuiz) === 0))}
         >
           <View style={styles.beginButtonContent}>
             <Text style={styles.beginButtonEmoji}>🚀</Text>
             <Text style={styles.beginButtonText}>
-              {loading ? 'Loading...' : !selectedQuiz ? 'Select Quiz First' : selectedQuiz === "DEMO" ? 'Start Demo Quiz' : 'Start Assessment'}
+              {loading ? 'Loading...' : 
+               !selectedQuiz ? 'Select Quiz First' : 
+               (!isPaidUser && selectedQuiz && !(topics.indexOf(selectedTopic) === 0 && quizzes.indexOf(selectedQuiz) === 0)) ? '🔒 Upgrade Required' :
+               'Start Assessment'}
             </Text>
           </View>
         </TouchableOpacity>
@@ -559,5 +546,38 @@ const styles = StyleSheet.create({
   disabledPicker: {
     opacity: 0.5,
     backgroundColor: '#f1f5f9',
+  },
+  freeTrialCard: {
+    backgroundColor: '#fef3c7',
+    borderWidth: 2,
+    borderColor: '#f59e0b',
+    borderRadius: 16,
+    padding: 16,
+    marginTop: 12,
+    shadowColor: '#f59e0b',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  freeTrialHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  freeTrialIcon: {
+    fontSize: 20,
+    marginRight: 8,
+  },
+  freeTrialTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#92400e',
+  },
+  freeTrialText: {
+    fontSize: 14,
+    color: '#92400e',
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });
