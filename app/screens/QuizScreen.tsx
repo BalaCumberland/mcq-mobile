@@ -35,6 +35,14 @@ const QuizScreen = ({ navigation, route }) => {
       timeRemaining: timeRemaining || 0
     });
   }, [navigation, timeRemaining]);
+  
+  React.useLayoutEffect(() => {
+    if (showResults || forceResults) {
+      navigation.setOptions({
+        headerRight: undefined
+      });
+    }
+  }, [navigation, showResults, forceResults]);
   const [forceResults, setForceResults] = useState(false);
   const [quizResults, setQuizResults] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);

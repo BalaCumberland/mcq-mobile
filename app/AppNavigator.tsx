@@ -148,7 +148,7 @@ export default function AppNavigator() {
       const { toggleMenuFn } = useContext(MenuContext) || {};
       return <HamburgerButton onPress={toggleMenuFn} />;
     } : route.name === 'Review' ? undefined : () => null,
-    headerRight: route.name === 'Quiz' ? () => (
+    headerRight: route.name === 'Quiz' && !route.params?.showingResults ? () => (
       <TouchableOpacity 
         style={{
           backgroundColor: '#ffffff20',
