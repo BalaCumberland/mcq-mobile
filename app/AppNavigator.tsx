@@ -1,7 +1,7 @@
-import React, { useState, useCallback, memo } from 'react';
+import React, { useState, useCallback, memo, createContext, useContext } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { TouchableOpacity, Text, View, Alert, Modal, StyleSheet } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { signOut } from 'firebase/auth';
 import { auth } from './config/firebase';
 import LoginScreen from './screens/LoginScreen';
@@ -12,118 +12,35 @@ import HomeScreen from './screens/HomeScreen';
 import QuizScreen from './screens/QuizScreen';
 import ProgressScreen from './screens/ProgressScreen';
 import ProfileScreen from './screens/ProfileScreen';
+import ScreenWrapper from './components/ScreenWrapper';
 
 import useUserStore from './store/UserStore';
 import useQuizStore from './store/QuizStore';
 
 const Stack = createStackNavigator();
 
-const HamburgerMenu = memo(({ navigation, hasActiveQuiz }) => {
-  const [isMenuVisible, setIsMenuVisible] = useState(false);
+const HamburgerButton = memo(({ onPress }) => (
+  <TouchableOpacity onPress={onPress} style={styles.hamburgerButton}>
+    <Text style={styles.hamburgerIcon}>☰</Text>
+  </TouchableOpacity>
+));
 
-  const navigateWithQuizCheck = useCallback((screenName) => {
-    if (hasActiveQuiz()) {
-      Alert.alert(
-        'Leave Quiz?',
-        'You have an active quiz. Your progress will be lost if you leave.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Leave', onPress: () => {
-            setIsMenuVisible(false);
-            navigation.navigate(screenName);
-          }}
-        ]
-      );
-    } else {
-      setIsMenuVisible(false);
-      navigation.navigate(screenName);
-    }
-  }, [hasActiveQuiz, navigation]);
+export const MenuContext = createContext();
 
-  const handleLogout = useCallback(() => {
-    Alert.alert(
-      hasActiveQuiz() ? 'Logout During Quiz?' : 'Logout',
-      hasActiveQuiz() 
-        ? 'You have an active quiz. Your progress will be lost if you logout.' 
-        : 'Are you sure you want to logout?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Logout', onPress: async () => {
-          try {
-            setIsMenuVisible(false);
-            await signOut(auth);
-            navigation.reset({
-              index: 0,
-              routes: [{ name: 'Login' }],
-            });
-          } catch (error) {
-            console.error('Logout error:', error);
-          }
-        }}
-      ]
-    );
-  }, [hasActiveQuiz, navigation]);
-
+const MenuProvider = ({ children }) => {
+  const [toggleMenuFn, setToggleMenuFn] = useState(() => () => {});
   return (
-    <>
-      <TouchableOpacity 
-        onPress={() => setIsMenuVisible(true)}
-        style={styles.hamburgerButton}
-      >
-        <Text style={styles.hamburgerIcon}>☰</Text>
-      </TouchableOpacity>
-      
-      {isMenuVisible && (
-        <Modal
-          visible={true}
-          transparent={true}
-          animationType="none"
-          onRequestClose={() => setIsMenuVisible(false)}
-        >
-          <TouchableOpacity 
-            style={styles.modalOverlay}
-            activeOpacity={1}
-            onPress={() => setIsMenuVisible(false)}
-          >
-            <View style={styles.menuContainer}>
-              <TouchableOpacity 
-                style={styles.menuItem}
-                onPress={() => navigateWithQuizCheck('Home')}
-              >
-                <Text style={styles.menuIcon}>🏠</Text>
-                <Text style={styles.menuText}>Home</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.menuItem}
-                onPress={() => navigateWithQuizCheck('Progress')}
-              >
-                <Text style={styles.menuIcon}>📊</Text>
-                <Text style={styles.menuText}>Progress</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.menuItem}
-                onPress={() => navigateWithQuizCheck('Profile')}
-              >
-                <Text style={styles.menuIcon}>👤</Text>
-                <Text style={styles.menuText}>Profile</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={[styles.menuItem, styles.logoutItem]}
-                onPress={handleLogout}
-              >
-                <Text style={styles.menuIcon}>📴</Text>
-                <Text style={styles.menuText}>Logout</Text>
-              </TouchableOpacity>
-            </View>
-          </TouchableOpacity>
-        </Modal>
-      )}
-    </>
+    <MenuContext.Provider value={{ toggleMenuFn, setToggleMenuFn }}>
+      {children}
+    </MenuContext.Provider>
   );
-});
+};
+
+const WrappedScreen = ({ component: Component, ...props }) => (
+  <ScreenWrapper {...props}>
+    <Component {...props} />
+  </ScreenWrapper>
+);
 
 const styles = StyleSheet.create({
   hamburgerButton: {
@@ -212,27 +129,30 @@ export default function AppNavigator() {
     headerStyle,
     headerTitleStyle,
     headerTitle: getHeaderTitle(route.name),
-    headerLeft: route.name !== 'Login' && route.name !== 'Signup' && route.name !== 'ForgotPassword' ? () => (
-      <HamburgerMenu navigation={navigation} hasActiveQuiz={hasActiveQuiz} />
-    ) : route.name === 'Review' ? undefined : () => null,
+    headerLeft: route.name !== 'Login' && route.name !== 'Signup' && route.name !== 'ForgotPassword' ? () => {
+      const { toggleMenuFn } = useContext(MenuContext) || {};
+      return <HamburgerButton onPress={toggleMenuFn} />;
+    } : route.name === 'Review' ? undefined : () => null,
     gestureEnabled: route.name === 'Review',
   }), [hasActiveQuiz]);
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator 
-        initialRouteName="Login"
-        screenOptions={screenOptions}
-      >
-        <Stack.Screen name="Login" component={LoginScreen} />
-        <Stack.Screen name="Signup" component={SignupScreen} />
-        <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
-        <Stack.Screen name="Review" component={ReviewScreen} />
-        <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen name="Quiz" component={QuizScreen} />
-        <Stack.Screen name="Progress" component={ProgressScreen} />
-        <Stack.Screen name="Profile" component={ProfileScreen} />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <MenuProvider>
+      <NavigationContainer>
+        <Stack.Navigator 
+          initialRouteName="Login"
+          screenOptions={screenOptions}
+        >
+          <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="Signup" component={SignupScreen} />
+          <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+          <Stack.Screen name="Review" component={ReviewScreen} />
+          <Stack.Screen name="Home">{(props) => <WrappedScreen {...props} component={HomeScreen} />}</Stack.Screen>
+          <Stack.Screen name="Quiz">{(props) => <WrappedScreen {...props} component={QuizScreen} />}</Stack.Screen>
+          <Stack.Screen name="Progress">{(props) => <WrappedScreen {...props} component={ProgressScreen} />}</Stack.Screen>
+          <Stack.Screen name="Profile">{(props) => <WrappedScreen {...props} component={ProfileScreen} />}</Stack.Screen>
+        </Stack.Navigator>
+      </NavigationContainer>
+    </MenuProvider>
   );
 }
