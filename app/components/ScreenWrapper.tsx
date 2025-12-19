@@ -12,6 +12,7 @@ const ScreenWrapper = ({ children, navigation, showMenu = true }) => {
   const slideAnim = useRef(new Animated.Value(-250)).current;
 
   useEffect(() => {
+    console.log('Menu visibility changed:', isMenuVisible);
     Animated.timing(slideAnim, {
       toValue: isMenuVisible ? 0 : -250,
       duration: 150,
@@ -20,14 +21,24 @@ const ScreenWrapper = ({ children, navigation, showMenu = true }) => {
   }, [isMenuVisible, slideAnim]);
 
   const toggleMenu = useCallback(() => {
-    setIsMenuVisible(!isMenuVisible);
-  }, [isMenuVisible]);
+    setIsMenuVisible(prev => {
+      console.log('Toggle menu called, current state:', prev, 'new state:', !prev);
+      return !prev;
+    });
+  }, []);
 
   useEffect(() => {
     if (menuContext?.setToggleMenuFn) {
+      console.log('Setting toggle menu function, menuContext exists:', !!menuContext);
       menuContext.setToggleMenuFn(() => toggleMenu);
+    } else {
+      console.log('MenuContext not available or setToggleMenuFn missing');
     }
   }, [toggleMenu, menuContext]);
+
+  // Don't add cleanup effect that interferes with menu state
+
+
 
   const navigateWithQuizCheck = useCallback((screenName) => {
     if (hasActiveQuiz()) {
@@ -86,27 +97,29 @@ const ScreenWrapper = ({ children, navigation, showMenu = true }) => {
         />
       )}
       
-      <Animated.View style={[styles.expandableMenu, { transform: [{ translateX: slideAnim }] }]}>
-          <TouchableOpacity style={styles.menuItem} onPress={() => navigateWithQuizCheck('Home')}>
-            <Text style={styles.menuIcon}>🏠</Text>
-            <Text style={styles.menuText}>Home</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.menuItem} onPress={() => navigateWithQuizCheck('Progress')}>
-            <Text style={styles.menuIcon}>📊</Text>
-            <Text style={styles.menuText}>Progress</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.menuItem} onPress={() => navigateWithQuizCheck('Profile')}>
-            <Text style={styles.menuIcon}>👤</Text>
-            <Text style={styles.menuText}>Profile</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={[styles.menuItem, styles.logoutItem]} onPress={handleLogout}>
-            <Text style={styles.menuIcon}>📴</Text>
-            <Text style={styles.menuText}>Logout</Text>
-          </TouchableOpacity>
-      </Animated.View>
+      {isMenuVisible && (
+        <Animated.View style={[styles.expandableMenu, { transform: [{ translateX: 0 }] }]}>
+            <TouchableOpacity style={styles.menuItem} onPress={() => navigateWithQuizCheck('Home')}>
+              <Text style={styles.menuIcon}>🏠</Text>
+              <Text style={styles.menuText}>Home</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.menuItem} onPress={() => navigateWithQuizCheck('Progress')}>
+              <Text style={styles.menuIcon}>📊</Text>
+              <Text style={styles.menuText}>Progress</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.menuItem} onPress={() => navigateWithQuizCheck('Profile')}>
+              <Text style={styles.menuIcon}>👤</Text>
+              <Text style={styles.menuText}>Profile</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={[styles.menuItem, styles.logoutItem]} onPress={handleLogout}>
+              <Text style={styles.menuIcon}>📴</Text>
+              <Text style={styles.menuText}>Logout</Text>
+            </TouchableOpacity>
+        </Animated.View>
+      )}
     </View>
   );
 };
@@ -122,15 +135,15 @@ const styles = StyleSheet.create({
     bottom: 0,
     width: 250,
     backgroundColor: '#1e40af',
-    borderRightWidth: 1,
-    borderRightColor: '#1d4ed8',
-    elevation: 8,
+    borderRightWidth: 3,
+    borderRightColor: '#ffffff',
+    elevation: 20,
     shadowColor: '#000',
     shadowOffset: { width: 2, height: 0 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.5,
     shadowRadius: 8,
     paddingTop: 20,
-    zIndex: 1000,
+    zIndex: 9999,
   },
   menuItem: {
     flexDirection: 'row',

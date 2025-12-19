@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import useQuizStore from '../store/QuizStore';
 import ApiService from '../services/apiService';
 import LaTeXRenderer from '../components/LaTeXRenderer';
+import ScreenWrapper from '../components/ScreenWrapper';
 import { designSystem, colors, spacing, borderRadius, shadows } from '../styles/designSystem';
 
 
@@ -60,8 +61,13 @@ const QuizScreen = ({ navigation, route }) => {
 
   useFocusEffect(
     React.useCallback(() => {
+      // Only handle back button during active quiz, not during results
+      if (showResults || forceResults) {
+        return;
+      }
+      
       const backAction = () => {
-        if (quiz && !showResults && !forceResults) {
+        if (quiz) {
           Alert.alert(
             'Exit Quiz?',
             'Are you sure you want to exit? Your progress will be lost.',
@@ -224,7 +230,8 @@ const QuizScreen = ({ navigation, route }) => {
     const paginatedResults = results.slice(startIndex, startIndex + itemsPerPage);
 
     return (
-      <View style={styles.resultsContainer}>
+      <ScreenWrapper navigation={navigation}>
+        <View style={styles.resultsContainer}>
         <View style={styles.resultsHeader}>
           <Text style={styles.title}>🎯 Quiz Results</Text>
           <View style={styles.scoreContainer}>
@@ -351,8 +358,9 @@ const QuizScreen = ({ navigation, route }) => {
           >
             <Text style={styles.homeButtonText}>🏠 Back to Home</Text>
           </TouchableOpacity>
-        </SafeAreaView>
-      </View>
+          </SafeAreaView>
+        </View>
+      </ScreenWrapper>
     );
   }
 

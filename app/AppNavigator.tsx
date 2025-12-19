@@ -19,11 +19,22 @@ import useQuizStore from './store/QuizStore';
 
 const Stack = createStackNavigator();
 
-const HamburgerButton = memo(({ onPress }) => (
-  <TouchableOpacity onPress={onPress} style={styles.hamburgerButton}>
-    <Text style={styles.hamburgerIcon}>☰</Text>
-  </TouchableOpacity>
-));
+const HamburgerButton = memo(({ onPress }) => {
+  console.log('HamburgerButton rendered with onPress:', !!onPress);
+  return (
+    <TouchableOpacity onPress={() => {
+      console.log('Hamburger button pressed, onPress exists:', !!onPress);
+      if (onPress) {
+        console.log('Calling onPress function');
+        onPress();
+      } else {
+        console.log('No onPress function available');
+      }
+    }} style={styles.hamburgerButton}>
+      <Text style={styles.hamburgerIcon}>☰</Text>
+    </TouchableOpacity>
+  );
+});
 
 export const MenuContext = createContext();
 
@@ -37,7 +48,7 @@ const MenuProvider = ({ children }) => {
 };
 
 const WrappedScreen = ({ component: Component, ...props }) => (
-  <ScreenWrapper {...props}>
+  <ScreenWrapper key="stable-wrapper" {...props}>
     <Component {...props} />
   </ScreenWrapper>
 );
@@ -166,7 +177,7 @@ export default function AppNavigator() {
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Signup" component={SignupScreen} />
           <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
-          <Stack.Screen name="Review" component={ReviewScreen} />
+          <Stack.Screen name="Review">{(props) => <WrappedScreen {...props} component={ReviewScreen} />}</Stack.Screen>
           <Stack.Screen name="Home">{(props) => <WrappedScreen {...props} component={HomeScreen} />}</Stack.Screen>
           <Stack.Screen name="Quiz">{(props) => <WrappedScreen {...props} component={QuizScreen} />}</Stack.Screen>
           <Stack.Screen name="Progress">{(props) => <WrappedScreen {...props} component={ProgressScreen} />}</Stack.Screen>
