@@ -78,6 +78,14 @@ const ScreenWrapper = ({ children, navigation, showMenu = true }) => {
         {React.cloneElement(children, { toggleMenu: () => setIsMenuVisible(!isMenuVisible) })}
       </View>
       
+      {isMenuVisible && (
+        <TouchableOpacity 
+          style={styles.overlay}
+          activeOpacity={1}
+          onPress={() => setIsMenuVisible(false)}
+        />
+      )}
+      
       <Animated.View style={[styles.expandableMenu, { transform: [{ translateX: slideAnim }] }]}>
           <TouchableOpacity style={styles.menuItem} onPress={() => navigateWithQuizCheck('Home')}>
             <Text style={styles.menuIcon}>🏠</Text>
@@ -149,6 +157,15 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    zIndex: 999,
   },
 });
 
