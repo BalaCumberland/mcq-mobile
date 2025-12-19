@@ -723,15 +723,20 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   navButton: {
-    ...designSystem.buttonSecondary,
+    backgroundColor: '#1e40af',
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.md,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   disabledButton: {
     ...designSystem.buttonDisabled,
   },
   navButtonText: {
-    ...designSystem.buttonText,
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
   },
   rightButtons: {
     flexDirection: 'row',
