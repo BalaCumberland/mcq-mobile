@@ -44,7 +44,7 @@ const HomeScreen = memo(({ route, navigation }) => {
     if (user?.student_class) {
       fetchSubjects(user.student_class);
     }
-  }, [user]);
+  }, [user, fetchSubjects]);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -119,7 +119,33 @@ const HomeScreen = memo(({ route, navigation }) => {
   }, []);
 
   const beginTest = useCallback(async () => {
-    if (!selectedQuiz || !user?.student_class || !selectedSubject || !selectedTopic) return;
+    if (!selectedQuiz || !user?.student_class) return;
+    
+    // Handle demo mode
+    if (user.payment_status !== "PAID" && selectedQuiz === "DEMO") {
+      try {
+        setLoading(true);
+        setQuiz(demoData);
+        navigation.navigate('Quiz', {
+          className: user.student_class,
+          subjectName: 'Demo',
+          topic: 'Demo Topic',
+          quizName: 'DEMO'
+        });
+      } catch (error) {
+        console.error('Error loading demo quiz:', error);
+        Alert.alert('Error', 'Failed to load demo quiz.');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+    
+    // Handle paid user quiz
+    if (!selectedSubject || !selectedTopic) {
+      Alert.alert('Error', 'Please select subject and topic first.');
+      return;
+    }
     
     try {
       setLoading(true);
@@ -143,7 +169,7 @@ const HomeScreen = memo(({ route, navigation }) => {
     } finally {
       setLoading(false);
     }
-  }, [selectedQuiz, user, selectedSubject, selectedTopic, setQuiz, navigation]);
+  }, [selectedQuiz, user, selectedSubject, selectedTopic, setQuiz, navigation, demoData]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -171,126 +197,146 @@ const HomeScreen = memo(({ route, navigation }) => {
           <Text style={styles.title}>Select Quiz</Text>
         </View>
 
-        {user && user.payment_status === "PAID" && (
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>📚 Subject</Text>
-            {fetchingSubjects ? (
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>📚 Subject</Text>
+          {user && user.payment_status === "PAID" ? (
+            fetchingSubjects ? (
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="small" color="#f97316" />
                 <Text style={styles.loadingText}>Loading subjects...</Text>
               </View>
             ) : (
-              subjects.length > 0 ? (
-                <View style={styles.pickerWrapper}>
-                  <Picker
-                    selectedValue={selectedSubject}
-                    onValueChange={(value) => {
-                      setSelectedSubject(value);
-                      setSelectedTopic('');
-                      setSelectedQuiz('');
-                      if (value && user?.student_class) fetchTopics(user.student_class, value);
-                    }}
-                    style={styles.picker}
-                  >
-                    <Picker.Item label="Select subject..." value="" />
-                    {subjects.map((subject, index) => (
-                      <Picker.Item key={index} label={subject} value={subject} />
-                    ))}
-                  </Picker>
-                </View>
-              ) : (
-                <View style={styles.emptyContainer}>
-                  <Text style={styles.emptyEmoji}>📚</Text>
-                  <Text style={styles.emptyTitle}>No Subjects Available</Text>
-                  <Text style={styles.emptyText}>No subjects found for your class.</Text>
-                </View>
-              )
-            )}
-          </View>
-        )}
+              <View style={styles.pickerWrapper}>
+                <Picker
+                  selectedValue={selectedSubject}
+                  onValueChange={(value) => {
+                    setSelectedSubject(value);
+                    setSelectedTopic('');
+                    setSelectedQuiz('');
+                    setTopics([]);
+                    setQuizzes([]);
+                    if (value && user?.student_class) {
+                      fetchTopics(user.student_class, value);
+                    }
+                  }}
+                  style={styles.picker}
+                >
+                  <Picker.Item label="Select subject..." value="" />
+                  {subjects.map((subject, index) => (
+                    <Picker.Item key={index} label={subject} value={subject} />
+                  ))}
+                </Picker>
+              </View>
+            )
+          ) : (
+            <View style={styles.demoContainer}>
+              <Text style={styles.demoText}>📚 Demo Mode - Limited Access</Text>
+              <Text style={styles.demoSubtext}>Upgrade to access all subjects and topics</Text>
+            </View>
+          )}
+        </View>
 
-        {selectedSubject && (
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>📝 Topic</Text>
-            {fetchingTopics ? (
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>📝 Topic</Text>
+          {user && user.payment_status === "PAID" ? (
+            fetchingTopics ? (
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="small" color="#f97316" />
                 <Text style={styles.loadingText}>Loading topics...</Text>
               </View>
             ) : (
-              topics.length > 0 ? (
-                <View style={styles.pickerWrapper}>
-                  <Picker
-                    selectedValue={selectedTopic}
-                    onValueChange={(value) => {
-                      setSelectedTopic(value);
-                      setSelectedQuiz('');
-                      if (value && user?.student_class) fetchQuizzes(user.student_class, selectedSubject, value);
-                    }}
-                    style={styles.picker}
-                  >
-                    <Picker.Item label="Select topic..." value="" />
-                    {topics.map((topic, index) => (
-                      <Picker.Item key={index} label={topic} value={topic} />
-                    ))}
-                  </Picker>
-                </View>
-              ) : (
-                <View style={styles.emptyContainer}>
-                  <Text style={styles.emptyEmoji}>📝</Text>
-                  <Text style={styles.emptyTitle}>No Topics Available</Text>
-                  <Text style={styles.emptyText}>No topics found for this subject.</Text>
-                </View>
-              )
-            )}
-          </View>
-        )}
+              <View style={[styles.pickerWrapper, !selectedSubject && styles.disabledPicker]}>
+                <Picker
+                  selectedValue={selectedTopic}
+                  onValueChange={(value) => {
+                    setSelectedTopic(value);
+                    setSelectedQuiz('');
+                    setQuizzes([]);
+                    if (value && user?.student_class && selectedSubject) {
+                      fetchQuizzes(user.student_class, selectedSubject, value);
+                    }
+                  }}
+                  style={styles.picker}
+                  enabled={!!selectedSubject}
+                >
+                  <Picker.Item 
+                    label={
+                      !selectedSubject ? "Select subject first" :
+                      selectedSubject && topics.length === 0 && !fetchingTopics ? "No topics available" :
+                      "Select topic..."
+                    } 
+                    value="" 
+                  />
+                  {topics.map((topic, index) => (
+                    <Picker.Item key={index} label={topic} value={topic} />
+                  ))}
+                </Picker>
+              </View>
+            )
+          ) : (
+            <View style={styles.demoContainer}>
+              <Text style={styles.demoText}>📝 Demo Mode - Limited Access</Text>
+              <Text style={styles.demoSubtext}>Upgrade to access all subjects and topics</Text>
+            </View>
+          )}
+        </View>
 
-        {selectedTopic && (
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>📝 Available Quizzes</Text>
-            {fetchingQuizzes ? (
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>🎯 Available Quizzes</Text>
+          {user && user.payment_status === "PAID" ? (
+            fetchingQuizzes ? (
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="small" color="#f97316" />
                 <Text style={styles.loadingText}>Loading quizzes...</Text>
               </View>
-            ) : quizzes.length > 0 ? (
-              <View style={styles.pickerWrapper}>
+            ) : (
+              <View style={[styles.pickerWrapper, !selectedTopic && styles.disabledPicker]}>
                 <Picker
                   selectedValue={selectedQuiz}
                   onValueChange={setSelectedQuiz}
                   style={styles.picker}
+                  enabled={!!selectedTopic}
                 >
-                  <Picker.Item label="Select a quiz..." value="" />
+                  <Picker.Item 
+                    label={
+                      !selectedTopic ? "Select topic first" :
+                      selectedTopic && quizzes.length === 0 && !fetchingQuizzes ? "No quizzes available" :
+                      "Select a quiz..."
+                    } 
+                    value="" 
+                  />
                   {quizzes.map((quiz, index) => (
                     <Picker.Item key={index} label={quiz} value={quiz} />
                   ))}
                 </Picker>
               </View>
-            ) : (
-              <View style={styles.emptyContainer}>
-                <Text style={styles.emptyEmoji}>🎉</Text>
-                <Text style={styles.emptyTitle}>All Done!</Text>
-                <Text style={styles.emptyText}>No quizzes available for this topic. Great job!</Text>
-              </View>
-            )}
-          </View>
-        )}
-
-        {selectedQuiz && (
-          <TouchableOpacity 
-            style={[styles.beginButton, loading && styles.beginButtonDisabled]}
-            onPress={beginTest}
-            disabled={loading}
-          >
-            <View style={styles.beginButtonContent}>
-              <Text style={styles.beginButtonEmoji}>🚀</Text>
-              <Text style={styles.beginButtonText}>
-                {loading ? 'Loading...' : 'Start Assessment'}
-              </Text>
+            )
+          ) : (
+            <View style={styles.pickerWrapper}>
+              <Picker
+                selectedValue={selectedQuiz}
+                onValueChange={setSelectedQuiz}
+                style={styles.picker}
+              >
+                <Picker.Item label="DEMO Quiz" value="DEMO" />
+              </Picker>
             </View>
-          </TouchableOpacity>
-        )}
+          )}
+        </View>
+
+
+        <TouchableOpacity 
+          style={[styles.beginButton, (loading || !selectedQuiz) && styles.beginButtonDisabled]}
+          onPress={beginTest}
+          disabled={loading || !selectedQuiz}
+        >
+          <View style={styles.beginButtonContent}>
+            <Text style={styles.beginButtonEmoji}>🚀</Text>
+            <Text style={styles.beginButtonText}>
+              {loading ? 'Loading...' : !selectedQuiz ? 'Select Quiz First' : selectedQuiz === "DEMO" ? 'Start Demo Quiz' : 'Start Assessment'}
+            </Text>
+          </View>
+        </TouchableOpacity>
       </View>
       </ScrollView>
     </SafeAreaView>
@@ -489,5 +535,29 @@ const styles = StyleSheet.create({
     color: '#166534',
     textAlign: 'center',
     lineHeight: 20,
+  },
+  demoContainer: {
+    alignItems: 'center',
+    paddingVertical: 24,
+    paddingHorizontal: 20,
+    backgroundColor: '#fef3c7',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#f59e0b',
+  },
+  demoText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#92400e',
+    marginBottom: 4,
+  },
+  demoSubtext: {
+    fontSize: 14,
+    color: '#92400e',
+    textAlign: 'center',
+  },
+  disabledPicker: {
+    opacity: 0.5,
+    backgroundColor: '#f1f5f9',
   },
 });
