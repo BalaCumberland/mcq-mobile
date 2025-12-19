@@ -26,6 +26,14 @@ const QuizScreen = ({ navigation, route }) => {
   } = useQuizStore();
   
   const [showQuestionPanel, setShowQuestionPanel] = useState(false);
+
+  // Set up navigation header button and timer
+  React.useLayoutEffect(() => {
+    navigation.setParams({
+      openQuestions: () => setShowQuestionPanel(true),
+      timeRemaining: timeRemaining || 0
+    });
+  }, [navigation, timeRemaining]);
   const [forceResults, setForceResults] = useState(false);
   const [quizResults, setQuizResults] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -38,12 +46,17 @@ const QuizScreen = ({ navigation, route }) => {
   }, [showResults]);
 
   useEffect(() => {
+    if (showResults || forceResults) return;
+    
     const interval = setInterval(() => {
       updateTimer();
+      if (timeRemaining <= 0) {
+        setForceResults(true);
+      }
     }, 1000);
     
     return () => clearInterval(interval);
-  }, [updateTimer]);
+  }, [updateTimer, showResults, forceResults, timeRemaining]);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -349,20 +362,6 @@ const QuizScreen = ({ navigation, route }) => {
         <Text style={styles.title}>
           Question {currentQuestionIndex + 1} of {quiz.questions.length}
         </Text>
-        <View style={styles.headerRight}>
-          <TouchableOpacity 
-            style={styles.questionsButton}
-            onPress={() => {
-              console.log('Questions button pressed, opening modal');
-              setShowQuestionPanel(true);
-            }}
-          >
-            <Text style={styles.questionsButtonText}>📋 Questions</Text>
-          </TouchableOpacity>
-          <Text style={styles.timer}>
-            ⏰ {Math.floor((timeRemaining || 0) / 60)}:{((timeRemaining || 0) % 60).toString().padStart(2, '0')}
-          </Text>
-        </View>
       </View>
       
       {/* Progress Bar */}

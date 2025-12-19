@@ -1,7 +1,7 @@
 import React, { useState, useCallback, memo, createContext, useContext } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { TouchableOpacity, Text, View, StyleSheet } from 'react-native';
 import { signOut } from 'firebase/auth';
 import { auth } from './config/firebase';
 import LoginScreen from './screens/LoginScreen';
@@ -110,12 +110,16 @@ const headerTitleStyle = {
   letterSpacing: 0.3,
 };
 
-const getHeaderTitle = (routeName) => {
+const getHeaderTitle = (routeName, route) => {
   switch (routeName) {
     case 'Login': return '🎓 GradeUp';
     case 'Signup': return '🎓 Sign Up';
     case 'ForgotPassword': return '🔒 Reset Password';
     case 'Review': return '📋 Quiz Review';
+    case 'Quiz': {
+      const timeRemaining = route?.params?.timeRemaining || 0;
+      return `⏰ ${Math.floor(timeRemaining / 60)}:${(timeRemaining % 60).toString().padStart(2, '0')}`;
+    }
     default: return '🎓 GradeUp';
   }
 };
@@ -128,11 +132,27 @@ export default function AppNavigator() {
     gestureEnabled: false,
     headerStyle,
     headerTitleStyle,
-    headerTitle: getHeaderTitle(route.name),
+    headerTitle: getHeaderTitle(route.name, route),
     headerLeft: route.name !== 'Login' && route.name !== 'Signup' && route.name !== 'ForgotPassword' ? () => {
       const { toggleMenuFn } = useContext(MenuContext) || {};
       return <HamburgerButton onPress={toggleMenuFn} />;
     } : route.name === 'Review' ? undefined : () => null,
+    headerRight: route.name === 'Quiz' ? () => (
+      <TouchableOpacity 
+        style={{
+          backgroundColor: '#ffffff20',
+          paddingHorizontal: 12,
+          paddingVertical: 6,
+          borderRadius: 8,
+          marginRight: 16,
+        }}
+        onPress={() => {
+          route.params?.openQuestions?.();
+        }}
+      >
+        <Text style={{ color: '#ffffff', fontSize: 12, fontWeight: '600' }}>📋 Questions</Text>
+      </TouchableOpacity>
+    ) : undefined,
     gestureEnabled: route.name === 'Review',
   }), [hasActiveQuiz]);
 

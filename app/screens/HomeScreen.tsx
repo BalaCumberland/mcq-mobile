@@ -9,6 +9,7 @@ import {
   ScrollView,
   BackHandler,
   Alert,
+  SafeAreaView,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Picker } from '@react-native-picker/picker';
@@ -145,7 +146,8 @@ const HomeScreen = memo(({ route, navigation }) => {
   }, [selectedQuiz, user, selectedSubject, selectedTopic, setQuiz, navigation]);
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
       {user?.name && (
         <View style={styles.welcomeCard}>
           <View style={styles.avatar}>
@@ -290,35 +292,44 @@ const HomeScreen = memo(({ route, navigation }) => {
           </TouchableOpacity>
         )}
       </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 });
 
 export default HomeScreen;
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#f0f9ff',
+  },
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+  },
+  scrollContent: {
     paddingHorizontal: 20,
     paddingVertical: 16,
+    paddingBottom: 40,
   },
   welcomeCard: {
     backgroundColor: '#ffffff',
     borderRadius: 16,
-    padding: 24,
+    padding: 20,
     marginBottom: 20,
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: '#1e40af',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowRadius: 8,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#e0e7ff',
   },
   avatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     backgroundColor: '#1e40af',
     alignItems: 'center',
     justifyContent: 'center',
@@ -326,21 +337,21 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     color: '#ffffff',
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '700',
   },
   welcomeTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '600',
     color: '#0f172a',
-    marginBottom: 4,
+    marginBottom: 2,
     textAlign: 'center',
   },
   welcomeSubtitle: {
-    fontSize: 15,
+    fontSize: 14,
     color: '#64748b',
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   
   classBadge: {
@@ -358,13 +369,15 @@ const styles = StyleSheet.create({
   },
   mainCard: {
     backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderRadius: 20,
+    padding: 28,
+    shadowColor: '#1e40af',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: '#e0e7ff',
   },
   cardHeader: {
     flexDirection: 'row',
@@ -411,15 +424,15 @@ const styles = StyleSheet.create({
   },
   beginButton: {
     backgroundColor: '#1e40af',
-    borderRadius: 12,
-    paddingVertical: 16,
-    marginTop: 24,
+    borderRadius: 16,
+    paddingVertical: 18,
+    marginTop: 28,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowColor: '#1e40af',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
   beginButtonDisabled: {
     backgroundColor: '#94a3b8',
