@@ -63,7 +63,7 @@ const LaTeXRenderer: React.FC<LaTeXRendererProps> = memo(({ text, style }) => {
         `;
         return (
           <WebView
-            key={index}
+            key={`latex-${index}`}
             source={{ html }}
             style={{ height: webViewHeights[index] || (isBlock ? 200 : 80), backgroundColor: 'transparent' }}
             scrollEnabled={true}
@@ -83,7 +83,7 @@ const LaTeXRenderer: React.FC<LaTeXRendererProps> = memo(({ text, style }) => {
         const smilesUrl = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles/${encodeURIComponent(smiles)}/PNG?image_size=300x200`;
         return (
           <Image
-            key={index}
+            key={`smiles-${index}`}
             source={{ uri: smilesUrl, cache: 'force-cache' }}
             style={{ width: 300, height: 200, resizeMode: 'contain', marginVertical: 8 }}
             loadingIndicatorSource={{ uri: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==' }}
@@ -94,16 +94,16 @@ const LaTeXRenderer: React.FC<LaTeXRendererProps> = memo(({ text, style }) => {
       if (isImageUrl(part.trim())) {
         return (
           <Image
-            key={index}
+            key={`image-${index}`}
             source={{ uri: part.trim(), cache: 'force-cache' }}
             style={{ width: 200, height: 150, resizeMode: 'contain', marginVertical: 8 }}
             loadingIndicatorSource={{ uri: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==' }}
           />
         );
       }
-      return part ? <Text key={index} style={style}>{part}</Text> : null;
+      return part ? <Text key={`text-${index}`} style={style}>{part}</Text> : null;
     });
-  }, [text]);
+  }, [text, style, webViewHeights, handleMessage, isImageUrl]);
 
   return <>{renderContent}</>;
 });

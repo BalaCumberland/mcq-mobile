@@ -6,7 +6,7 @@ interface LoadingAnimationProps {
   text?: string;
 }
 
-const LoadingAnimation: React.FC<LoadingAnimationProps> = ({ text = "Loading..." }) => {
+const LoadingAnimation: React.FC<LoadingAnimationProps> = React.memo(({ text = "Loading..." }) => {
   const pulseAnim = useRef(new Animated.Value(0)).current;
   const rotateAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -92,7 +92,7 @@ const LoadingAnimation: React.FC<LoadingAnimationProps> = ({ text = "Loading..."
       <Text style={styles.loadingText}>{text}</Text>
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {

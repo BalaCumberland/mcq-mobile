@@ -7,7 +7,7 @@ interface ExplanationViewProps {
   label?: string;
 }
 
-const ExplanationView: React.FC<ExplanationViewProps> = ({ 
+const ExplanationView: React.FC<ExplanationViewProps> = React.memo(({ 
   explanation, 
   label = "💡 Explanation:" 
 }) => {
@@ -19,7 +19,7 @@ const ExplanationView: React.FC<ExplanationViewProps> = ({
       </ScrollView>
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   explanationSection: {

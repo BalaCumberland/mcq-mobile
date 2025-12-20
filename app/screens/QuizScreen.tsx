@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, Alert, BackHandler, Animated } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -133,15 +133,12 @@ const QuizScreen = ({ navigation, route }) => {
     }, [quiz, showResults, forceResults, navigation])
   );
 
-  const allAnswers = React.useMemo(() => {
+  const allAnswers = useMemo(() => {
     if (!quiz || !quiz.questions[currentQuestionIndex]) return [];
     const currentQuestion = quiz.questions[currentQuestionIndex];
-    // Use allAnswers from API if available, otherwise fallback to old format
     if (currentQuestion.allAnswers && Array.isArray(currentQuestion.allAnswers)) {
       return currentQuestion.allAnswers;
     }
-    
-    // Fallback for old format
     const incorrect = currentQuestion.incorrectAnswers || '';
     return [
       currentQuestion.correctAnswer,
@@ -316,7 +313,7 @@ const QuizScreen = ({ navigation, route }) => {
             return (
               <LinearGradient
                 key={index}
-                colors={isCorrect ? ['#f0fdf4', '#dcfce7'] : isSkipped ? ['#fffbeb', '#fef3c7'] : ['#fef2f2', '#fecaca']}
+                colors={['#ffffff', '#f8fafc']}
                 style={[styles.resultCard, isCorrect ? styles.correctCard : isSkipped ? styles.skippedCard : styles.incorrectCard]}
               >
                 <View style={styles.questionHeader}>
@@ -489,12 +486,13 @@ const QuizScreen = ({ navigation, route }) => {
       </View>
       
       <View style={styles.answersSection}>
-        <ScrollView 
-          style={styles.answersContainer} 
-          showsVerticalScrollIndicator={true}
-          removeClippedSubviews={true}
-          maxToRenderPerBatch={4}
-        >
+        <View style={styles.answersWrapper}>
+          <ScrollView 
+            style={styles.answersContainer} 
+            showsVerticalScrollIndicator={true}
+            removeClippedSubviews={true}
+            maxToRenderPerBatch={4}
+          >
           {allAnswers.map((answer, index) => {
             const isSelected = userAnswers[currentQuestionIndex] === answer;
             return (
@@ -523,7 +521,8 @@ const QuizScreen = ({ navigation, route }) => {
               </TouchableOpacity>
             );
           })}
-        </ScrollView>
+          </ScrollView>
+        </View>
         
         {showScrollHint && currentQuestionIndex === 0 && (
           <Animated.View style={[
@@ -839,6 +838,14 @@ const styles = StyleSheet.create({
     flex: 1,
     position: 'relative',
   },
+  answersWrapper: {
+    flex: 1,
+    backgroundColor: '#f8fafc',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    padding: 8,
+  },
   answersScrollHint: {
     position: 'absolute',
     top: 10,
@@ -875,10 +882,10 @@ const styles = StyleSheet.create({
   questionContainer: {
     maxHeight: 200,
     marginBottom: 16,
-    backgroundColor: '#f9fafb',
+    backgroundColor: '#f0f9ff',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderColor: '#bae6fd',
   },
   questionContent: {
     padding: 16,
@@ -894,17 +901,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   answerButton: {
-    backgroundColor: '#ffffff',
+    backgroundColor: 'transparent',
     padding: spacing.lg,
-    marginVertical: spacing.xs,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: '#e5e7eb',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
+    marginVertical: 4,
+    borderRadius: 8,
+    borderWidth: 0,
   },
   answerRow: {
     flexDirection: 'row',
@@ -1205,15 +1206,15 @@ const styles = StyleSheet.create({
   },
   correctCard: {
     borderLeftWidth: 4,
-    borderLeftColor: '#4CAF50',
+    borderLeftColor: '#10b981',
   },
   incorrectCard: {
     borderLeftWidth: 4,
-    borderLeftColor: '#f44336',
+    borderLeftColor: '#ef4444',
   },
   skippedCard: {
     borderLeftWidth: 4,
-    borderLeftColor: '#FF9800',
+    borderLeftColor: '#f59e0b',
   },
   resultsScrollView: {
     flex: 1,

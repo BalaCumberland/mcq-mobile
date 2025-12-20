@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getAuthToken } from '../services/firebaseAuth';
@@ -9,7 +9,7 @@ import LoadingAnimation from '../components/LoadingAnimation';
 
 
 
-export default function ReviewScreen({ route }) {
+const ReviewScreen = React.memo(({ route }) => {
   const { quizName, className, subjectName, topic } = route.params;
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -17,11 +17,7 @@ export default function ReviewScreen({ route }) {
   const itemsPerPage = 5;
   const scrollViewRef = useRef(null);
 
-  useEffect(() => {
-    fetchResults();
-  }, []);
-
-  const fetchResults = async () => {
+  const fetchResults = useCallback(async () => {
     try {
       const token = await getAuthToken();
       const params = new URLSearchParams({
@@ -47,7 +43,37 @@ export default function ReviewScreen({ route }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [quizName, className, subjectName, topic]);
+
+  useEffect(() => {
+    fetchResults();
+  }, [fetchResults]);
+
+  const paginatedResults = useMemo(() => {
+    if (!results?.results) return [];
+    return results.results.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  }, [results?.results, currentPage, itemsPerPage]);
+
+  const totalPages = useMemo(() => {
+    if (!results?.results) return 1;
+    return Math.ceil(results.results.length / itemsPerPage);
+  }, [results?.results?.length, itemsPerPage]);
+
+  const handlePrevPage = useCallback(() => {
+    if (results?.results && currentPage > 1) {
+      setCurrentPage(prev => Math.max(prev - 1, 1));
+      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+    }
+  }, [results?.results, currentPage]);
+
+  const handleNextPage = useCallback(() => {
+    if (results?.results) {
+      if (currentPage < totalPages) {
+        setCurrentPage(prev => Math.min(prev + 1, totalPages));
+        scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+      }
+    }
+  }, [results?.results, currentPage, totalPages]);
 
   if (loading) {
     return <LoadingAnimation text="Loading Results..." />;
@@ -85,8 +111,8 @@ export default function ReviewScreen({ route }) {
         </Text>
       </View>
       
-      {results.results.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((result, index) => (
-        <View key={index} style={[
+      {paginatedResults.map((result, index) => (
+        <View key={`${result.qno}-${index}`} style={[
           styles.questionCard,
           result.status === 'correct' && styles.correctCard,
           result.status === 'wrong' && styles.wrongCard,
@@ -124,33 +150,20 @@ export default function ReviewScreen({ route }) {
         </View>
       ))}
       
-      {Math.ceil(results.results.length / itemsPerPage) > 1 && (
+      {totalPages > 1 && (
         <SafeAreaView style={styles.paginationContainer} edges={['bottom']}>
           <TouchableOpacity 
             style={[styles.paginationButton, currentPage === 1 && styles.disabledButton]}
-            onPress={() => {
-              if (results?.results && currentPage > 1) {
-                setCurrentPage(prev => Math.max(prev - 1, 1));
-                scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-              }
-            }}
+            onPress={handlePrevPage}
             disabled={currentPage === 1 || !results?.results}
           >
             <Text style={styles.paginationButtonText}>Previous</Text>
           </TouchableOpacity>
-          <Text style={styles.paginationText}>Page {currentPage} of {results?.results ? Math.ceil(results.results.length / itemsPerPage) : 1}</Text>
+          <Text style={styles.paginationText}>Page {currentPage} of {totalPages}</Text>
           <TouchableOpacity 
-            style={[styles.paginationButton, (!results?.results || currentPage === Math.ceil(results.results.length / itemsPerPage)) && styles.disabledButton]}
-            onPress={() => {
-              if (results?.results) {
-                const totalPages = Math.ceil(results.results.length / itemsPerPage);
-                if (currentPage < totalPages) {
-                  setCurrentPage(prev => Math.min(prev + 1, totalPages));
-                  scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-                }
-              }
-            }}
-            disabled={!results?.results || currentPage === Math.ceil(results.results.length / itemsPerPage)}
+            style={[styles.paginationButton, currentPage === totalPages && styles.disabledButton]}
+            onPress={handleNextPage}
+            disabled={!results?.results || currentPage === totalPages}
           >
             <Text style={styles.paginationButtonText}>Next</Text>
           </TouchableOpacity>
@@ -158,7 +171,9 @@ export default function ReviewScreen({ route }) {
       )}
     </ScrollView>
   );
-}
+});
+
+export default ReviewScreen;
 
 const styles = StyleSheet.create({
   container: {
@@ -252,6 +267,11 @@ const styles = StyleSheet.create({
     color: '#0f172a',
     lineHeight: 24,
     fontWeight: '400',
+    backgroundColor: '#f0f9ff',
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#bae6fd',
   },
   answerSection: {
     marginBottom: 12,
