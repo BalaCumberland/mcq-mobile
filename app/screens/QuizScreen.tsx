@@ -82,11 +82,14 @@ const QuizScreen = ({ navigation, route }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
   const scrollViewRef = React.useRef(null);
+  const answersScrollRef = React.useRef(null);
 
-  // Force results if we have quiz data but showResults is false after finish
-  React.useEffect(() => {
-    console.log('showResults changed:', showResults);
-  }, [showResults]);
+  // Reset answers scroll position when question changes
+  useEffect(() => {
+    if (answersScrollRef.current) {
+      answersScrollRef.current.scrollTo({ y: 0, animated: false });
+    }
+  }, [currentQuestionIndex]);
 
   useEffect(() => {
     if (showResults || forceResults) return;
@@ -488,6 +491,7 @@ const QuizScreen = ({ navigation, route }) => {
       <View style={styles.answersSection}>
         <View style={styles.answersWrapper}>
           <ScrollView 
+            ref={answersScrollRef}
             style={styles.answersContainer} 
             showsVerticalScrollIndicator={true}
             removeClippedSubviews={true}
