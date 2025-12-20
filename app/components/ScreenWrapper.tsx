@@ -103,6 +103,11 @@ const ScreenWrapper = ({ children, navigation, showMenu = true }) => {
               <Text style={styles.menuText}>Progress</Text>
             </TouchableOpacity>
             
+            <TouchableOpacity style={styles.menuItem} onPress={() => navigateWithQuizCheck('Leaderboard')}>
+              <Text style={styles.menuIcon}>🏆</Text>
+              <Text style={styles.menuText}>Leaderboard</Text>
+            </TouchableOpacity>
+            
             <TouchableOpacity style={styles.menuItem} onPress={() => navigateWithQuizCheck('Profile')}>
               <Text style={styles.menuIcon}>👤</Text>
               <Text style={styles.menuText}>Profile</Text>

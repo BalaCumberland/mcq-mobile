@@ -12,6 +12,7 @@ import HomeScreen from './screens/HomeScreen';
 import QuizScreen from './screens/QuizScreen';
 import ProgressScreen from './screens/ProgressScreen';
 import ProfileScreen from './screens/ProfileScreen';
+import LeaderboardScreen from './screens/LeaderboardScreen';
 import ScreenWrapper from './components/ScreenWrapper';
 
 import useUserStore from './store/UserStore';
@@ -182,6 +183,7 @@ export default function AppNavigator() {
           <Stack.Screen name="Quiz">{(props) => <WrappedScreen {...props} component={QuizScreen} />}</Stack.Screen>
           <Stack.Screen name="Progress">{(props) => <WrappedScreen {...props} component={ProgressScreen} />}</Stack.Screen>
           <Stack.Screen name="Profile">{(props) => <WrappedScreen {...props} component={ProfileScreen} />}</Stack.Screen>
+          <Stack.Screen name="Leaderboard">{(props) => <WrappedScreen {...props} component={LeaderboardScreen} />}</Stack.Screen>
         </Stack.Navigator>
       </NavigationContainer>
     </MenuProvider>
