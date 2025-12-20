@@ -844,10 +844,10 @@ const styles = StyleSheet.create({
   },
   answersWrapper: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#f3f4f6',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: '#e5e7eb',
     padding: 8,
   },
   answersScrollHint: {

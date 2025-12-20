@@ -123,15 +123,15 @@ const headerTitleStyle = {
 
 const getHeaderTitle = (routeName, route) => {
   switch (routeName) {
-    case 'Login': return '🎓 GradeUp';
-    case 'Signup': return '🎓 Sign Up';
+    case 'Login': return '🌐 Exam Sphere';
+    case 'Signup': return '🌐 Sign Up';
     case 'ForgotPassword': return '🔒 Reset Password';
     case 'Review': return '📋 Quiz Review';
     case 'Quiz': {
       const timeRemaining = route?.params?.timeRemaining || 0;
       return `⏰ ${Math.floor(timeRemaining / 60)}:${(timeRemaining % 60).toString().padStart(2, '0')}`;
     }
-    default: return '🎓 GradeUp';
+    default: return '🌐 Exam Sphere';
   }
 };
 

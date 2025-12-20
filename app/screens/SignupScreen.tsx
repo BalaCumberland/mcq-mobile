@@ -102,7 +102,7 @@ const SignupScreen = memo(function SignupScreen({ navigation }: any) {
       
       {/* Header Section */}
       <View style={styles.header}>
-        <Text style={styles.appTitle}>🎓 GradeUp</Text>
+        <Text style={styles.appTitle}>🌐 Exam Sphere</Text>
         <Text style={styles.subtitle}>Join the learning community</Text>
       </View>
       
