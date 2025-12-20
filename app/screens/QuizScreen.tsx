@@ -541,7 +541,7 @@ const QuizScreen = ({ navigation, route }) => {
       >
         {console.log('Modal rendering, visible:', showQuestionPanel)}
         <View style={styles.modalOverlay}>
-          <View style={styles.questionPanel}>
+          <SafeAreaView style={styles.questionPanel} edges={['top', 'bottom']}>
             <View style={styles.panelHeader}>
               <Text style={styles.panelTitle}>Questions</Text>
               <TouchableOpacity onPress={() => setShowQuestionPanel(false)}>
@@ -607,7 +607,7 @@ const QuizScreen = ({ navigation, route }) => {
                 })}
               </View>
             </ScrollView>
-          </View>
+          </SafeAreaView>
         </View>
       </Modal>
     </SafeAreaView>
