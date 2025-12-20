@@ -5,6 +5,7 @@ import { getAuthToken } from '../services/firebaseAuth';
 import { LAMBDA_MCQ_GO_API_URL } from '../config/env';
 import LaTeXRenderer from '../components/LaTeXRenderer';
 import ExplanationView from '../components/ExplanationView';
+import LoadingAnimation from '../components/LoadingAnimation';
 
 
 
@@ -49,12 +50,7 @@ export default function ReviewScreen({ route }) {
   };
 
   if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#2196F3" />
-        <Text style={styles.loadingText}>Loading Results...</Text>
-      </View>
-    );
+    return <LoadingAnimation text="Loading Results..." />;
   }
 
   if (!results) {
@@ -169,17 +165,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8fafc',
     padding: 20,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f8fafc',
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 15,
-    color: '#64748b',
   },
   emptyContainer: {
     flex: 1,

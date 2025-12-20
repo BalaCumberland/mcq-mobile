@@ -6,6 +6,7 @@ import useQuizStore from '../store/QuizStore';
 import ApiService from '../services/apiService';
 import LaTeXRenderer from '../components/LaTeXRenderer';
 import ExplanationView from '../components/ExplanationView';
+import LoadingAnimation from '../components/LoadingAnimation';
 import ScreenWrapper from '../components/ScreenWrapper';
 import { designSystem, colors, spacing, borderRadius, shadows } from '../styles/designSystem';
 import LinearGradient from 'react-native-linear-gradient';
@@ -243,11 +244,7 @@ const QuizScreen = ({ navigation, route }) => {
   });
 
   if (!quiz) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.title}>Loading...</Text>
-      </View>
-    );
+    return <LoadingAnimation />;
   }
 
   const currentQuestion = quiz.questions[currentQuestionIndex];
@@ -257,11 +254,7 @@ const QuizScreen = ({ navigation, route }) => {
 
   if (showResults || forceResults) {
     if (!quizResults) {
-      return (
-        <View style={styles.container}>
-          <Text style={styles.title}>Loading Results...</Text>
-        </View>
-      );
+      return <LoadingAnimation text="Loading Results..." />;
     }
     
     const { correctCount = 0, wrongCount = 0, skippedCount = 0, totalCount = 0, percentage = 0, results = [] } = quizResults;

@@ -8,6 +8,7 @@ import useUserStore from '../store/UserStore';
 import useQuizStore from '../store/QuizStore';
 import { getAuthToken } from '../services/firebaseAuth';
 import { LAMBDA_MCQ_GO_API_URL } from '../config/env';
+import LoadingAnimation from '../components/LoadingAnimation';
 
 const ProgressScreen = ({ navigation }) => {
   const { user } = useUserStore();
@@ -49,12 +50,7 @@ const ProgressScreen = ({ navigation }) => {
   };
 
   if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#2196F3" />
-        <Text style={styles.loadingText}>Loading Progress...</Text>
-      </View>
-    );
+    return <LoadingAnimation text="Loading Progress..." />;
   }
 
   return (
