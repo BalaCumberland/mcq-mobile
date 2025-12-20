@@ -320,11 +320,12 @@ const HomeScreen = memo(({ route, navigation }) => {
               <Text style={styles.loadingText}>Loading quizzes...</Text>
             </View>
           ) : (
-            <View style={styles.pickerWrapper}>
+            <View style={[styles.pickerWrapper, !selectedTopic && styles.disabledPicker]}>
               <Picker
                 selectedValue={selectedQuiz}
                 onValueChange={setSelectedQuiz}
                 style={styles.picker}
+                enabled={!!selectedTopic}
               >
                 <Picker.Item 
                   label={

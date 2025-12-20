@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect, useContext, useRef } from 'react';
 import { View, TouchableOpacity, Text, StyleSheet, Alert, Animated } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { signOut } from 'firebase/auth';
 import { auth } from '../config/firebase';
 import useQuizStore from '../store/QuizStore';
@@ -12,7 +13,6 @@ const ScreenWrapper = ({ children, navigation, showMenu = true }) => {
   const slideAnim = useRef(new Animated.Value(-250)).current;
 
   useEffect(() => {
-    console.log('Menu visibility changed:', isMenuVisible);
     Animated.timing(slideAnim, {
       toValue: isMenuVisible ? 0 : -250,
       duration: 150,
@@ -21,22 +21,16 @@ const ScreenWrapper = ({ children, navigation, showMenu = true }) => {
   }, [isMenuVisible, slideAnim]);
 
   const toggleMenu = useCallback(() => {
-    setIsMenuVisible(prev => {
-      console.log('Toggle menu called, current state:', prev, 'new state:', !prev);
-      return !prev;
-    });
+    setIsMenuVisible(prev => !prev);
   }, []);
 
-  useEffect(() => {
-    if (menuContext?.setToggleMenuFn) {
-      console.log('Setting toggle menu function, menuContext exists:', !!menuContext);
-      menuContext.setToggleMenuFn(() => toggleMenu);
-    } else {
-      console.log('MenuContext not available or setToggleMenuFn missing');
-    }
-  }, [toggleMenu, menuContext]);
-
-  // Don't add cleanup effect that interferes with menu state
+  useFocusEffect(
+    useCallback(() => {
+      if (menuContext?.setToggleMenuFn) {
+        menuContext.setToggleMenuFn(() => toggleMenu);
+      }
+    }, [toggleMenu, menuContext])
+  );
 
 
 

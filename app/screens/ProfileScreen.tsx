@@ -17,13 +17,8 @@ const ProfileScreen = ({ navigation }: any) => {
 
   useFocusEffect(
     React.useCallback(() => {
-      // Clear any persisted quiz state when entering Profile screen
-      try {
-        clearQuizState();
-      } catch (error) {
-        console.warn('Error clearing quiz state:', error);
-      }
-    }, [clearQuizState])
+      // Profile screen focused - no special actions needed
+    }, [])
   );
 
   useEffect(() => {
