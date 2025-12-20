@@ -460,91 +460,50 @@ const QuizScreen = ({ navigation, route }) => {
         </View>
       </LinearGradient>
       
-      <View style={styles.questionSection}>
-        <ScrollView 
-          style={styles.questionContainer}
-          showsVerticalScrollIndicator={true}
-          indicatorStyle="dark"
-          contentContainerStyle={styles.questionContent}
-        >
-          <LaTeXRenderer text={currentQuestion.question} style={styles.question} />
-        </ScrollView>
-        
-        {showScrollHint && (
-          <Animated.View style={[
-            styles.scrollHint,
-            {
-              opacity: scrollHintAnimation,
-              transform: [{
-                translateY: scrollHintAnimation.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0, -10]
-                })
-              }]
-            }
-          ]}>
-            <Text style={styles.scrollHintText}>👆 Scroll to read full question</Text>
-          </Animated.View>
-        )}
-      </View>
-      
-      <View style={styles.answersSection}>
-        <View style={styles.answersWrapper}>
-          <ScrollView 
-            ref={answersScrollRef}
-            style={styles.answersContainer} 
-            showsVerticalScrollIndicator={true}
-            removeClippedSubviews={true}
-            maxToRenderPerBatch={4}
-          >
-          {allAnswers.map((answer, index) => {
-            const isSelected = userAnswers[currentQuestionIndex] === answer;
-            return (
-              <TouchableOpacity
-                key={index}
-                style={[
-                  styles.answerButton,
-                  isSelected && styles.selectedAnswer
-                ]}
-                onPress={() => selectAnswer(answer)}
-              >
-                <LinearGradient
-                  colors={isSelected ? ['#dbeafe', '#bfdbfe'] : ['#f8fafc', '#ffffff']}
-                  style={styles.answerGradient}
-                >
-                  <View style={styles.answerRow}>
-                    <View style={[
-                      styles.radioButton,
-                      isSelected && styles.radioSelected
-                    ]}>
-                      {isSelected && <View style={styles.radioInner} />}
-                    </View>
-                    <LaTeXRenderer text={answer} style={styles.answerText} />
-                  </View>
-                </LinearGradient>
-              </TouchableOpacity>
-            );
-          })}
-          </ScrollView>
+      <ScrollView 
+        style={styles.mainScrollView}
+        contentContainerStyle={styles.mainScrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.questionSection}>
+          <View style={styles.questionContainer}>
+            <LaTeXRenderer text={currentQuestion.question} style={styles.question} />
+          </View>
         </View>
         
-        {showScrollHint && currentQuestionIndex === 0 && (
-          <Animated.View style={[
-            styles.answersScrollHint,
-            {
-              opacity: scrollHintAnimation,
-              transform: [{
-                translateY: scrollHintAnimation.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0, -5]
-                })
-              }]
-            }
-          ]}>
-            <Text style={styles.scrollHintText}>👆 Scroll to see all answers</Text>
-          </Animated.View>
-        )}
-      </View>
+        <View style={styles.answersSection}>
+          <View style={styles.answersWrapper}>
+            {allAnswers.map((answer, index) => {
+              const isSelected = userAnswers[currentQuestionIndex] === answer;
+              return (
+                <TouchableOpacity
+                  key={index}
+                  style={[
+                    styles.answerButton,
+                    isSelected && styles.selectedAnswer
+                  ]}
+                  onPress={() => selectAnswer(answer)}
+                >
+                  <LinearGradient
+                    colors={isSelected ? ['#dbeafe', '#bfdbfe'] : ['#f8fafc', '#ffffff']}
+                    style={styles.answerGradient}
+                  >
+                    <View style={styles.answerRow}>
+                      <View style={[
+                        styles.radioButton,
+                        isSelected && styles.radioSelected
+                      ]}>
+                        {isSelected && <View style={styles.radioInner} />}
+                      </View>
+                      <LaTeXRenderer text={answer} style={styles.answerText} />
+                    </View>
+                  </LinearGradient>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+      </ScrollView>
       
       <View style={styles.navigationContainer}>
         <TouchableOpacity
@@ -838,62 +797,21 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.error[500],
   },
-  answersSection: {
+  mainScrollView: {
     flex: 1,
-    position: 'relative',
   },
-  answersWrapper: {
-    flex: 1,
-    backgroundColor: '#f3f4f6',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    padding: 8,
-  },
-  answersScrollHint: {
-    position: 'absolute',
-    top: 10,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    zIndex: 10,
+  mainScrollContent: {
+    paddingBottom: 20,
   },
   questionSection: {
-    position: 'relative',
-  },
-  scrollHint: {
-    position: 'absolute',
-    top: 10,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    zIndex: 10,
-  },
-  scrollHintText: {
-    fontSize: 13,
-    color: '#ffffff',
-    fontWeight: '700',
-    backgroundColor: '#3b82f6',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    shadowColor: '#3b82f6',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5,
+    marginBottom: 20,
   },
   questionContainer: {
-    maxHeight: 200,
-    marginBottom: 16,
     backgroundColor: '#f0f9ff',
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#bae6fd',
-  },
-  questionContent: {
     padding: 16,
-    minHeight: 60,
   },
   question: {
     fontSize: 18,
@@ -901,8 +819,15 @@ const styles = StyleSheet.create({
     color: '#374151',
     fontWeight: '600',
   },
-  answersContainer: {
-    flex: 1,
+  answersSection: {
+    marginBottom: 20,
+  },
+  answersWrapper: {
+    backgroundColor: '#f3f4f6',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    padding: 8,
   },
   answerButton: {
     backgroundColor: 'transparent',
