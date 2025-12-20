@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, ScrollView } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Picker } from '@react-native-picker/picker';
+import LinearGradient from 'react-native-linear-gradient';
 import useUserStore from '../store/UserStore';
 import useQuizStore from '../store/QuizStore';
 import ApiService from '../services/apiService';
@@ -79,14 +80,32 @@ const ProfileScreen = ({ navigation }: any) => {
       removeClippedSubviews={true}
       maxToRenderPerBatch={2}
     >
-      <View style={styles.card}>
-        <View style={styles.header}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{user?.name?.charAt(0).toUpperCase()}</Text>
-          </View>
-          <Text style={styles.name}>{user?.name}</Text>
-          <Text style={styles.email}>{user?.email}</Text>
-        </View>
+      <LinearGradient
+        colors={['#1e3a8a', '#1e40af']}
+        style={styles.headerGradient}
+      >
+        <LinearGradient
+          colors={['#3b82f6', '#1e40af']}
+          style={styles.avatar}
+        >
+          <Text style={styles.avatarText}>{user?.name?.charAt(0).toUpperCase()}</Text>
+        </LinearGradient>
+        <Text style={styles.name}>{user?.name}</Text>
+        <Text style={styles.email}>{user?.email}</Text>
+        <LinearGradient
+          colors={user?.payment_status === 'PAID' ? ['#10b981', '#059669'] : ['#f59e0b', '#d97706']}
+          style={styles.statusBadge}
+        >
+          <Text style={styles.statusBadgeText}>
+            {user?.payment_status === 'PAID' ? '👑 PREMIUM' : '🆓 FREE TRIAL'}
+          </Text>
+        </LinearGradient>
+      </LinearGradient>
+
+      <LinearGradient
+        colors={['#ffffff', '#f8fafc']}
+        style={styles.card}
+      >
 
         <View style={styles.infoSection}>
           <View style={styles.infoRow}>
@@ -135,7 +154,7 @@ const ProfileScreen = ({ navigation }: any) => {
           )}
 
           <TouchableOpacity
-            style={[styles.upgradeButton, loading && styles.buttonDisabled]}
+            style={[styles.upgradeButton, loading && styles.upgradeButtonDisabled]}
             onPress={handleUpdateClass}
             disabled={loading || selectedClass === user?.student_class}
           >
@@ -146,7 +165,7 @@ const ProfileScreen = ({ navigation }: any) => {
             )}
           </TouchableOpacity>
         </View>
-      </View>
+      </LinearGradient>
     </ScrollView>
   );
 };
@@ -154,49 +173,71 @@ const ProfileScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#ffffff',
+  },
+  headerGradient: {
+    paddingTop: 60,
+    paddingBottom: 30,
+    paddingHorizontal: 24,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    alignItems: 'center',
   },
   card: {
     backgroundColor: '#ffffff',
-    margin: 20,
-    borderRadius: 16,
-    padding: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    margin: 24,
+    borderRadius: 24,
+    padding: 28,
+    shadowColor: '#667eea',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(102, 126, 234, 0.1)',
   },
   header: {
     alignItems: 'center',
     marginBottom: 24,
     paddingBottom: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
+    borderBottomColor: 'rgba(102, 126, 234, 0.1)',
   },
   avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#1e40af',
+    width: 88,
+    height: 88,
+    borderRadius: 44,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
+    shadowColor: '#3b82f6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
   avatarText: {
     color: '#ffffff',
-    fontSize: 32,
-    fontWeight: '700',
+    fontSize: 36,
+    fontWeight: '800',
+    textShadowColor: 'rgba(0,0,0,0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   name: {
-    fontSize: 22,
-    fontWeight: '600',
-    color: '#0f172a',
-    marginBottom: 4,
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#ffffff',
+    marginBottom: 6,
+    letterSpacing: -0.5,
+    textShadowColor: 'rgba(0,0,0,0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   email: {
-    fontSize: 14,
-    color: '#64748b',
+    fontSize: 15,
+    color: 'rgba(255,255,255,0.9)',
+    marginBottom: 16,
   },
   infoSection: {
     marginBottom: 24,
@@ -228,10 +269,11 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#0f172a',
-    marginBottom: 8,
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#1a202c',
+    marginBottom: 12,
+    letterSpacing: -0.3,
   },
   warningText: {
     fontSize: 12,
@@ -244,36 +286,36 @@ const styles = StyleSheet.create({
     borderColor: '#fed7aa',
   },
   pickerWrapper: {
-    backgroundColor: '#f8fafc',
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    borderRadius: 12,
-    marginBottom: 16,
+    backgroundColor: '#f9fafb',
+    borderWidth: 1.5,
+    borderColor: '#e5e7eb',
+    borderRadius: 14,
+    marginBottom: 20,
   },
   picker: {
     height: 50,
   },
   upgradeButton: {
-    backgroundColor: '#1e40af',
+    backgroundColor: '#3b82f6',
     paddingVertical: 16,
-    borderRadius: 12,
+    borderRadius: 16,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowColor: '#3b82f6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  upgradeButtonDisabled: {
+    backgroundColor: '#9ca3af',
+    shadowOpacity: 0,
+    elevation: 0,
   },
   upgradeButtonText: {
     color: '#ffffff',
     fontSize: 16,
-    fontWeight: '600',
-    letterSpacing: 0.3,
-  },
-  buttonDisabled: {
-    backgroundColor: '#94a3b8',
-    shadowOpacity: 0,
-    elevation: 0,
+    fontWeight: '700',
+    letterSpacing: -0.2,
   },
   loadingContainer: {
     flexDirection: 'row',
@@ -288,6 +330,22 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     color: '#64748b',
     fontSize: 14,
+  },
+  statusBadge: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginTop: 12,
+  },
+  statusBadgeText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  upgradeButtonGradient: {
+    paddingVertical: 16,
+    alignItems: 'center',
   },
 });
 

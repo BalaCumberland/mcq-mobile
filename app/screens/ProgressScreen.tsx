@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
+import LinearGradient from 'react-native-linear-gradient';
 import ApiService from '../services/apiService';
 import useUserStore from '../store/UserStore';
 import useQuizStore from '../store/QuizStore';
@@ -58,8 +59,14 @@ const ProgressScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
+      <LinearGradient
+        colors={['#1e3a8a', '#1e40af']}
+        style={styles.headerGradient}
+      >
+        <Text style={styles.title}>📊 Your Progress</Text>
+      </LinearGradient>
+      
       <ScrollView style={styles.container}>
-      <Text style={styles.title}>📊 Your Progress</Text>
       
       {/* Subject Progress */}
       {analytics?.subjectSummary && (
@@ -125,29 +132,28 @@ const ProgressScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#ffffff',
   },
   container: {
     flex: 1,
-    padding: 20,
+    backgroundColor: '#ffffff',
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f8fafc',
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 15,
-    color: '#64748b',
+  headerGradient: {
+    paddingTop: 60,
+    paddingBottom: 30,
+    paddingHorizontal: 20,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
   },
   title: {
-    fontSize: 24,
-    fontWeight: '600',
-    marginBottom: 24,
+    fontSize: 28,
+    fontWeight: '800',
     textAlign: 'center',
-    color: '#0f172a',
+    color: '#ffffff',
+    letterSpacing: -0.5,
+    textShadowColor: 'rgba(0,0,0,0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   statsContainer: {
     flexDirection: 'row',
@@ -179,14 +185,17 @@ const styles = StyleSheet.create({
 
   section: {
     backgroundColor: '#ffffff',
-    padding: 24,
-    borderRadius: 16,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    padding: 28,
+    borderRadius: 24,
+    marginBottom: 24,
+    marginHorizontal: 20,
+    shadowColor: '#3b82f6',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(59, 130, 246, 0.1)',
   },
   sectionTitle: {
     fontSize: 18,
@@ -195,18 +204,25 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   subjectCard: {
-    backgroundColor: '#f8fafc',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: '#1e40af',
+    backgroundColor: '#3b82f6',
+    padding: 24,
+    borderRadius: 20,
+    marginBottom: 16,
+    shadowColor: '#3b82f6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
   subjectName: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 8,
-    color: '#0f172a',
+    fontSize: 18,
+    fontWeight: '800',
+    marginBottom: 12,
+    color: '#ffffff',
+    letterSpacing: -0.2,
+    textShadowColor: 'rgba(0,0,0,0.2)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   subjectStats: {
     flexDirection: 'row',
@@ -214,86 +230,97 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statText: {
-    fontSize: 12,
-    color: '#64748b',
-    fontWeight: '500',
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.9)',
+    fontWeight: '600',
   },
   percentageText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1e40af',
+    fontSize: 24,
+    fontWeight: '900',
+    color: '#ffffff',
+    textShadowColor: 'rgba(0,0,0,0.2)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   testCard: {
     backgroundColor: '#ffffff',
-    padding: 16,
-    borderRadius: 8,
-    marginBottom: 12,
+    padding: 24,
+    borderRadius: 20,
+    marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    borderColor: 'rgba(102, 126, 234, 0.1)',
+    shadowColor: '#667eea',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 4,
   },
   testName: {
-    fontSize: 15,
-    fontWeight: '600',
-    marginBottom: 8,
-    color: '#0f172a',
-  },
-  testStats: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 6,
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 12,
+    color: '#1a202c',
+    letterSpacing: -0.2,
   },
   testScore: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#059669',
+    fontSize: 22,
+    fontWeight: '900',
+    color: '#10b981',
+    textShadowColor: 'rgba(16, 185, 129, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   testDetail: {
-    fontSize: 12,
-    color: '#64748b',
-    fontWeight: '500',
+    fontSize: 14,
+    color: '#6b7280',
+    fontWeight: '600',
+    backgroundColor: '#f9fafb',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    marginHorizontal: 2,
   },
   testDate: {
-    fontSize: 11,
-    color: '#94a3b8',
-    marginBottom: 4,
+    fontSize: 12,
+    color: '#9ca3af',
+    marginBottom: 8,
+    fontWeight: '500',
   },
   reviewHint: {
-    fontSize: 11,
-    color: '#475569',
+    fontSize: 13,
+    color: '#3b82f6',
     textAlign: 'center',
-    fontWeight: '500',
+    fontWeight: '700',
+    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+    paddingVertical: 8,
+    borderRadius: 12,
+    marginTop: 4,
   },
 
   emptyState: {
     backgroundColor: '#ffffff',
     padding: 40,
-    borderRadius: 16,
+    borderRadius: 20,
     alignItems: 'center',
+    marginHorizontal: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  emptyEmoji: {
-    fontSize: 48,
-    marginBottom: 16,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#f3f4f6',
   },
   emptyTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 20,
+    fontWeight: '700',
     marginBottom: 8,
-    color: '#0f172a',
+    color: '#111827',
+    letterSpacing: -0.3,
   },
   emptyText: {
-    fontSize: 14,
-    color: '#64748b',
+    fontSize: 15,
+    color: '#6b7280',
     textAlign: 'center',
   },
 });

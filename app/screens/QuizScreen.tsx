@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, Alert, BackHandler } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, Alert, BackHandler, Animated } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import useQuizStore from '../store/QuizStore';
 import ApiService from '../services/apiService';
 import LaTeXRenderer from '../components/LaTeXRenderer';
+import ExplanationView from '../components/ExplanationView';
 import ScreenWrapper from '../components/ScreenWrapper';
 import { designSystem, colors, spacing, borderRadius, shadows } from '../styles/designSystem';
+import LinearGradient from 'react-native-linear-gradient';
 
 
 
@@ -27,6 +29,37 @@ const QuizScreen = ({ navigation, route }) => {
   } = useQuizStore();
   
   const [showQuestionPanel, setShowQuestionPanel] = useState(false);
+  const [progressAnimation] = useState(new Animated.Value(0));
+  const [scoreAnimation] = useState(new Animated.Value(0));
+  const [showScrollHint, setShowScrollHint] = useState(false);
+  const [scrollHintAnimation] = useState(new Animated.Value(0));
+
+  // Show scroll hint on first question
+  useEffect(() => {
+    if (currentQuestionIndex === 0) {
+      const timer = setTimeout(() => {
+        setShowScrollHint(true);
+        Animated.loop(
+          Animated.sequence([
+            Animated.timing(scrollHintAnimation, {
+              toValue: 1,
+              duration: 800,
+              useNativeDriver: true,
+            }),
+            Animated.timing(scrollHintAnimation, {
+              toValue: 0,
+              duration: 800,
+              useNativeDriver: true,
+            })
+          ]),
+          { iterations: 3 }
+        ).start(() => {
+          setShowScrollHint(false);
+        });
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [currentQuestionIndex]);
 
   // Set up navigation header button and timer
   React.useLayoutEffect(() => {
@@ -240,16 +273,36 @@ const QuizScreen = ({ navigation, route }) => {
     return (
       <ScreenWrapper navigation={navigation}>
         <View style={styles.resultsContainer}>
-        <View style={styles.resultsHeader}>
+        <LinearGradient
+          colors={['#f8fafc', '#ffffff']}
+          style={styles.resultsHeader}
+        >
           <Text style={styles.title}>🎯 Quiz Results</Text>
           <View style={styles.scoreContainer}>
-            <View style={[styles.scoreCircle, { borderColor: percentage >= 80 ? '#4CAF50' : percentage >= 60 ? '#FF9800' : '#f44336' }]}>
-              <Text style={[styles.scorePercentage, { color: percentage >= 80 ? '#4CAF50' : percentage >= 60 ? '#FF9800' : '#f44336' }]}>{Math.round(percentage)}%</Text>
-            </View>
+            <LinearGradient
+              colors={percentage >= 80 ? ['#10b981', '#059669'] : percentage >= 60 ? ['#f59e0b', '#d97706'] : ['#ef4444', '#dc2626']}
+              style={[styles.scoreCircle, { borderColor: percentage >= 80 ? '#10b981' : percentage >= 60 ? '#f59e0b' : '#ef4444' }]}
+            >
+              <Text style={[styles.scorePercentage, { color: '#ffffff' }]}>{Math.round(percentage)}%</Text>
+            </LinearGradient>
             <Text style={styles.scoreText}>{correctCount}/{totalCount} Correct</Text>
+            <View style={styles.statsRow}>
+              <View style={styles.statItem}>
+                <Text style={styles.statNumber}>{correctCount}</Text>
+                <Text style={styles.statLabel}>✓ Correct</Text>
+              </View>
+              <View style={styles.statItem}>
+                <Text style={styles.statNumber}>{wrongCount}</Text>
+                <Text style={styles.statLabel}>✗ Wrong</Text>
+              </View>
+              <View style={styles.statItem}>
+                <Text style={styles.statNumber}>{skippedCount}</Text>
+                <Text style={styles.statLabel}>⏭ Skipped</Text>
+              </View>
+            </View>
           </View>
           {totalPages > 1 && <Text style={styles.pageInfo}>📄 Page {currentPage} of {totalPages}</Text>}
-        </View>
+        </LinearGradient>
         
         <ScrollView 
           ref={scrollViewRef} 
@@ -268,18 +321,25 @@ const QuizScreen = ({ navigation, route }) => {
               : 'Not answered';
             
             return (
-              <View key={index} style={[styles.resultCard, isCorrect ? styles.correctCard : isSkipped ? styles.skippedCard : styles.incorrectCard]}>
+              <LinearGradient
+                key={index}
+                colors={isCorrect ? ['#f0fdf4', '#dcfce7'] : isSkipped ? ['#fffbeb', '#fef3c7'] : ['#fef2f2', '#fecaca']}
+                style={[styles.resultCard, isCorrect ? styles.correctCard : isSkipped ? styles.skippedCard : styles.incorrectCard]}
+              >
                 <View style={styles.questionHeader}>
                   <Text style={styles.questionNumber}>Q{result.qno}</Text>
-                  <View style={[styles.statusBadge, isCorrect ? styles.correctBadge : isSkipped ? styles.skippedBadge : styles.incorrectBadge]}>
+                  <LinearGradient
+                    colors={isCorrect ? ['#10b981', '#059669'] : isSkipped ? ['#f59e0b', '#d97706'] : ['#ef4444', '#dc2626']}
+                    style={styles.statusBadge}
+                  >
                     <Text style={styles.statusText}>{isCorrect ? '✓' : isSkipped ? '⏭' : '✗'}</Text>
-                  </View>
+                  </LinearGradient>
                 </View>
                 <LaTeXRenderer text={result.question} style={styles.questionText} />
                 
                 <Text style={[
                   styles.resultLabel,
-                  { color: isCorrect ? '#4CAF50' : isSkipped ? '#FF9800' : '#f44336' }
+                  { color: isCorrect ? '#10b981' : isSkipped ? '#f59e0b' : '#ef4444' }
                 ]}>
                   {isCorrect ? '✓ CORRECT' : isSkipped ? '⏭ SKIPPED' : '✗ INCORRECT'}
                 </Text>
@@ -301,11 +361,8 @@ const QuizScreen = ({ navigation, route }) => {
                   </View>
                 )}
                 
-                <View style={styles.answerSection}>
-                  <Text style={styles.explanationLabel}>Explanation:</Text>
-                  <LaTeXRenderer text={result.explanation || 'No explanation available'} style={styles.explanation} />
-                </View>
-              </View>
+                <ExplanationView explanation={result.explanation || 'No explanation available'} />
+              </LinearGradient>
             );
           })}
         </ScrollView>
@@ -314,10 +371,9 @@ const QuizScreen = ({ navigation, route }) => {
           {totalPages > 1 && (
             <View style={styles.paginationContainer}>
               <TouchableOpacity 
-                style={[styles.paginationButton, currentPage === 1 && styles.disabledButton]}
+                style={[styles.paginationButton, currentPage === 1 && styles.paginationButtonDisabled]}
                 onPress={() => {
                   setCurrentPage(prev => Math.max(prev - 1, 1));
-                  // Scroll to top when changing pages
                   setTimeout(() => {
                     if (scrollViewRef.current) {
                       scrollViewRef.current.scrollTo({ y: 0, animated: true });
@@ -326,14 +382,19 @@ const QuizScreen = ({ navigation, route }) => {
                 }}
                 disabled={currentPage === 1}
               >
-                <Text style={styles.paginationButtonText}>Previous</Text>
+                <Text style={[styles.paginationButtonText, currentPage === 1 && styles.paginationButtonTextDisabled]}>
+                  ← Previous
+                </Text>
               </TouchableOpacity>
-              <Text style={styles.paginationText}>Page {currentPage} of {totalPages}</Text>
+              
+              <View style={styles.pageIndicator}>
+                <Text style={styles.paginationText}>{currentPage} / {totalPages}</Text>
+              </View>
+              
               <TouchableOpacity 
-                style={[styles.paginationButton, currentPage === totalPages && styles.disabledButton]}
+                style={[styles.paginationButton, currentPage === totalPages && styles.paginationButtonDisabled]}
                 onPress={() => {
                   setCurrentPage(prev => Math.min(prev + 1, totalPages));
-                  // Scroll to top when changing pages
                   setTimeout(() => {
                     if (scrollViewRef.current) {
                       scrollViewRef.current.scrollTo({ y: 0, animated: true });
@@ -342,13 +403,15 @@ const QuizScreen = ({ navigation, route }) => {
                 }}
                 disabled={currentPage === totalPages}
               >
-                <Text style={styles.paginationButtonText}>Next</Text>
+                <Text style={[styles.paginationButtonText, currentPage === totalPages && styles.paginationButtonTextDisabled]}>
+                  Next →
+                </Text>
               </TouchableOpacity>
             </View>
           )}
           
           <TouchableOpacity 
-            style={[styles.homeButton, { backgroundColor: percentage >= 80 ? '#4CAF50' : '#1e40af' }]} 
+            style={styles.homeButton} 
             onPress={() => {
               Alert.alert(
                 'Leave Quiz Results?',
@@ -381,7 +444,10 @@ const QuizScreen = ({ navigation, route }) => {
       </View>
       
       {/* Progress Bar */}
-      <View style={styles.progressContainer}>
+      <LinearGradient
+        colors={['#f8fafc', '#ffffff']}
+        style={styles.progressContainer}
+      >
         <View style={styles.progressStats}>
           <Text style={styles.progressText}>
             {currentQuestionIndex + 1}/{quiz.questions.length} Questions
@@ -391,54 +457,112 @@ const QuizScreen = ({ navigation, route }) => {
           </Text>
         </View>
         <View style={styles.progressBar}>
-          <View 
+          <LinearGradient
+            colors={['#3b82f6', '#1e40af']}
             style={[
               styles.progressFill,
               { width: `${((currentQuestionIndex + 1) / quiz.questions.length) * 100}%` }
-            ]} 
+            ]}
           />
         </View>
+      </LinearGradient>
+      
+      <View style={styles.questionSection}>
+        <ScrollView 
+          style={styles.questionContainer}
+          showsVerticalScrollIndicator={true}
+          indicatorStyle="dark"
+          contentContainerStyle={styles.questionContent}
+        >
+          <LaTeXRenderer text={currentQuestion.question} style={styles.question} />
+        </ScrollView>
+        
+        {showScrollHint && (
+          <Animated.View style={[
+            styles.scrollHint,
+            {
+              opacity: scrollHintAnimation,
+              transform: [{
+                translateY: scrollHintAnimation.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, -10]
+                })
+              }]
+            }
+          ]}>
+            <Text style={styles.scrollHintText}>👆 Scroll to read full question</Text>
+          </Animated.View>
+        )}
       </View>
       
-      <LaTeXRenderer text={currentQuestion.question} style={styles.question} />
-      
-      <ScrollView 
-        style={styles.answersContainer} 
-        showsVerticalScrollIndicator={true}
-        removeClippedSubviews={true}
-        maxToRenderPerBatch={4}
-      >
-        {allAnswers.map((answer, index) => (
-          <TouchableOpacity
-            key={index}
-            style={[
-              styles.answerButton,
-              userAnswers[currentQuestionIndex] === answer && styles.selectedAnswer
-            ]}
-            onPress={() => selectAnswer(answer)}
-          >
-            <View style={styles.answerRow}>
-              <View style={[
-                styles.radioButton,
-                userAnswers[currentQuestionIndex] === answer && styles.radioSelected
-              ]} />
-              <LaTeXRenderer text={answer} style={styles.answerText} />
-            </View>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+      <View style={styles.answersSection}>
+        <ScrollView 
+          style={styles.answersContainer} 
+          showsVerticalScrollIndicator={true}
+          removeClippedSubviews={true}
+          maxToRenderPerBatch={4}
+        >
+          {allAnswers.map((answer, index) => {
+            const isSelected = userAnswers[currentQuestionIndex] === answer;
+            return (
+              <TouchableOpacity
+                key={index}
+                style={[
+                  styles.answerButton,
+                  isSelected && styles.selectedAnswer
+                ]}
+                onPress={() => selectAnswer(answer)}
+              >
+                <LinearGradient
+                  colors={isSelected ? ['#dbeafe', '#bfdbfe'] : ['#f8fafc', '#ffffff']}
+                  style={styles.answerGradient}
+                >
+                  <View style={styles.answerRow}>
+                    <View style={[
+                      styles.radioButton,
+                      isSelected && styles.radioSelected
+                    ]}>
+                      {isSelected && <View style={styles.radioInner} />}
+                    </View>
+                    <LaTeXRenderer text={answer} style={styles.answerText} />
+                  </View>
+                </LinearGradient>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+        
+        {showScrollHint && currentQuestionIndex === 0 && (
+          <Animated.View style={[
+            styles.answersScrollHint,
+            {
+              opacity: scrollHintAnimation,
+              transform: [{
+                translateY: scrollHintAnimation.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, -5]
+                })
+              }]
+            }
+          ]}>
+            <Text style={styles.scrollHintText}>👆 Scroll to see all answers</Text>
+          </Animated.View>
+        )}
+      </View>
       
       <View style={styles.navigationContainer}>
         <TouchableOpacity
-          style={[styles.navButton, currentQuestionIndex === 0 && styles.disabledButton]}
+          style={[styles.navButton, styles.prevButton, currentQuestionIndex === 0 && styles.navButtonDisabled]}
           onPress={prevQuestion}
           disabled={currentQuestionIndex === 0}
         >
-          <Text style={styles.navButtonText}>Previous</Text>
+          <Text style={[styles.navButtonText, currentQuestionIndex === 0 && styles.navButtonTextDisabled]}>
+            ← Previous
+          </Text>
         </TouchableOpacity>
         
         <TouchableOpacity
-          style={styles.navButton}
+          style={[styles.navButton, isLastQuestion ? styles.finishButton : styles.nextButton]}
           onPress={() => {
             if (isLastQuestion) {
               console.log('FINISH CLICKED - Forcing results');
@@ -539,7 +663,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: spacing.xl,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#ffffff',
   },
   header: {
     flexDirection: 'row',
@@ -568,6 +692,15 @@ const styles = StyleSheet.create({
   progressContainer: {
     paddingHorizontal: spacing.xl,
     marginBottom: spacing.lg,
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 20,
+    marginHorizontal: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
   progressStats: {
     flexDirection: 'row',
@@ -592,49 +725,66 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'flex-start',
     alignItems: 'center',
+    paddingTop: 60,
+    padding: 20,
   },
   questionPanel: {
-    backgroundColor: '#fff',
-    width: '90%',
-    height: '70%',
-    borderRadius: 12,
-    padding: 20,
+    backgroundColor: '#ffffff',
+    width: '100%',
+    height: '75%',
+    borderRadius: 20,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 8,
   },
   panelHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: 20,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
   },
   panelTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1f2937',
   },
   closeButton: {
-    fontSize: 20,
-    color: '#666',
+    fontSize: 24,
+    color: '#6b7280',
+    fontWeight: '600',
+    padding: 4,
   },
   legend: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    marginBottom: 15,
+    marginBottom: 20,
+    backgroundColor: '#f9fafb',
+    padding: 16,
+    borderRadius: 12,
   },
   legendItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 8,
   },
   legendColor: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
   },
   legendText: {
-    fontSize: 12,
-    color: '#666',
+    fontSize: 13,
+    color: '#374151',
+    fontWeight: '500',
   },
   questionGrid: {
     flex: 1,
@@ -643,34 +793,45 @@ const styles = StyleSheet.create({
   gridContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 12,
+    justifyContent: 'flex-start',
   },
   questionButton: {
-    width: 44,
-    height: 44,
-    backgroundColor: '#ccc',
-    borderRadius: 6,
+    width: 48,
+    height: 48,
+    backgroundColor: '#f8fafc',
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
-    margin: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   currentQuestion: {
-    backgroundColor: '#2196F3',
+    backgroundColor: '#6366f1',
+    shadowColor: '#6366f1',
+    shadowOpacity: 0.3,
   },
   answeredQuestion: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#059669',
+    shadowColor: '#059669',
+    shadowOpacity: 0.3,
   },
   skippedQuestion: {
-    backgroundColor: '#FF9800',
+    backgroundColor: '#d97706',
+    shadowColor: '#d97706',
+    shadowOpacity: 0.3,
   },
   questionButtonText: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#000',
+    fontWeight: '700',
+    color: '#374151',
     textAlign: 'center',
   },
   questionButtonTextActive: {
-    color: '#fff',
+    color: '#ffffff',
   },
   title: {
     ...designSystem.headingMedium,
@@ -681,23 +842,76 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.error[500],
   },
+  answersSection: {
+    flex: 1,
+    position: 'relative',
+  },
+  answersScrollHint: {
+    position: 'absolute',
+    top: 10,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  questionSection: {
+    position: 'relative',
+  },
+  scrollHint: {
+    position: 'absolute',
+    top: 10,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  scrollHintText: {
+    fontSize: 13,
+    color: '#ffffff',
+    fontWeight: '700',
+    backgroundColor: '#3b82f6',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    shadowColor: '#3b82f6',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  questionContainer: {
+    maxHeight: 200,
+    marginBottom: 16,
+    backgroundColor: '#f9fafb',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  questionContent: {
+    padding: 16,
+    minHeight: 60,
+  },
   question: {
     fontSize: 18,
-    marginBottom: spacing.xl,
     lineHeight: 26,
-    color: colors.neutral[800],
+    color: '#374151',
     fontWeight: '600',
   },
   answersContainer: {
     flex: 1,
   },
   answerButton: {
-    backgroundColor: colors.neutral[100],
+    backgroundColor: '#ffffff',
     padding: spacing.lg,
     marginVertical: spacing.xs,
-    borderRadius: borderRadius.lg,
-    borderWidth: 2,
-    borderColor: 'transparent',
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: '#e5e7eb',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
   },
   answerRow: {
     flexDirection: 'row',
@@ -716,8 +930,10 @@ const styles = StyleSheet.create({
     borderColor: '#007bff',
   },
   selectedAnswer: {
-    borderColor: colors.primary[500], // border-orange-400
-    backgroundColor: colors.primary[50], // bg-orange-50 to red-50 gradient
+    borderColor: '#3b82f6',
+    backgroundColor: '#eff6ff',
+    shadowColor: '#3b82f6',
+    shadowOpacity: 0.1,
   },
   answerText: {
     fontSize: 16,
@@ -729,22 +945,42 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 20,
+    gap: 12,
   },
   navButton: {
-    backgroundColor: '#1e40af',
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.md,
-    borderRadius: 8,
+    flex: 1,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  disabledButton: {
-    ...designSystem.buttonDisabled,
+  prevButton: {
+    backgroundColor: '#64748b',
+  },
+  nextButton: {
+    backgroundColor: '#3b82f6',
+  },
+  finishButton: {
+    backgroundColor: '#10b981',
+  },
+  navButtonDisabled: {
+    backgroundColor: '#e5e7eb',
+    shadowOpacity: 0,
+    elevation: 0,
   },
   navButtonText: {
     color: '#ffffff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  navButtonTextDisabled: {
+    color: '#9ca3af',
   },
   rightButtons: {
     flexDirection: 'row',
@@ -809,7 +1045,7 @@ const styles = StyleSheet.create({
   correctAnswer: {
     fontSize: 14,
     color: '#333',
-    lineHeight: 20,
+    flexWrap: 'wrap',
   },
   userAnswerLabel: {
     fontSize: 14,
@@ -820,19 +1056,7 @@ const styles = StyleSheet.create({
   userAnswer: {
     fontSize: 14,
     color: '#333',
-    lineHeight: 20,
-  },
-  explanationLabel: {
-    fontSize: 14,
-    color: '#666',
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  explanation: {
-    fontSize: 14,
-    color: '#666',
-    lineHeight: 20,
-    fontStyle: 'italic',
+    flexWrap: 'wrap',
   },
   button: {
     backgroundColor: '#007bff',
@@ -935,7 +1159,7 @@ const styles = StyleSheet.create({
   },
   resultsContainer: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#ffffff',
   },
   scoreContainer: {
     alignItems: 'center',
@@ -1018,32 +1242,80 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
+  paginationButton: {
+    backgroundColor: '#3b82f6',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+    minWidth: 80,
+    alignItems: 'center',
+  },
+  paginationButtonDisabled: {
+    backgroundColor: '#e5e7eb',
+  },
+  paginationButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  paginationButtonTextDisabled: {
+    color: '#9ca3af',
+  },
+  pageIndicator: {
+    backgroundColor: '#f3f4f6',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  paginationText: {
+    fontSize: 14,
+    color: '#374151',
+    fontWeight: '600',
+  },
   homeButton: {
     backgroundColor: '#1e40af',
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: 24,
-    borderRadius: 8,
+    borderRadius: 12,
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   homeButtonText: {
     color: '#ffffff',
     fontSize: 16,
     fontWeight: '600',
   },
-  paginationButton: {
-    backgroundColor: '#1e40af',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
+  answerGradient: {
+    padding: spacing.lg,
   },
-  paginationButtonText: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '500',
+  radioInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#3b82f6',
   },
-  paginationText: {
-    fontSize: 14,
-    color: '#64748b',
+
+  statsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+  },
+  statItem: {
+    alignItems: 'center',
+  },
+  statNumber: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1f2937',
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#6b7280',
+    marginTop: 4,
   },
 });
 

@@ -10,6 +10,7 @@ import {
   BackHandler,
   Alert,
   SafeAreaView,
+  Animated,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Picker } from '@react-native-picker/picker';
@@ -18,6 +19,7 @@ import useUserStore from '../store/UserStore';
 import demoData from '../data/demoData';
 import useQuizStore from '../store/QuizStore';
 import { designSystem, colors, spacing, borderRadius, shadows } from '../styles/designSystem';
+import LinearGradient from 'react-native-linear-gradient';
 
 
 const HomeScreen = memo(({ route, navigation }) => {
@@ -33,6 +35,7 @@ const HomeScreen = memo(({ route, navigation }) => {
   const [fetchingSubjects, setFetchingSubjects] = useState(false);
   const [fetchingTopics, setFetchingTopics] = useState(false);
   const [fetchingQuizzes, setFetchingQuizzes] = useState(false);
+  const [buttonScale] = useState(new Animated.Value(1));
 
   React.useEffect(() => {
     if (user?.student_class) {
@@ -42,6 +45,33 @@ const HomeScreen = memo(({ route, navigation }) => {
 
   // Check if user is paid and subscription is active
   const isPaidUser = user?.payment_status === "PAID" && user?.sub_exp_date && new Date(user.sub_exp_date) > new Date();
+  
+  const animateButton = () => {
+    Animated.sequence([
+      Animated.timing(buttonScale, {
+        toValue: 0.95,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(buttonScale, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  const handleButtonPress = () => {
+    animateButton();
+    beginTest();
+  };
+
+  const getUserTierBadge = () => {
+    if (isPaidUser) {
+      return { text: '👑 PREMIUM', color: '#fbbf24', bgColor: '#fef3c7' };
+    }
+    return { text: '🆓 FREE TRIAL', color: '#f59e0b', bgColor: '#fef3c7' };
+  };
   
   useFocusEffect(
     React.useCallback(() => {
@@ -172,38 +202,44 @@ const HomeScreen = memo(({ route, navigation }) => {
     <SafeAreaView style={styles.safeArea}>
       <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
       {user?.name && (
-        <View style={styles.welcomeCard}>
-          <View style={styles.avatar}>
+        <LinearGradient
+          colors={['#ffffff', '#f8fafc']}
+          style={styles.welcomeCard}
+        >
+          <LinearGradient
+            colors={['#3b82f6', '#1e40af']}
+            style={styles.avatar}
+          >
             <Text style={styles.avatarText}>{user.name.charAt(0).toUpperCase()}</Text>
-          </View>
+          </LinearGradient>
           <Text style={styles.welcomeTitle}>Welcome back, {user.name}!</Text>
           <Text style={styles.welcomeSubtitle}>Ready for your next challenge?</Text>
           <View style={styles.classBadge}>
             <Text style={styles.classBadgeText}>📚 Class: {user.student_class}</Text>
           </View>
           
-          {!isPaidUser && (
-            <View style={styles.freeTrialCard}>
-              <View style={styles.freeTrialHeader}>
-                <Text style={styles.freeTrialIcon}>🔒</Text>
-                <Text style={styles.freeTrialTitle}>Free Trial Access</Text>
-              </View>
-              <Text style={styles.freeTrialText}>
-                🎯 Free Trial: Try one quiz from each subject to get started. Upgrade for unlimited access!
-              </Text>
-            </View>
-          )}
-        </View>
+          <View style={[styles.tierBadge, { backgroundColor: getUserTierBadge().bgColor }]}>
+            <Text style={[styles.tierBadgeText, { color: getUserTierBadge().color }]}>
+              {getUserTierBadge().text}
+            </Text>
+          </View>
+        </LinearGradient>
       )}
 
 
 
-      <View style={styles.mainCard}>
+      <LinearGradient
+        colors={['#ffffff', '#f8fafc']}
+        style={styles.mainCard}
+      >
         <View style={styles.cardHeader}>
-          <View style={styles.cardIcon}>
-            <Text style={styles.cardIconText}>🎓</Text>
-          </View>
-          <Text style={styles.title}>Select Quiz</Text>
+          <LinearGradient
+            colors={['#f97316', '#ea580c']}
+            style={styles.cardIcon}
+          >
+            <Text style={styles.cardIconText}>🎯</Text>
+          </LinearGradient>
+          <Text style={styles.title}>Select Your Quiz</Text>
         </View>
 
         <View style={styles.inputContainer}>
@@ -318,22 +354,31 @@ const HomeScreen = memo(({ route, navigation }) => {
         </View>
 
 
-        <TouchableOpacity 
-          style={[styles.beginButton, (loading || !selectedQuiz || (!isPaidUser && selectedQuiz && !(topics.indexOf(selectedTopic) === 0 && quizzes.indexOf(selectedQuiz) === 0))) && styles.beginButtonDisabled]}
-          onPress={beginTest}
-          disabled={loading || !selectedQuiz || (!isPaidUser && selectedQuiz && !(topics.indexOf(selectedTopic) === 0 && quizzes.indexOf(selectedQuiz) === 0))}
-        >
-          <View style={styles.beginButtonContent}>
-            <Text style={styles.beginButtonEmoji}>🚀</Text>
-            <Text style={styles.beginButtonText}>
-              {loading ? 'Loading...' : 
-               !selectedQuiz ? 'Select Quiz First' : 
-               (!isPaidUser && selectedQuiz && !(topics.indexOf(selectedTopic) === 0 && quizzes.indexOf(selectedQuiz) === 0)) ? '🔒 Upgrade Required' :
-               'Start Assessment'}
-            </Text>
-          </View>
-        </TouchableOpacity>
-      </View>
+        <Animated.View style={{ transform: [{ scale: buttonScale }] }}>
+          <TouchableOpacity 
+            style={[styles.beginButton, (loading || !selectedQuiz || (!isPaidUser && selectedQuiz && !(topics.indexOf(selectedTopic) === 0 && quizzes.indexOf(selectedQuiz) === 0))) && styles.beginButtonDisabled]}
+            onPress={handleButtonPress}
+            disabled={loading || !selectedQuiz || (!isPaidUser && selectedQuiz && !(topics.indexOf(selectedTopic) === 0 && quizzes.indexOf(selectedQuiz) === 0))}
+          >
+            <LinearGradient
+              colors={loading || !selectedQuiz || (!isPaidUser && selectedQuiz && !(topics.indexOf(selectedTopic) === 0 && quizzes.indexOf(selectedQuiz) === 0)) 
+                ? ['#94a3b8', '#64748b'] 
+                : ['#3b82f6', '#1e40af']}
+              style={styles.beginButtonGradient}
+            >
+              <View style={styles.beginButtonContent}>
+                <Text style={styles.beginButtonEmoji}>🚀</Text>
+                <Text style={styles.beginButtonText}>
+                  {loading ? 'Loading...' : 
+                   !selectedQuiz ? 'Select Quiz First' : 
+                   (!isPaidUser && selectedQuiz && !(topics.indexOf(selectedTopic) === 0 && quizzes.indexOf(selectedQuiz) === 0)) ? '🔒 Upgrade Required' :
+                   'Start Assessment'}
+                </Text>
+              </View>
+            </LinearGradient>
+          </TouchableOpacity>
+        </Animated.View>
+      </LinearGradient>
       </ScrollView>
     </SafeAreaView>
   );
@@ -344,58 +389,63 @@ export default HomeScreen;
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f0f9ff',
+    backgroundColor: '#ffffff',
   },
   container: {
     flex: 1,
+    backgroundColor: '#ffffff',
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: 24,
+    paddingVertical: 20,
     paddingBottom: 40,
   },
   welcomeCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 20,
+    borderRadius: 24,
+    padding: 28,
+    marginBottom: 24,
     alignItems: 'center',
-    shadowColor: '#1e40af',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
+    backgroundColor: '#ffffff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
     elevation: 4,
     borderWidth: 1,
-    borderColor: '#e0e7ff',
+    borderColor: '#f3f4f6',
   },
   avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#1e40af',
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
+    shadowColor: '#3b82f6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
   avatarText: {
     color: '#ffffff',
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: '700',
   },
   welcomeTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#0f172a',
-    marginBottom: 2,
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#111827',
+    marginBottom: 4,
     textAlign: 'center',
+    letterSpacing: -0.5,
   },
   welcomeSubtitle: {
-    fontSize: 14,
-    color: '#64748b',
+    fontSize: 15,
+    color: '#6b7280',
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
   },
-  
   classBadge: {
     backgroundColor: '#f1f5f9',
     paddingHorizontal: 16,
@@ -403,23 +453,35 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
     borderColor: '#e2e8f0',
+    marginBottom: 8,
   },
   classBadgeText: {
     fontSize: 14,
     fontWeight: '500',
     color: '#475569',
   },
+  tierBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginBottom: 12,
+  },
+  tierBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
   mainCard: {
+    borderRadius: 24,
+    padding: 32,
     backgroundColor: '#ffffff',
-    borderRadius: 20,
-    padding: 28,
-    shadowColor: '#1e40af',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
+    shadowOpacity: 0.08,
     shadowRadius: 12,
-    elevation: 6,
+    elevation: 4,
     borderWidth: 1,
-    borderColor: '#e0e7ff',
+    borderColor: '#f3f4f6',
   },
   cardHeader: {
     flexDirection: 'row',
@@ -430,7 +492,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#1e40af',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -439,25 +500,26 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
   title: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#0f172a',
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#111827',
     flex: 1,
+    letterSpacing: -0.5,
   },
   inputContainer: {
     marginBottom: 20,
   },
   label: {
-    fontSize: 14,
-    fontWeight: '500',
+    fontSize: 15,
+    fontWeight: '600',
     color: '#374151',
-    marginBottom: 8,
+    marginBottom: 10,
   },
   pickerWrapper: {
-    backgroundColor: '#f8fafc',
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    borderRadius: 12,
+    backgroundColor: '#f9fafb',
+    borderWidth: 1.5,
+    borderColor: '#e5e7eb',
+    borderRadius: 14,
   },
   picker: {
     height: 50,
@@ -465,19 +527,20 @@ const styles = StyleSheet.create({
     color: '#0f172a',
   },
   beginButton: {
-    backgroundColor: '#1e40af',
     borderRadius: 16,
-    paddingVertical: 18,
-    marginTop: 28,
-    alignItems: 'center',
-    shadowColor: '#1e40af',
+    marginTop: 32,
+    shadowColor: '#3b82f6',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 6,
   },
+  beginButtonGradient: {
+    paddingVertical: 18,
+    borderRadius: 16,
+    alignItems: 'center',
+  },
   beginButtonDisabled: {
-    backgroundColor: '#94a3b8',
     shadowOpacity: 0,
     elevation: 0,
   },
@@ -495,7 +558,6 @@ const styles = StyleSheet.create({
   beginButtonEmoji: {
     fontSize: 18,
   },
-
   loadingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -511,7 +573,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 32,
     paddingHorizontal: 24,
-    backgroundColor: '#f0fdf4',
     borderRadius: 16,
     borderWidth: 1,
     borderColor: '#bbf7d0',
@@ -531,6 +592,21 @@ const styles = StyleSheet.create({
     color: '#166534',
     textAlign: 'center',
     lineHeight: 20,
+    marginBottom: 16,
+  },
+  emptyActions: {
+    alignItems: 'flex-start',
+  },
+  emptyActionTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#166534',
+    marginBottom: 8,
+  },
+  emptyActionItem: {
+    fontSize: 13,
+    color: '#166534',
+    marginBottom: 4,
   },
   demoContainer: {
     alignItems: 'center',
@@ -556,37 +632,8 @@ const styles = StyleSheet.create({
     opacity: 0.5,
     backgroundColor: '#f1f5f9',
   },
-  freeTrialCard: {
-    backgroundColor: '#fef3c7',
-    borderWidth: 2,
-    borderColor: '#f59e0b',
-    borderRadius: 16,
-    padding: 16,
-    marginTop: 12,
-    shadowColor: '#f59e0b',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  freeTrialHeader: {
-    flexDirection: 'row',
+  beginButtonGradient: {
+    paddingVertical: 18,
     alignItems: 'center',
-    marginBottom: 8,
-  },
-  freeTrialIcon: {
-    fontSize: 20,
-    marginRight: 8,
-  },
-  freeTrialTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#92400e',
-  },
-  freeTrialText: {
-    fontSize: 14,
-    color: '#92400e',
-    textAlign: 'center',
-    lineHeight: 20,
   },
 });

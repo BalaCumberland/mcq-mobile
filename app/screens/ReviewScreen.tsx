@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { getAuthToken } from '../services/firebaseAuth';
 import { LAMBDA_MCQ_GO_API_URL } from '../config/env';
 import LaTeXRenderer from '../components/LaTeXRenderer';
+import ExplanationView from '../components/ExplanationView';
 
 
 
@@ -122,14 +123,7 @@ export default function ReviewScreen({ route }) {
           </View>
           
           {result.explanation && (
-            <View style={styles.explanationSection}>
-              <Text style={styles.explanationLabel}>💡 Explanation:</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={true} style={styles.explanationScroll}>
-                <View style={styles.explanationContent}>
-                  <LaTeXRenderer text={result.explanation} style={styles.explanation} />
-                </View>
-              </ScrollView>
-            </View>
+            <ExplanationView explanation={result.explanation} />
           )}
         </View>
       ))}
@@ -300,32 +294,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#bbf7d0',
-  },
-  explanationSection: {
-    marginTop: 12,
-    backgroundColor: '#f8fafc',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    padding: 16,
-  },
-  explanationScroll: {
-    marginTop: 6,
-  },
-  explanationContent: {
-    minWidth: 400,
-  },
-  explanationLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#64748b',
-    marginBottom: 6,
-  },
-  explanation: {
-    fontSize: 14,
-    color: '#475569',
-    lineHeight: 22,
-    flexWrap: 'wrap',
   },
   paginationInfo: {
     backgroundColor: '#f1f5f9',
