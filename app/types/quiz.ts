@@ -25,3 +25,15 @@ export interface QuizSubmitResponse {
   wrongCount: number;
   results: QuizResult[];
 }
+
+export interface LeaderboardEntry {
+  uid: string;
+  name: string;
+  score: number;
+  rank: number;
+}
+
+export interface LeaderboardResponse {
+  class: string;
+  leaderboard: LeaderboardEntry[];
+}

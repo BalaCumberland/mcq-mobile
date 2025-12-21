@@ -104,6 +104,10 @@ const ProfileScreen = ({ navigation }: any) => {
 
         <View style={styles.infoSection}>
           <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>🆔 User ID:</Text>
+            <Text style={[styles.infoValue, styles.userIdText]}>{user?.uid}</Text>
+          </View>
+          <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>📚 Current Class:</Text>
             <Text style={styles.infoValue}>{user?.student_class}</Text>
           </View>
@@ -341,6 +345,10 @@ const styles = StyleSheet.create({
   upgradeButtonGradient: {
     paddingVertical: 16,
     alignItems: 'center',
+  },
+  userIdText: {
+    fontFamily: 'monospace',
+    fontSize: 12,
   },
 });
 

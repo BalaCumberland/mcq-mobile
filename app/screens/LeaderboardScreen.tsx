@@ -4,9 +4,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import { auth } from '../config/firebase';
 import useUserStore from '../store/UserStore';
+import { LeaderboardResponse } from '../types/quiz';
 
 const LeaderboardScreen = ({ navigation }) => {
-  const [leaderboardData, setLeaderboardData] = useState(null);
+  const [leaderboardData, setLeaderboardData] = useState<LeaderboardResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const { user } = useUserStore();
 
@@ -48,7 +49,7 @@ const LeaderboardScreen = ({ navigation }) => {
     }
   };
 
-  const classData = leaderboardData?.leaderboard?.[user?.student_class] || [];
+  const classData = leaderboardData?.leaderboard || [];
 
   if (loading) {
     return (
@@ -76,7 +77,7 @@ const LeaderboardScreen = ({ navigation }) => {
           </LinearGradient>
           <View style={styles.headerTextContainer}>
             <Text style={styles.title}>Leaderboard</Text>
-            <Text style={styles.subtitle}>Class: {user?.student_class}</Text>
+            <Text style={styles.subtitle}>Class: {leaderboardData?.class || user?.student_class}</Text>
           </View>
         </View>
         
@@ -87,7 +88,18 @@ const LeaderboardScreen = ({ navigation }) => {
           <Text style={styles.infoIcon}>ℹ️</Text>
           <View style={styles.infoTextContainer}>
             <Text style={styles.infoTitle}>How it works:</Text>
-            <Text style={styles.infoText}>🔄 Rankings update every 24 hours • 🏆 Top 10 students shown • ⭐ Score = Performance × Participation</Text>
+            <Text style={styles.infoText}>🏆 Class rankings • 📊 Updated regularly • ⭐ Based on quiz performance</Text>
+          </View>
+        </LinearGradient>
+        
+        <LinearGradient
+          colors={['#fef3c7', '#fde68a']}
+          style={styles.disclaimerCard}
+        >
+          <Text style={styles.disclaimerIcon}>🎯</Text>
+          <View style={styles.disclaimerTextContainer}>
+            <Text style={styles.disclaimerTitle}>Eligibility Rules:</Text>
+            <Text style={styles.disclaimerText}>✅ Complete ALL quizzes in every subject{"\n"}✅ Score >35% per subject average{"\n"}✅ At least one valid subject with quizzes</Text>
           </View>
         </LinearGradient>
       </LinearGradient>
@@ -132,16 +144,12 @@ const LeaderboardScreen = ({ navigation }) => {
                   <Text style={[styles.studentName, isCurrentUser && styles.currentUserText]}>
                     {student.name} {isCurrentUser && '(You)'}
                   </Text>
-                  <View style={styles.statsRow}>
-                    <Text style={styles.statText}>📊 Score: {student.totalScore}</Text>
-                    <Text style={styles.statText}>📝 Quizzes: {student.quizzesTaken}</Text>
-                    <Text style={styles.statText}>⭐ Avg: {student.avgScore.toFixed(1)}</Text>
-                  </View>
+                  <Text style={styles.userIdText}>ID: {student.uid}</Text>
                 </View>
                 
                 <View style={styles.scoreContainer}>
-                  <Text style={styles.weightedScore}>{student.weightedScore.toFixed(0)}</Text>
-                  <Text style={styles.pointsLabel}>points</Text>
+                  <Text style={styles.weightedScore}>{student.score.toFixed(2)}</Text>
+                  <Text style={styles.pointsLabel}>score</Text>
                 </View>
               </LinearGradient>
             );
@@ -323,6 +331,41 @@ const styles = StyleSheet.create({
   pointsLabel: {
     fontSize: 12,
     color: '#6b7280',
+  },
+  userIdText: {
+    fontSize: 11,
+    color: '#9ca3af',
+    fontFamily: 'monospace',
+    marginBottom: 2,
+  },
+  disclaimerCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    padding: 12,
+    marginTop: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#fbbf24',
+  },
+  disclaimerIcon: {
+    fontSize: 16,
+    marginRight: 10,
+    marginTop: 2,
+  },
+  disclaimerTextContainer: {
+    flex: 1,
+  },
+  disclaimerTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#92400e',
+    marginBottom: 4,
+  },
+  disclaimerText: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#b45309',
+    lineHeight: 16,
   },
 });
 
