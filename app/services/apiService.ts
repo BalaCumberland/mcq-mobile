@@ -1,6 +1,8 @@
 import { getAuthToken } from './firebaseAuth';
 import { LAMBDA_MCQ_GO_API_URL } from '../config/env';
 import { QuizSubmitRequest, QuizSubmitResponse } from '../types/quiz';
+import useUserStore from '../store/UserStore';
+import { auth } from '../config/firebase';
 
 const API_ENDPOINTS = {
   REGISTER: '/students/register',
@@ -21,37 +23,58 @@ class ApiService {
   }
 
   private async makeRequest(endpoint: string, options: RequestInit = {}) {
-    const token = await getAuthToken();
-    
-    const config: RequestInit = {
-      ...options,
-      headers: {
-        'Accept': '*/*',
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-        ...options.headers,
-      },
-    };
+    try {
+      const token = await getAuthToken();
+      
+      const config: RequestInit = {
+        ...options,
+        headers: {
+          'Accept': '*/*',
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          ...options.headers,
+        },
+      };
 
-    const response = await fetch(`${this.baseUrl}${endpoint}`, config);
-    
-    if (!response.ok) {
-      let errorMessage = `API Error: ${response.status}`;
-      try {
-        const errorData = await response.json();
-        if (errorData.message) {
-          errorMessage = errorData.message;
-        } else if (errorData.error) {
-          errorMessage = errorData.error;
+      const response = await fetch(`${this.baseUrl}${endpoint}`, config);
+      
+      if (!response.ok) {
+        let errorMessage = `API Error: ${response.status}`;
+        try {
+          const errorData = await response.json();
+          if (errorData.message) {
+            errorMessage = errorData.message;
+          } else if (errorData.error) {
+            errorMessage = errorData.error;
+          }
+        } catch (e) {
+          // If response is not JSON, use status text
+          errorMessage = response.statusText || errorMessage;
         }
-      } catch (e) {
-        // If response is not JSON, use status text
-        errorMessage = response.statusText || errorMessage;
+        
+        // Handle authentication errors
+        if (response.status === 401 || errorMessage.includes('not authenticated')) {
+          console.log('Authentication failed, logging out user');
+          const { logout } = useUserStore.getState();
+          await logout();
+          await auth.signOut();
+          throw new Error('User is not authenticated');
+        }
+        
+        throw new Error(errorMessage);
       }
-      throw new Error(errorMessage);
+      
+      return response.json();
+    } catch (error: any) {
+      // Handle authentication errors in catch block as well
+      if (error.message === 'User is not authenticated' || error.message.includes('not authenticated')) {
+        console.log('Authentication error caught, logging out user');
+        const { logout } = useUserStore.getState();
+        await logout();
+        await auth.signOut();
+      }
+      throw error;
     }
-    
-    return response.json();
   }
 
   async registerStudent(data: any) {
@@ -81,60 +104,77 @@ class ApiService {
     answers: { questionId: string; selectedAnswer: string }[],
     quiz: any
   ): Promise<QuizSubmitResponse> {
-    const params = new URLSearchParams({ 
-      quizName: decodeURIComponent(quizName),
-      className, 
-      subjectName, 
-      topic 
-    });
-    
-    // Convert to old format that server expects with option letters
-    const oldFormatAnswers = answers.map((answer, index) => {
-      if (!answer.selectedAnswer) {
+    try {
+      const params = new URLSearchParams({ 
+        quizName: decodeURIComponent(quizName),
+        className, 
+        subjectName, 
+        topic 
+      });
+      
+      // Convert to old format that server expects with option letters
+      const oldFormatAnswers = answers.map((answer, index) => {
+        if (!answer.selectedAnswer) {
+          return { qno: index + 1, options: [] };
+        }
+        
+        // Get the question to find all answers
+        const question = quiz.questions[index];
+        const allAnswers = question.allAnswers || [];
+        const answerIndex = allAnswers.indexOf(answer.selectedAnswer);
+        
+        if (answerIndex !== -1) {
+          // Convert index to option letter (0->A, 1->B, 2->C, 3->D)
+          const optionLetter = String.fromCharCode(65 + answerIndex);
+          return { qno: index + 1, options: [optionLetter] };
+        }
+        
         return { qno: index + 1, options: [] };
+      });
+      
+      const requestBody = {
+        answers: oldFormatAnswers
+      };
+      
+      // Try existing endpoint structure first
+      const specUrl = 'https://ieetpwfoci.execute-api.us-east-1.amazonaws.com/prod/v2/quiz/submit';
+      const fullUrl = `${specUrl}?${params}`;
+      console.log('Quiz Submit URL:', fullUrl);
+      console.log('Request Body:', JSON.stringify(requestBody));
+      
+      const token = await getAuthToken();
+      
+      const response = await fetch(fullUrl, {
+        method: 'POST',
+        headers: {
+          'Accept': '*/*',
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(requestBody),
+      });
+      
+      if (!response.ok) {
+        if (response.status === 401) {
+          console.log('Authentication failed in submitQuiz, logging out user');
+          const { logout } = useUserStore.getState();
+          await logout();
+          await auth.signOut();
+          throw new Error('User is not authenticated');
+        }
+        throw new Error(`API Error: ${response.status}`);
       }
       
-      // Get the question to find all answers
-      const question = quiz.questions[index];
-      const allAnswers = question.allAnswers || [];
-      const answerIndex = allAnswers.indexOf(answer.selectedAnswer);
-      
-      if (answerIndex !== -1) {
-        // Convert index to option letter (0->A, 1->B, 2->C, 3->D)
-        const optionLetter = String.fromCharCode(65 + answerIndex);
-        return { qno: index + 1, options: [optionLetter] };
+      return response.json();
+    } catch (error: any) {
+      if (error.message === 'User is not authenticated' || error.message.includes('not authenticated')) {
+        console.log('Authentication error in submitQuiz, logging out user');
+        const { logout } = useUserStore.getState();
+        await logout();
+        await auth.signOut();
       }
-      
-      return { qno: index + 1, options: [] };
-    });
-    
-    const requestBody = {
-      answers: oldFormatAnswers
-    };
-    
-    // Try existing endpoint structure first
-    const specUrl = 'https://ieetpwfoci.execute-api.us-east-1.amazonaws.com/prod/v2/quiz/submit';
-    const fullUrl = `${specUrl}?${params}`;
-    console.log('Quiz Submit URL:', fullUrl);
-    console.log('Request Body:', JSON.stringify(requestBody));
-    
-    const token = await getAuthToken();
-    
-    const response = await fetch(fullUrl, {
-      method: 'POST',
-      headers: {
-        'Accept': '*/*',
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify(requestBody),
-    });
-    
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.status}`);
+      throw error;
     }
-    
-    return response.json();
   }
 
   async getUserByEmail(email: string) {
@@ -170,25 +210,46 @@ class ApiService {
   }
 
   async upgradeClass(newClass: string) {
-    const token = await getAuthToken();
-    const url = `${this.baseUrl}/students/upgrade-class`;
-    
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Accept': '*/*',
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify({ newClass }),
-    });
-    
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
-      throw new Error(error.error || `API Error: ${response.status}`);
+    try {
+      const token = await getAuthToken();
+      const url = `${this.baseUrl}/students/upgrade-class`;
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Accept': '*/*',
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ newClass }),
+      });
+      
+      if (!response.ok) {
+        if (response.status === 401) {
+          console.log('Authentication failed in upgradeClass, logging out user');
+          const { logout } = useUserStore.getState();
+          await logout();
+          await auth.signOut();
+          throw new Error('User is not authenticated');
+        }
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.error || `API Error: ${response.status}`);
+      }
+      
+      return response.json();
+    } catch (error: any) {
+      if (error.message === 'User is not authenticated' || error.message.includes('not authenticated')) {
+        console.log('Authentication error in upgradeClass, logging out user');
+        const { logout } = useUserStore.getState();
+        await logout();
+        await auth.signOut();
+      }
+      throw error;
     }
-    
-    return response.json();
+  }
+
+  async getProgress() {
+    return this.makeRequest('/students/progress');
   }
 }
 

@@ -9,6 +9,7 @@ import useQuizStore from '../store/QuizStore';
 import { getAuthToken } from '../services/firebaseAuth';
 import { LAMBDA_MCQ_GO_API_URL } from '../config/env';
 import LoadingAnimation from '../components/LoadingAnimation';
+import { auth } from '../config/firebase';
 
 const ProgressScreen = ({ navigation }) => {
   const { user } = useUserStore();
@@ -30,18 +31,8 @@ const ProgressScreen = ({ navigation }) => {
 
   const fetchAnalytics = async () => {
     try {
-      const token = await getAuthToken();
-      const response = await fetch(`${LAMBDA_MCQ_GO_API_URL}/students/progress`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': '*/*'
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setAnalytics(data);
-      }
+      const data = await ApiService.getProgress();
+      setAnalytics(data);
     } catch (error) {
       console.error('Failed to fetch progress:', error);
     } finally {

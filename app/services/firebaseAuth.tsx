@@ -71,9 +71,20 @@ export const getAuthToken = async () => {
       unsubscribe();
 
       if (user) {
-        const token = await user.getIdToken();
-        resolve(token);
+        try {
+          const token = await user.getIdToken();
+          resolve(token);
+        } catch (error) {
+          console.log('Failed to get ID token, logging out user');
+          const { logout } = useUserStore.getState();
+          await logout();
+          await auth.signOut();
+          reject(new Error("User is not authenticated"));
+        }
       } else {
+        console.log('No authenticated user found, logging out');
+        const { logout } = useUserStore.getState();
+        await logout();
         reject(new Error("User is not authenticated"));
       }
     });
