@@ -3,6 +3,7 @@ import { LAMBDA_MCQ_GO_API_URL } from '../config/env';
 import { QuizSubmitRequest, QuizSubmitResponse } from '../types/quiz';
 import useUserStore from '../store/UserStore';
 import { auth } from '../config/firebase';
+import { reset } from './navigationService';
 
 const API_ENDPOINTS = {
   REGISTER: '/students/register',
@@ -58,6 +59,7 @@ class ApiService {
           const { logout } = useUserStore.getState();
           await logout();
           await auth.signOut();
+          reset('Login');
           throw new Error('User is not authenticated');
         }
         
@@ -72,6 +74,7 @@ class ApiService {
         const { logout } = useUserStore.getState();
         await logout();
         await auth.signOut();
+        reset('Login');
       }
       throw error;
     }
@@ -160,6 +163,7 @@ class ApiService {
           const { logout } = useUserStore.getState();
           await logout();
           await auth.signOut();
+          reset('Login');
           throw new Error('User is not authenticated');
         }
         throw new Error(`API Error: ${response.status}`);
@@ -172,6 +176,7 @@ class ApiService {
         const { logout } = useUserStore.getState();
         await logout();
         await auth.signOut();
+        reset('Login');
       }
       throw error;
     }
@@ -230,6 +235,7 @@ class ApiService {
           const { logout } = useUserStore.getState();
           await logout();
           await auth.signOut();
+          reset('Login');
           throw new Error('User is not authenticated');
         }
         const error = await response.json().catch(() => ({}));
@@ -243,6 +249,7 @@ class ApiService {
         const { logout } = useUserStore.getState();
         await logout();
         await auth.signOut();
+        reset('Login');
       }
       throw error;
     }

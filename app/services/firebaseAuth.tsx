@@ -7,6 +7,7 @@ signInWithEmailAndPassword,
 } from "firebase/auth";
 import API_BASE_URL from "../config/env";
 import useUserStore from "../store/UserStore";
+import { reset } from "./navigationService";
 
 export async function handleRegister(email, password, name, phoneNumber, studentClass) {
   return new Promise(async (resolve, reject) => {
@@ -79,12 +80,14 @@ export const getAuthToken = async () => {
           const { logout } = useUserStore.getState();
           await logout();
           await auth.signOut();
+          reset('Login');
           reject(new Error("User is not authenticated"));
         }
       } else {
         console.log('No authenticated user found, logging out');
         const { logout } = useUserStore.getState();
         await logout();
+        reset('Login');
         reject(new Error("User is not authenticated"));
       }
     });

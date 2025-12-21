@@ -83,11 +83,12 @@ const QuizScreen = ({ navigation, route }) => {
   const itemsPerPage = 5;
   const scrollViewRef = React.useRef(null);
   const answersScrollRef = React.useRef(null);
+  const mainScrollRef = React.useRef(null);
 
-  // Reset answers scroll position when question changes
+  // Reset scroll position when question changes
   useEffect(() => {
-    if (answersScrollRef.current) {
-      answersScrollRef.current.scrollTo({ y: 0, animated: false });
+    if (mainScrollRef.current) {
+      mainScrollRef.current.scrollTo({ y: 0, animated: false });
     }
   }, [currentQuestionIndex]);
 
@@ -461,6 +462,7 @@ const QuizScreen = ({ navigation, route }) => {
       </LinearGradient>
       
       <ScrollView 
+        ref={mainScrollRef}
         style={styles.mainScrollView}
         contentContainerStyle={styles.mainScrollContent}
         showsVerticalScrollIndicator={false}

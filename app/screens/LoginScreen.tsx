@@ -1,10 +1,11 @@
-import React, { useState, memo } from 'react';
-import { View, TextInput, StyleSheet, Alert, Text, TouchableOpacity, ActivityIndicator, Dimensions, StatusBar, ScrollView } from 'react-native';
+import React, { useState, memo, useEffect } from 'react';
+import { View, TextInput, StyleSheet, Alert, Text, TouchableOpacity, ActivityIndicator, Dimensions, StatusBar, ScrollView, BackHandler } from 'react-native';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../config/firebase';
 import userStore from '../store/UserStore';
 import { resendVerifiedEmail } from '../services/firebaseAuth';
 import { designSystem, colors, spacing, borderRadius } from '../styles/designSystem';
+import { useFocusEffect } from '@react-navigation/native';
 
 const { width, height } = Dimensions.get('window');
 
@@ -12,6 +13,18 @@ const LoginScreen = memo(function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      const backAction = () => {
+        BackHandler.exitApp();
+        return true;
+      };
+
+      const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+      return () => backHandler.remove();
+    }, [])
+  );
 
   const handleForgotPassword = () => {
     navigation.navigate('ForgotPassword');

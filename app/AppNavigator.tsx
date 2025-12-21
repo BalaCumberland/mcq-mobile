@@ -14,6 +14,7 @@ import ProgressScreen from './screens/ProgressScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import LeaderboardScreen from './screens/LeaderboardScreen';
 import ScreenWrapper from './components/ScreenWrapper';
+import { navigationRef } from './services/navigationService';
 
 import useUserStore from './store/UserStore';
 import useQuizStore from './store/QuizStore';
@@ -170,7 +171,7 @@ export default function AppNavigator() {
 
   return (
     <MenuProvider>
-      <NavigationContainer>
+      <NavigationContainer ref={navigationRef}>
         <Stack.Navigator 
           initialRouteName="Login"
           screenOptions={screenOptions}
