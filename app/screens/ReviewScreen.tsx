@@ -6,7 +6,6 @@ import { LAMBDA_MCQ_GO_API_URL } from '../config/env';
 import LaTeXRenderer from '../components/LaTeXRenderer';
 import ExplanationView from '../components/ExplanationView';
 import LoadingAnimation from '../components/LoadingAnimation';
-import ResultCard from '../components/ResultCard';
 
 
 
@@ -113,7 +112,42 @@ const ReviewScreen = React.memo(({ route }) => {
       </View>
       
       {paginatedResults.map((result, index) => (
-        <ResultCard key={`${result.qno}-${index}`} result={result} />
+        <View key={`${result.qno}-${index}`} style={[
+          styles.questionCard,
+          result.status === 'correct' && styles.correctCard,
+          result.status === 'wrong' && styles.wrongCard,
+          result.status === 'skipped' && styles.skippedCard
+        ]}>
+          <View style={styles.questionHeader}>
+            <Text style={styles.questionNumber}>Q{result.qno}</Text>
+            <Text style={[
+              styles.statusBadge,
+              result.status === 'correct' && styles.correctBadge,
+              result.status === 'wrong' && styles.wrongBadge,
+              result.status === 'skipped' && styles.skippedBadge
+            ]}>
+              {result.status === 'correct' ? '✅' : result.status === 'wrong' ? '❌' : '⏭️'}
+            </Text>
+          </View>
+          
+          <LaTeXRenderer text={result.question} style={styles.question} />
+          
+          {result.studentAnswer && (
+            <View style={styles.answerSection}>
+              <Text style={styles.answerLabel}>Your Answer:</Text>
+              <LaTeXRenderer text={result.studentAnswer[0]} style={styles.studentAnswer} />
+            </View>
+          )}
+          
+          <View style={styles.answerSection}>
+            <Text style={styles.answerLabel}>Correct Answer:</Text>
+            <LaTeXRenderer text={result.correctAnswer[0]} style={styles.correctAnswer} />
+          </View>
+          
+          {result.explanation && (
+            <ExplanationView explanation={result.explanation} />
+          )}
+        </View>
       ))}
       
       {totalPages > 1 && (
