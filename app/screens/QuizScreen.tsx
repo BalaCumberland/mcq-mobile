@@ -1,13 +1,13 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, Alert, BackHandler, Animated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, Alert, BackHandler } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import useQuizStore from '../store/QuizStore';
 import ApiService from '../services/apiService';
 import LaTeXRenderer from '../components/LaTeXRenderer';
-import ExplanationView from '../components/ExplanationView';
 import LoadingAnimation from '../components/LoadingAnimation';
 import ScreenWrapper from '../components/ScreenWrapper';
+import ResultCard from '../components/ResultCard';
 import { designSystem, colors, spacing, borderRadius, shadows } from '../styles/designSystem';
 import LinearGradient from 'react-native-linear-gradient';
 
@@ -30,37 +30,12 @@ const QuizScreen = ({ navigation, route }) => {
   } = useQuizStore();
   
   const [showQuestionPanel, setShowQuestionPanel] = useState(false);
-  const [progressAnimation] = useState(new Animated.Value(0));
-  const [scoreAnimation] = useState(new Animated.Value(0));
-  const [showScrollHint, setShowScrollHint] = useState(false);
-  const [scrollHintAnimation] = useState(new Animated.Value(0));
-
-  // Show scroll hint on first question
-  useEffect(() => {
-    if (currentQuestionIndex === 0) {
-      const timer = setTimeout(() => {
-        setShowScrollHint(true);
-        Animated.loop(
-          Animated.sequence([
-            Animated.timing(scrollHintAnimation, {
-              toValue: 1,
-              duration: 800,
-              useNativeDriver: true,
-            }),
-            Animated.timing(scrollHintAnimation, {
-              toValue: 0,
-              duration: 800,
-              useNativeDriver: true,
-            })
-          ]),
-          { iterations: 3 }
-        ).start(() => {
-          setShowScrollHint(false);
-        });
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-  }, [currentQuestionIndex]);
+  const [forceResults, setForceResults] = useState(false);
+  const [quizResults, setQuizResults] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+  const scrollViewRef = React.useRef(null);
+  const mainScrollRef = React.useRef(null);
 
   // Set up navigation header button and timer
   React.useLayoutEffect(() => {
@@ -77,20 +52,6 @@ const QuizScreen = ({ navigation, route }) => {
       });
     }
   }, [navigation, showResults, forceResults]);
-  const [forceResults, setForceResults] = useState(false);
-  const [quizResults, setQuizResults] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
-  const scrollViewRef = React.useRef(null);
-  const answersScrollRef = React.useRef(null);
-  const mainScrollRef = React.useRef(null);
-
-  // Reset scroll position when question changes
-  useEffect(() => {
-    if (mainScrollRef.current) {
-      mainScrollRef.current.scrollTo({ y: 0, animated: false });
-    }
-  }, [currentQuestionIndex]);
 
   useEffect(() => {
     if (showResults || forceResults) return;
@@ -306,59 +267,9 @@ const QuizScreen = ({ navigation, route }) => {
           maxToRenderPerBatch={3}
           windowSize={5}
         >
-          {paginatedResults.map((result, index) => {
-            const isCorrect = result.status === 'correct';
-            const isSkipped = result.status === 'skipped';
-            const correctAnswers = Array.isArray(result.correctAnswer) ? result.correctAnswer : [result.correctAnswer];
-            const userAnswer = result.studentAnswer && result.studentAnswer.length > 0 
-              ? result.studentAnswer[0] 
-              : 'Not answered';
-            
-            return (
-              <LinearGradient
-                key={index}
-                colors={['#ffffff', '#f8fafc']}
-                style={[styles.resultCard, isCorrect ? styles.correctCard : isSkipped ? styles.skippedCard : styles.incorrectCard]}
-              >
-                <View style={styles.questionHeader}>
-                  <Text style={styles.questionNumber}>Q{result.qno}</Text>
-                  <LinearGradient
-                    colors={isCorrect ? ['#10b981', '#059669'] : isSkipped ? ['#f59e0b', '#d97706'] : ['#ef4444', '#dc2626']}
-                    style={styles.statusBadge}
-                  >
-                    <Text style={styles.statusText}>{isCorrect ? '✓' : isSkipped ? '⏭' : '✗'}</Text>
-                  </LinearGradient>
-                </View>
-                <LaTeXRenderer text={result.question} style={styles.questionText} />
-                
-                <Text style={[
-                  styles.resultLabel,
-                  { color: isCorrect ? '#10b981' : isSkipped ? '#f59e0b' : '#ef4444' }
-                ]}>
-                  {isCorrect ? '✓ CORRECT' : isSkipped ? '⏭ SKIPPED' : '✗ INCORRECT'}
-                </Text>
-                
-                <View style={styles.answerSection}>
-                  <Text style={styles.correctAnswerLabel}>Correct Answer:</Text>
-                  {correctAnswers.map((answer, idx) => (
-                    <LaTeXRenderer key={idx} text={answer} style={styles.correctAnswer} />
-                  ))}
-                </View>
-                
-                {!isCorrect && (
-                  <View style={styles.answerSection}>
-                    <Text style={styles.userAnswerLabel}>Your Answer:</Text>
-                    <LaTeXRenderer 
-                      text={isSkipped ? 'Skipped' : userAnswer} 
-                      style={styles.userAnswer} 
-                    />
-                  </View>
-                )}
-                
-                <ExplanationView explanation={result.explanation || 'No explanation available'} />
-              </LinearGradient>
-            );
-          })}
+          {paginatedResults.map((result, index) => (
+            <ResultCard key={index} result={result} />
+          ))}
         </ScrollView>
         
         <SafeAreaView style={styles.resultsFooter} edges={['bottom']}>
@@ -907,184 +818,13 @@ const styles = StyleSheet.create({
   navButtonTextDisabled: {
     color: '#9ca3af',
   },
-  rightButtons: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-
+  // Remove unused styles from QuizScreen that are now handled by ResultCard
   resultsHeader: {
     alignItems: 'center',
     marginBottom: 20,
     paddingBottom: 15,
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
-  },
-  score: {
-    fontSize: 18,
-    textAlign: 'center',
-    marginTop: 10,
-    fontWeight: 'bold',
-    color: '#2196F3',
-  },
-  resultCard: {
-    backgroundColor: '#fff',
-    padding: 16,
-    marginVertical: 8,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  questionNumber: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#666',
-    marginBottom: 8,
-  },
-  answerSection: {
-    marginTop: 12,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
-  },
-  questionText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  resultLabel: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 5,
-  },
-  correctAnswerLabel: {
-    fontSize: 14,
-    color: '#4CAF50',
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  correctAnswer: {
-    fontSize: 14,
-    color: '#333',
-    flexWrap: 'wrap',
-  },
-  userAnswerLabel: {
-    fontSize: 14,
-    color: '#f44336',
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  userAnswer: {
-    fontSize: 14,
-    color: '#333',
-    flexWrap: 'wrap',
-  },
-  button: {
-    backgroundColor: '#007bff',
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  resultsHeader: {
-    alignItems: 'center',
-    marginBottom: 20,
-    paddingBottom: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  score: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#2196F3',
-    marginTop: 10,
-  },
-  resultCard: {
-    backgroundColor: '#fff',
-    padding: 16,
-    marginVertical: 8,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  questionNumber: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#666',
-    marginBottom: 8,
-  },
-  questionText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  resultLabel: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  answerSection: {
-    marginTop: 12,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
-  },
-  correctAnswerLabel: {
-    fontSize: 14,
-    color: '#4CAF50',
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  correctAnswer: {
-    fontSize: 14,
-    color: '#333',
-  },
-  userAnswerLabel: {
-    fontSize: 14,
-    color: '#f44336',
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  userAnswer: {
-    fontSize: 14,
-    color: '#333',
-  },
-  explanationLabel: {
-    fontSize: 14,
-    color: '#666',
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  explanation: {
-    fontSize: 14,
-    color: '#666',
-    fontStyle: 'italic',
-  },
-  pageInfo: {
-    fontSize: 14,
-    color: '#64748b',
-    marginTop: 8,
-  },
-  resultsContainer: {
-    flex: 1,
-    backgroundColor: '#ffffff',
   },
   scoreContainer: {
     alignItems: 'center',
@@ -1108,44 +848,28 @@ const styles = StyleSheet.create({
     color: '#666',
     fontWeight: '500',
   },
-  questionHeader: {
+  statsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
+    justifyContent: 'space-around',
+    width: '100%',
   },
-  statusBadge: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    justifyContent: 'center',
+  statItem: {
     alignItems: 'center',
   },
-  correctBadge: {
-    backgroundColor: '#4CAF50',
-  },
-  incorrectBadge: {
-    backgroundColor: '#f44336',
-  },
-  skippedBadge: {
-    backgroundColor: '#FF9800',
-  },
-  statusText: {
-    color: '#fff',
-    fontSize: 16,
+  statNumber: {
+    fontSize: 20,
     fontWeight: 'bold',
+    color: '#1f2937',
   },
-  correctCard: {
-    borderLeftWidth: 4,
-    borderLeftColor: '#10b981',
+  statLabel: {
+    fontSize: 12,
+    color: '#6b7280',
+    marginTop: 4,
   },
-  incorrectCard: {
-    borderLeftWidth: 4,
-    borderLeftColor: '#ef4444',
-  },
-  skippedCard: {
-    borderLeftWidth: 4,
-    borderLeftColor: '#f59e0b',
+  pageInfo: {
+    fontSize: 14,
+    color: '#64748b',
+    marginTop: 8,
   },
   resultsScrollView: {
     flex: 1,
@@ -1213,34 +937,6 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 16,
     fontWeight: '600',
-  },
-  answerGradient: {
-    padding: spacing.lg,
-  },
-  radioInner: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#3b82f6',
-  },
-
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
-  },
-  statItem: {
-    alignItems: 'center',
-  },
-  statNumber: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1f2937',
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#6b7280',
-    marginTop: 4,
   },
 });
 
