@@ -3,7 +3,7 @@ import { Text, Image } from 'react-native';
 import { WebView } from 'react-native-webview';
 
 interface LaTeXRendererProps {
-  text: string;
+  text?: string | null;
   style?: any;
 }
 
@@ -29,6 +29,7 @@ const LaTeXRenderer: React.FC<LaTeXRendererProps> = memo(({ text, style }) => {
   }, []);
 
   const renderContent = useMemo(() => {
+    if (!text) return null;
     const parts = text.split(LATEX_SMILES_REGEX);
 
     return parts.map((part, index) => {
