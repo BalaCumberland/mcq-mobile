@@ -21,7 +21,7 @@ const LeaderboardScreen = ({ navigation }) => {
     try {
       setLoading(true);
       const token = await auth.currentUser?.getIdToken();
-      
+
       if (!token) {
         Alert.alert('Error', 'Authentication required');
         return;
@@ -80,7 +80,7 @@ const LeaderboardScreen = ({ navigation }) => {
             <Text style={styles.subtitle}>Class: {leaderboardData?.class || user?.student_class}</Text>
           </View>
         </View>
-        
+
         <LinearGradient
           colors={['#eff6ff', '#dbeafe']}
           style={styles.infoCard}
@@ -91,7 +91,7 @@ const LeaderboardScreen = ({ navigation }) => {
             <Text style={styles.infoText}>🏆 Class rankings • 📊 Updated regularly • ⭐ Based on quiz performance</Text>
           </View>
         </LinearGradient>
-        
+
         <LinearGradient
           colors={['#fef3c7', '#fde68a']}
           style={styles.disclaimerCard}
@@ -103,7 +103,7 @@ const LeaderboardScreen = ({ navigation }) => {
           </View>
         </LinearGradient>
       </LinearGradient>
-      
+
       <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
         {classData.length === 0 ? (
           <View style={styles.emptyContainer}>
@@ -112,7 +112,7 @@ const LeaderboardScreen = ({ navigation }) => {
         ) : (
           classData.map((student, index) => {
             const isCurrentUser = student.uid === auth.currentUser?.uid;
-            
+
             return (
               <LinearGradient
                 key={student.uid}
@@ -139,14 +139,14 @@ const LeaderboardScreen = ({ navigation }) => {
                     </View>
                   )}
                 </View>
-                
+
                 <View style={styles.studentInfo}>
                   <Text style={[styles.studentName, isCurrentUser && styles.currentUserText]}>
                     {student.name} {isCurrentUser && '(You)'}
                   </Text>
                   <Text style={styles.userIdText}>ID: {student.uid}</Text>
                 </View>
-                
+
                 <View style={styles.scoreContainer}>
                   <Text style={styles.weightedScore}>{student.score.toFixed(2)}</Text>
                   <Text style={styles.pointsLabel}>score</Text>

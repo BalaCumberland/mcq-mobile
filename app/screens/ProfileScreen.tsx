@@ -70,7 +70,7 @@ const ProfileScreen = ({ navigation }: any) => {
   };
 
   return (
-    <ScrollView 
+    <ScrollView
       style={styles.container}
       removeClippedSubviews={true}
       maxToRenderPerBatch={2}
@@ -132,7 +132,7 @@ const ProfileScreen = ({ navigation }: any) => {
         <View style={styles.upgradeSection}>
           <Text style={styles.sectionTitle}>🔄 Upgrade Class</Text>
           <Text style={styles.warningText}>⚠️ You can upgrade your class once every 6 months</Text>
-          
+
           {loadingClasses ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="small" color="#2196F3" />

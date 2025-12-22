@@ -1,13 +1,23 @@
 import React, { useState, memo, useCallback, useEffect } from 'react';
-import { View, TextInput, StyleSheet, Alert, Text, TouchableOpacity, ActivityIndicator, ScrollView, StatusBar, Dimensions } from 'react-native';
+import {
+  View,
+  TextInput,
+  StyleSheet,
+  Alert,
+  Text,
+  TouchableOpacity,
+  ActivityIndicator,
+  ScrollView,
+  StatusBar,
+  Dimensions,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-const { width, height } = Dimensions.get('window');
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../config/firebase';
+import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
 import { Picker } from '@react-native-picker/picker';
+import { auth } from '../config/firebase';
 import ApiService from '../services/apiService';
-import { designSystem, colors, spacing, borderRadius } from '../styles/designSystem';
+
+const { width } = Dimensions.get('window');
 
 const SignupScreen = memo(function SignupScreen({ navigation }: any) {
   const [name, setName] = useState('');
@@ -26,12 +36,10 @@ const SignupScreen = memo(function SignupScreen({ navigation }: any) {
       try {
         const data = await ApiService.getClassesPublic();
         setClasses(Array.isArray(data) ? data : []);
-        if (data && data.length > 0) {
-          setStudentClass(data[0]);
-        }
       } catch (error) {
         console.error('Error fetching classes:', error);
         setClasses([]);
+        Alert.alert('Error', 'Failed to load classes. Please try again later.');
       } finally {
         setLoadingClasses(false);
       }
@@ -44,221 +52,311 @@ const SignupScreen = memo(function SignupScreen({ navigation }: any) {
     return phoneRegex.test(phone);
   }, []);
 
+  const isValidEmail = useCallback((value: string) => {
+    if (!value) return false;
+    // basic email check
+    return /\S+@\S+\.\S+/.test(value.trim());
+  }, []);
+
   const sanitizeInput = (input: string) => {
     return input.trim().replace(/[<>"'&]/g, '');
   };
 
   const handleSignup = useCallback(async () => {
-    if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim();
+
+    if (!trimmedName) {
+      Alert.alert('Error', 'Please enter your full name');
       return;
     }
-    
+
+    if (!isValidEmail(trimmedEmail)) {
+      Alert.alert('Error', 'Please enter a valid email address');
+      return;
+    }
+
     if (!isValidIndianPhone(phoneNumber)) {
       Alert.alert('Error', 'Please enter a valid Indian phone number');
       return;
     }
 
+    if (!studentClass) {
+      Alert.alert('Error', 'Please select your class');
+      return;
+    }
+
+    if (!password || password.length < 6) {
+      Alert.alert('Error', 'Password must be at least 6 characters long');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match');
+      return;
+    }
+
     setLoading(true);
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, trimmedEmail, password);
       const user = userCredential.user;
-      
-      // Send email verification (no actionCodeSettings needed for React Native)
-      const { sendEmailVerification } = await import('firebase/auth');
+
+      // Send email verification
       try {
         await sendEmailVerification(user);
         console.log('✅ Verification email sent via Firebase');
       } catch (emailError: any) {
         console.warn('⚠️ Firebase email failed:', emailError.message);
       }
-      
+
       const result = await ApiService.registerStudent({
         uid: user.uid,
-        email: sanitizeInput(email),
-        name: sanitizeInput(name),
+        email: sanitizeInput(trimmedEmail),
+        name: sanitizeInput(trimmedName),
         phoneNumber: sanitizeInput(phoneNumber),
-        studentClass: sanitizeInput(studentClass)
+        studentClass: sanitizeInput(studentClass),
       });
       console.log('Registration result:', result);
-      
+
       Alert.alert(
         'Registration Successful!',
-        'Account created successfully!\n\nCheck your email including spam/junk folder to verify your account.',
-        [
-          { text: 'OK', onPress: () => navigation.navigate('Login') }
-        ]
+        'Account created successfully.\n\nPlease check your email (including spam/junk folder) to verify your account.',
+        [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
       );
     } catch (error: any) {
-      Alert.alert('Signup Failed', error.message);
+      console.error('Signup error:', error);
+      Alert.alert('Signup Failed', error.message || 'Unable to create your account. Please try again.');
     } finally {
       setLoading(false);
     }
-  }, [email, name, phoneNumber, password, confirmPassword, studentClass, navigation, isValidIndianPhone]);
+  }, [
+    name,
+    email,
+    phoneNumber,
+    password,
+    confirmPassword,
+    studentClass,
+    navigation,
+    isValidEmail,
+    isValidIndianPhone,
+  ]);
+
+  const phoneInvalid = phoneNumber.length > 0 && !isValidIndianPhone(phoneNumber);
+  const emailInvalid = email.length > 0 && !isValidEmail(email);
+
+  const isButtonDisabled =
+    loading ||
+    !name.trim() ||
+    !email.trim() ||
+    !password ||
+    !confirmPassword ||
+    !studentClass ||
+    phoneInvalid ||
+    emailInvalid ||
+    password.length < 6 ||
+    password !== confirmPassword;
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" backgroundColor="#1e293b" />
-      
-      {/* Header Section */}
-      <View style={styles.header}>
-        <Text style={styles.appTitle}>🌐 Exam Sphere</Text>
-        <Text style={styles.subtitle}>Join the learning community</Text>
-      </View>
-      
-      {/* Form Section */}
-      <View style={styles.formSection}>
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-          <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.description}>Start your learning journey today</Text>
-        
-          <View style={styles.inputContainer}>
-            <View style={styles.inputWrapper}>
-              <Text style={styles.inputIcon}>👤</Text>
-              <TextInput
-                placeholder="Full name"
-                placeholderTextColor="#9CA3AF"
-                value={name}
-                onChangeText={setName}
-                style={styles.input}
-                autoCapitalize="words"
-              />
-            </View>
-          </View>
-        
-          <View style={styles.inputContainer}>
-            <View style={styles.inputWrapper}>
-              <Text style={styles.inputIcon}>📧</Text>
-              <TextInput
-                placeholder="Email address"
-                placeholderTextColor="#9CA3AF"
-                value={email}
-                onChangeText={setEmail}
-                style={styles.input}
-                autoCapitalize="none"
-                keyboardType="email-address"
-              />
-            </View>
-          </View>
-        
-          <View style={styles.inputContainer}>
-            <View style={[styles.inputWrapper, phoneNumber && !isValidIndianPhone(phoneNumber) && styles.inputError]}>
-              <Text style={styles.inputIcon}>📱</Text>
-              <TextInput
-                placeholder="Phone number (10 digits)"
-                placeholderTextColor="#9CA3AF"
-                value={phoneNumber}
-                onChangeText={setPhoneNumber}
-                style={styles.input}
-                keyboardType="phone-pad"
-                maxLength={10}
-              />
-            </View>
-            {phoneNumber && !isValidIndianPhone(phoneNumber) && (
-              <Text style={styles.errorText}>Invalid phone number</Text>
-            )}
-          </View>
-        
-          <View style={styles.inputContainer}>
-            <View style={styles.inputWrapper}>
-              <Text style={styles.inputIcon}>🔒</Text>
-              <TextInput
-                placeholder="Password"
-                placeholderTextColor="#9CA3AF"
-                value={password}
-                onChangeText={setPassword}
-                style={styles.input}
-                secureTextEntry
-              />
-            </View>
-          </View>
-          
-          <View style={styles.inputContainer}>
-            <View style={styles.inputWrapper}>
-              <Text style={styles.inputIcon}>🔐</Text>
-              <TextInput
-                placeholder="Confirm password"
-                placeholderTextColor="#9CA3AF"
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                style={styles.input}
-                secureTextEntry
-              />
-            </View>
-          </View>
-        
-          <View style={styles.inputContainer}>
-            {loadingClasses ? (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="small" color="#1e40af" />
-                <Text style={styles.loadingText}>Loading classes...</Text>
-              </View>
-            ) : (
-              <View style={styles.pickerContainer}>
-                <Text style={styles.inputIcon}>🎓</Text>
-                <Picker
-                  selectedValue={studentClass}
-                  onValueChange={setStudentClass}
-                  style={styles.picker}
-                >
-                  <Picker.Item label="Select class..." value="" />
-                  {classes.map((cls) => (
-                    <Picker.Item key={cls} label={cls} value={cls} />
-                  ))}
-                </Picker>
-              </View>
-            )}
-          </View>
-        
-          <TouchableOpacity
-            style={[
-              styles.button,
-              (loading || !isValidIndianPhone(phoneNumber) || !studentClass) && styles.buttonDisabled
-            ]}
-            onPress={handleSignup}
-            disabled={loading || !isValidIndianPhone(phoneNumber) || !studentClass}
+      <View style={styles.container}>
+        {/* Header Section */}
+        <View style={styles.header}>
+          <Text style={styles.appTitle}>🌐 Exam Sphere</Text>
+          <Text style={styles.subtitle}>Join the learning community</Text>
+        </View>
+
+        {/* Form Section */}
+        <View style={styles.formSection}>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContent}
           >
-            {loading ? (
-              <View style={styles.buttonContent}>
-                <ActivityIndicator color="#fff" size="small" />
-                <Text style={styles.buttonText}>Creating Account...</Text>
+            <Text style={styles.title}>Create Account</Text>
+            <Text style={styles.description}>Start your learning journey today</Text>
+
+            {/* Name */}
+            <View style={styles.inputContainer}>
+              <View style={styles.inputWrapper}>
+                <Text style={styles.inputIcon}>👤</Text>
+                <TextInput
+                  placeholder="Full name"
+                  placeholderTextColor="#9CA3AF"
+                  value={name}
+                  onChangeText={setName}
+                  style={styles.input}
+                  autoCapitalize="words"
+                />
               </View>
-            ) : (
-              <Text style={styles.buttonText}>Create Account</Text>
-            )}
-          </TouchableOpacity>
-          
-          <View style={styles.signupContainer}>
-            <Text style={styles.signupText}>
-              Already have an account?{' '}
-              <Text style={styles.signupLink} onPress={() => navigation.navigate('Login')}>
-                Sign In
+            </View>
+
+            {/* Email */}
+            <View style={styles.inputContainer}>
+              <View
+                style={[
+                  styles.inputWrapper,
+                  emailInvalid && styles.inputError,
+                ]}
+              >
+                <Text style={styles.inputIcon}>📧</Text>
+                <TextInput
+                  placeholder="Email address"
+                  placeholderTextColor="#9CA3AF"
+                  value={email}
+                  onChangeText={setEmail}
+                  style={styles.input}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                />
+              </View>
+              {emailInvalid && (
+                <Text style={styles.errorText}>Invalid email address</Text>
+              )}
+            </View>
+
+            {/* Phone */}
+            <View style={styles.inputContainer}>
+              <View
+                style={[
+                  styles.inputWrapper,
+                  phoneInvalid && styles.inputError,
+                ]}
+              >
+                <Text style={styles.inputIcon}>📱</Text>
+                <TextInput
+                  placeholder="Phone number (10 digits)"
+                  placeholderTextColor="#9CA3AF"
+                  value={phoneNumber}
+                  onChangeText={setPhoneNumber}
+                  style={styles.input}
+                  keyboardType="phone-pad"
+                  maxLength={10}
+                />
+              </View>
+              {phoneInvalid && (
+                <Text style={styles.errorText}>Invalid Indian phone number</Text>
+              )}
+            </View>
+
+            {/* Password */}
+            <View style={styles.inputContainer}>
+              <View style={styles.inputWrapper}>
+                <Text style={styles.inputIcon}>🔒</Text>
+                <TextInput
+                  placeholder="Password (min 6 characters)"
+                  placeholderTextColor="#9CA3AF"
+                  value={password}
+                  onChangeText={setPassword}
+                  style={styles.input}
+                  secureTextEntry
+                />
+              </View>
+              {password.length > 0 && password.length < 6 && (
+                <Text style={styles.errorText}>Password is too short</Text>
+              )}
+            </View>
+
+            {/* Confirm Password */}
+            <View style={styles.inputContainer}>
+              <View style={styles.inputWrapper}>
+                <Text style={styles.inputIcon}>🔐</Text>
+                <TextInput
+                  placeholder="Confirm password"
+                  placeholderTextColor="#9CA3AF"
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  style={styles.input}
+                  secureTextEntry
+                />
+              </View>
+              {confirmPassword.length > 0 && confirmPassword !== password && (
+                <Text style={styles.errorText}>Passwords do not match</Text>
+              )}
+            </View>
+
+            {/* Class Picker */}
+            <View style={styles.inputContainer}>
+              {loadingClasses ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="small" color="#1e40af" />
+                  <Text style={styles.loadingText}>Loading classes...</Text>
+                </View>
+              ) : (
+                <View style={styles.pickerContainer}>
+                  <Text style={styles.inputIcon}>🎓</Text>
+                  <Picker
+                    selectedValue={studentClass}
+                    onValueChange={setStudentClass}
+                    style={styles.picker}
+                  >
+                    <Picker.Item label="Select class..." value="" />
+                    {classes.map((cls) => (
+                      <Picker.Item key={cls} label={cls} value={cls} />
+                    ))}
+                  </Picker>
+                </View>
+              )}
+            </View>
+
+            {/* Submit Button */}
+            <TouchableOpacity
+              style={[styles.button, isButtonDisabled && styles.buttonDisabled]}
+              onPress={handleSignup}
+              disabled={isButtonDisabled}
+              activeOpacity={0.9}
+            >
+              {loading ? (
+                <View style={styles.buttonContent}>
+                  <ActivityIndicator color="#fff" size="small" />
+                  <Text style={styles.buttonText}>Creating Account...</Text>
+                </View>
+              ) : (
+                <Text style={styles.buttonText}>Create Account</Text>
+              )}
+            </TouchableOpacity>
+
+            {/* Footer: already have account */}
+            <View style={styles.signupContainer}>
+              <Text style={styles.signupText}>
+                Already have an account?{' '}
+                <Text
+                  style={styles.signupLink}
+                  onPress={() => navigation.navigate('Login')}
+                >
+                  Sign In
+                </Text>
               </Text>
-            </Text>
-          </View>
-        </ScrollView>
+            </View>
+          </ScrollView>
+        </View>
       </View>
-    </View>
+    </SafeAreaView>
   );
 });
 
+export default SignupScreen;
+
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#1e40af',
+  },
   container: {
     flex: 1,
     backgroundColor: '#1e40af',
   },
   header: {
-    flex: 0.2,
+    flex: 0.22,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: 40,
+    paddingTop: 32,
   },
   appTitle: {
     fontSize: 32,
     fontWeight: '700',
     color: '#ffffff',
     marginBottom: 6,
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
   },
   subtitle: {
     fontSize: 15,
@@ -266,11 +364,11 @@ const styles = StyleSheet.create({
     fontWeight: '400',
   },
   formSection: {
-    flex: 0.8,
+    flex: 0.78,
     backgroundColor: '#ffffff',
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
-    paddingTop: 40,
+    paddingTop: 32,
     paddingHorizontal: 24,
   },
   scrollContent: {
@@ -279,10 +377,11 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#0f172a',
     textAlign: 'center',
     marginBottom: 6,
+    letterSpacing: -0.2,
   },
   description: {
     fontSize: 15,
@@ -312,7 +411,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: '#0f172a',
-    paddingVertical: 16,
+    paddingVertical: 12,
     fontWeight: '400',
   },
   inputError: {
@@ -338,7 +437,7 @@ const styles = StyleSheet.create({
   },
   button: {
     backgroundColor: '#1e40af',
-    borderRadius: 12,
+    borderRadius: 14,
     paddingVertical: 16,
     alignItems: 'center',
     marginTop: 20,
@@ -356,13 +455,13 @@ const styles = StyleSheet.create({
   buttonContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    columnGap: 8,
   },
   buttonText: {
     color: '#ffffff',
     fontSize: 16,
     fontWeight: '600',
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
   },
   signupContainer: {
     alignItems: 'center',
@@ -375,7 +474,7 @@ const styles = StyleSheet.create({
   },
   signupLink: {
     color: '#1e40af',
-    fontWeight: '600',
+    fontWeight: '700',
   },
   loadingContainer: {
     flexDirection: 'row',
@@ -386,7 +485,6 @@ const styles = StyleSheet.create({
   loadingText: {
     marginLeft: 8,
     color: '#64748b',
+    fontSize: 14,
   },
 });
-
-export default SignupScreen;
