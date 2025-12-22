@@ -8,7 +8,7 @@ import LaTeXRenderer from '../components/LaTeXRenderer';
 import ExplanationView from '../components/ExplanationView';
 import LoadingAnimation from '../components/LoadingAnimation';
 import ScreenWrapper from '../components/ScreenWrapper';
-import QuizResultsHeader from '../components/QuizResultsHeader';
+import QuizResultsView from '../components/QuizResultsView';
 import { designSystem, colors, spacing, borderRadius, shadows } from '../styles/designSystem';
 import LinearGradient from 'react-native-linear-gradient';
 
@@ -151,6 +151,30 @@ const QuizScreen = ({ navigation, route }) => {
     ].filter(Boolean).sort(() => Math.random() - 0.5);
   }, [quiz, currentQuestionIndex]);
 
+  const handlePrevPage = useCallback(() => {
+    setCurrentPage(prev => Math.max(prev - 1, 1));
+  }, []);
+
+  const handleNextPage = useCallback(() => {
+    const totalPages = Math.ceil(quizResults?.results?.length || 0 / itemsPerPage);
+    setCurrentPage(prev => Math.min(prev + 1, totalPages));
+  }, [quizResults?.results?.length, itemsPerPage]);
+
+  const handleGoHome = useCallback(() => {
+    Alert.alert(
+      'Leave Quiz Results?',
+      'Are you sure you want to go back to home?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Yes', onPress: () => {
+          const { resetQuiz } = useQuizStore.getState();
+          resetQuiz();
+          navigation.navigate('Home');
+        }}
+      ]
+    );
+  }, [navigation]);
+
   // Submit quiz when results are requested
   useEffect(() => {
     if ((showResults || forceResults) && !quizResults && quiz) {
@@ -267,147 +291,15 @@ const QuizScreen = ({ navigation, route }) => {
 
     return (
       <ScreenWrapper navigation={navigation}>
-        <View style={styles.resultsContainer}>
-        <QuizResultsHeader
+        <QuizResultsView
+          results={quizResults}
+          currentPage={currentPage}
+          itemsPerPage={itemsPerPage}
           title="🎯 Quiz Results"
-          percentage={percentage}
-          correctCount={correctCount}
-          wrongCount={wrongCount}
-          skippedCount={skippedCount}
+          onPrevPage={handlePrevPage}
+          onNextPage={handleNextPage}
+          onGoHome={handleGoHome}
         />
-        
-        {totalPages > 1 && <Text style={styles.pageInfo}>📄 Page {currentPage} of {totalPages}</Text>}
-        
-        <ScrollView 
-          ref={scrollViewRef} 
-          style={styles.resultsScrollView} 
-          contentContainerStyle={styles.scrollContent}
-          removeClippedSubviews={true}
-          maxToRenderPerBatch={3}
-          windowSize={5}
-        >
-          {paginatedResults.map((result, index) => {
-            const isCorrect = result.status === 'correct';
-            const isSkipped = result.status === 'skipped';
-            const correctAnswers = Array.isArray(result.correctAnswer) ? result.correctAnswer : [result.correctAnswer];
-            const userAnswer = result.studentAnswer && result.studentAnswer.length > 0 
-              ? result.studentAnswer[0] 
-              : 'Not answered';
-            
-            return (
-              <LinearGradient
-                key={index}
-                colors={['#ffffff', '#f8fafc']}
-                style={[styles.resultCard, isCorrect ? styles.correctCard : isSkipped ? styles.skippedCard : styles.incorrectCard]}
-              >
-                <View style={styles.questionHeader}>
-                  <Text style={styles.questionNumber}>Q{result.qno}</Text>
-                  <LinearGradient
-                    colors={isCorrect ? ['#10b981', '#059669'] : isSkipped ? ['#f59e0b', '#d97706'] : ['#ef4444', '#dc2626']}
-                    style={styles.statusBadge}
-                  >
-                    <Text style={styles.statusText}>{isCorrect ? '✓' : isSkipped ? '⏭' : '✗'}</Text>
-                  </LinearGradient>
-                </View>
-                <LaTeXRenderer text={result.question} style={styles.questionText} />
-                
-                <Text style={[
-                  styles.resultLabel,
-                  { color: isCorrect ? '#10b981' : isSkipped ? '#f59e0b' : '#ef4444' }
-                ]}>
-                  {isCorrect ? '✓ CORRECT' : isSkipped ? '⏭ SKIPPED' : '✗ INCORRECT'}
-                </Text>
-                
-                <View style={styles.answerSection}>
-                  <Text style={styles.correctAnswerLabel}>Correct Answer:</Text>
-                  {correctAnswers.map((answer, idx) => (
-                    <LaTeXRenderer key={idx} text={answer} style={styles.correctAnswer} />
-                  ))}
-                </View>
-                
-                {!isCorrect && (
-                  <View style={styles.answerSection}>
-                    <Text style={styles.userAnswerLabel}>Your Answer:</Text>
-                    <LaTeXRenderer 
-                      text={isSkipped ? 'Skipped' : userAnswer} 
-                      style={styles.userAnswer} 
-                    />
-                  </View>
-                )}
-                
-                <ExplanationView 
-                  explanation={result.explanation || 'No explanation available'} 
-                  questionId={result.qno}
-                />
-              </LinearGradient>
-            );
-          })}
-        </ScrollView>
-        
-        <SafeAreaView style={styles.resultsFooter} edges={['bottom']}>
-          {totalPages > 1 && (
-            <View style={styles.paginationContainer}>
-              <TouchableOpacity 
-                style={[styles.paginationButton, currentPage === 1 && styles.paginationButtonDisabled]}
-                onPress={() => {
-                  setCurrentPage(prev => Math.max(prev - 1, 1));
-                  setTimeout(() => {
-                    if (scrollViewRef.current) {
-                      scrollViewRef.current.scrollTo({ y: 0, animated: true });
-                    }
-                  }, 100);
-                }}
-                disabled={currentPage === 1}
-              >
-                <Text style={[styles.paginationButtonText, currentPage === 1 && styles.paginationButtonTextDisabled]}>
-                  ← Previous
-                </Text>
-              </TouchableOpacity>
-              
-              <View style={styles.pageIndicator}>
-                <Text style={styles.paginationText}>{currentPage} / {totalPages}</Text>
-              </View>
-              
-              <TouchableOpacity 
-                style={[styles.paginationButton, currentPage === totalPages && styles.paginationButtonDisabled]}
-                onPress={() => {
-                  setCurrentPage(prev => Math.min(prev + 1, totalPages));
-                  setTimeout(() => {
-                    if (scrollViewRef.current) {
-                      scrollViewRef.current.scrollTo({ y: 0, animated: true });
-                    }
-                  }, 100);
-                }}
-                disabled={currentPage === totalPages}
-              >
-                <Text style={[styles.paginationButtonText, currentPage === totalPages && styles.paginationButtonTextDisabled]}>
-                  Next →
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
-          
-          <TouchableOpacity 
-            style={styles.homeButton} 
-            onPress={() => {
-              Alert.alert(
-                'Leave Quiz Results?',
-                'Are you sure you want to go back to home?',
-                [
-                  { text: 'Cancel', style: 'cancel' },
-                  { text: 'Yes', onPress: () => {
-                    const { resetQuiz } = useQuizStore.getState();
-                    resetQuiz();
-                    navigation.navigate('Home');
-                  }}
-                ]
-              );
-            }}
-          >
-            <Text style={styles.homeButtonText}>🏠 Back to Home</Text>
-          </TouchableOpacity>
-          </SafeAreaView>
-        </View>
       </ScreenWrapper>
     );
   }
