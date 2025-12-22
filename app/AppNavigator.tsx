@@ -8,6 +8,7 @@ import LoginScreen from './screens/LoginScreen';
 import SignupScreen from './screens/SignupScreen';
 import ForgotPasswordScreen from './screens/ForgotPasswordScreen';
 import ReviewScreen from './screens/ReviewScreen';
+import SubjectResultsScreen from './screens/SubjectResultsScreen';
 import HomeScreen from './screens/HomeScreen';
 import QuizScreen from './screens/QuizScreen';
 import ProgressScreen from './screens/ProgressScreen';
@@ -180,6 +181,7 @@ export default function AppNavigator() {
           <Stack.Screen name="Signup" component={SignupScreen} />
           <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
           <Stack.Screen name="Review">{(props) => <WrappedScreen {...props} component={ReviewScreen} />}</Stack.Screen>
+          <Stack.Screen name="SubjectResults">{(props) => <WrappedScreen {...props} component={SubjectResultsScreen} />}</Stack.Screen>
           <Stack.Screen name="Home">{(props) => <WrappedScreen {...props} component={HomeScreen} />}</Stack.Screen>
           <Stack.Screen name="Quiz">{(props) => <WrappedScreen {...props} component={QuizScreen} />}</Stack.Screen>
           <Stack.Screen name="Progress">{(props) => <WrappedScreen {...props} component={ProgressScreen} />}</Stack.Screen>

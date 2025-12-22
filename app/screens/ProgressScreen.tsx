@@ -61,41 +61,20 @@ const ProgressScreen = ({ navigation }) => {
                 <Text style={styles.statText}>Remaining: {subject.unattempted}</Text>
                 <Text style={styles.percentageText}>{subject.percentage}%</Text>
               </View>
+              <TouchableOpacity 
+                style={styles.viewResultsButton}
+                onPress={() => navigation.navigate('SubjectResults', {
+                  subjectName: subject.subjectName,
+                  tests: analytics?.individualTests?.[subject.subjectName] || [],
+                  className: analytics.className
+                })}
+              >
+                <Text style={styles.viewResultsText}>View Results</Text>
+              </TouchableOpacity>
             </View>
           ))}
         </View>
       )}
-
-      {/* Individual Test Results */}
-      {analytics?.individualTests && Object.keys(analytics.individualTests).map(subject => (
-        analytics.individualTests[subject].length > 0 && (
-          <View key={subject} style={styles.section}>
-            <Text style={styles.sectionTitle}>🏆 {subject} Results</Text>
-            {analytics.individualTests[subject].map((test, index) => (
-              <TouchableOpacity 
-                key={index} 
-                style={styles.testCard}
-                onPress={() => navigation.navigate('Review', {
-                  quizName: test.quizName,
-                  className: analytics.className,
-                  subjectName: test.subjectName,
-                  topic: test.topic
-                })}
-              >
-                <Text style={styles.testName}>{test.topic}</Text>
-                <View style={styles.testStats}>
-                  <Text style={styles.testScore}>{test.percentage}%</Text>
-                  <Text style={styles.testDetail}>✅ {test.correctCount}</Text>
-                  <Text style={styles.testDetail}>❌ {test.wrongCount}</Text>
-                  <Text style={styles.testDetail}>⏭️ {test.skippedCount}</Text>
-                </View>
-                <Text style={styles.testDate}>{new Date(test.attemptedAt).toLocaleDateString()}</Text>
-                <Text style={styles.reviewHint}>👆 Tap to review answers</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        )
-      ))}
 
       {/* No Data Message */}
       {!analytics && (
@@ -209,6 +188,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 16,
   },
   statText: {
     fontSize: 13,
@@ -223,59 +203,19 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
   },
-  testCard: {
-    backgroundColor: '#ffffff',
-    padding: 24,
-    borderRadius: 20,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(102, 126, 234, 0.1)',
-    shadowColor: '#667eea',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 4,
-  },
-  testName: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 12,
-    color: '#1a202c',
-    letterSpacing: -0.2,
-  },
-  testScore: {
-    fontSize: 22,
-    fontWeight: '900',
-    color: '#10b981',
-    textShadowColor: 'rgba(16, 185, 129, 0.3)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
-  },
-  testDetail: {
-    fontSize: 14,
-    color: '#6b7280',
-    fontWeight: '600',
-    backgroundColor: '#f9fafb',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    marginHorizontal: 2,
-  },
-  testDate: {
-    fontSize: 12,
-    color: '#9ca3af',
-    marginBottom: 8,
-    fontWeight: '500',
-  },
-  reviewHint: {
-    fontSize: 13,
-    color: '#3b82f6',
-    textAlign: 'center',
-    fontWeight: '700',
-    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-    paddingVertical: 8,
+  viewResultsButton: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
     borderRadius: 12,
-    marginTop: 4,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+  },
+  viewResultsText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '700',
   },
 
   emptyState: {
