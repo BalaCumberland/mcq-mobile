@@ -1,14 +1,30 @@
 import React, { useState, memo, useEffect } from 'react';
-import { View, TextInput, StyleSheet, Alert, Text, TouchableOpacity, ActivityIndicator, Dimensions, StatusBar, ScrollView, BackHandler } from 'react-native';
+import {
+  View,
+  TextInput,
+  StyleSheet,
+  Alert,
+  Text,
+  TouchableOpacity,
+  ActivityIndicator,
+  Dimensions,
+  StatusBar,
+  ScrollView,
+  BackHandler,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { signInWithEmailAndPassword } from 'firebase/auth';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
+
 import { auth } from '../config/firebase';
 import userStore from '../store/UserStore';
 import { resendVerifiedEmail } from '../services/firebaseAuth';
 import { designSystem, colors, spacing, borderRadius } from '../styles/designSystem';
-import { useFocusEffect } from '@react-navigation/native';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 const LoginScreen = memo(function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
@@ -41,7 +57,10 @@ const LoginScreen = memo(function LoginScreen({ navigation }: any) {
         return true;
       };
 
-      const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+      const backHandler = BackHandler.addEventListener(
+        'hardwareBackPress',
+        backAction
+      );
       return () => backHandler.remove();
     }, [])
   );
@@ -54,297 +73,370 @@ const LoginScreen = memo(function LoginScreen({ navigation }: any) {
     try {
       await resendVerifiedEmail();
       Alert.alert(
-        'Email Sent',
-        'Verification email sent! Check your inbox.\n\n💡 Check spam/junk folder if you don\'t see it.'
+        'Verification Email Sent',
+        "We've sent a verification link to your email.\n\n💡 Please also check your spam/junk folder."
       );
     } catch (error: any) {
       console.error('Resend email error:', error);
-      Alert.alert('Error', error.message || 'Failed to resend verification email');
+      Alert.alert(
+        'Error',
+        error?.message || 'Failed to resend verification email. Please try again.'
+      );
     }
   };
 
   const handleLogin = async () => {
+    const trimmedEmail = email.trim();
+
+    if (!trimmedEmail || !password) {
+      Alert.alert('Missing Details', 'Please enter both email and password.');
+      return;
+    }
+
     setLoading(true);
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        trimmedEmail,
+        password
+      );
       const user = userCredential.user;
-      
+
       if (!user.emailVerified) {
         Alert.alert(
           'Email Not Verified',
-          'Please verify your email address to access the application.\n\nCheck including spam/junk folder and verify your account before logging in.',
+          'Please verify your email address to access the app.\n\nIf you cannot find the email, check spam/junk or request a new link.',
           [
             { text: 'Cancel', style: 'cancel' },
-            { text: 'Resend Email', onPress: handleResendEmail }
+            { text: 'Resend Email', onPress: handleResendEmail },
           ]
         );
         setLoading(false);
         return;
       }
-      
-      await AsyncStorage.setItem('savedEmail', rememberMe ? email : '');
+
+      await AsyncStorage.setItem('savedEmail', rememberMe ? trimmedEmail : '');
       await AsyncStorage.setItem('savedPassword', rememberMe ? password : '');
-      
-      const response = await userStore.getState().fetchUserByEmail(email);
-      console.log(response);
-      Alert.alert('Login Success', `Welcome back, ${response.email}`);
+
+      const response = await userStore.getState().fetchUserByEmail(trimmedEmail);
+      Alert.alert('Login Successful', `Welcome back, ${response.email}`);
       navigation.navigate('Home');
     } catch (error: any) {
-      Alert.alert('Login Failed', error.message);
+      console.error('Login failed:', error);
+      Alert.alert(
+        'Login Failed',
+        error?.message || 'Unable to sign in. Please check your details and try again.'
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#667eea" />
-      
-      {/* Header Section */}
-      <View style={styles.header}>
-        <Text style={styles.appTitle}>🌐 Exam Sphere</Text>
-        <Text style={styles.subtitle}>Master your knowledge</Text>
-      </View>
-      
-      {/* Form Section */}
-      <View style={styles.formSection}>
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-          <Text style={styles.title}>Welcome Back!</Text>
-          <Text style={styles.description}>Sign in to continue your learning journey</Text>
-          
-          <View style={styles.inputContainer}>
-            <View style={styles.inputWrapper}>
-              <Text style={styles.inputIcon}>📧</Text>
-              <TextInput
-                placeholder="Email address"
-                placeholderTextColor="#9CA3AF"
-                value={email}
-                onChangeText={setEmail}
-                style={styles.input}
-                autoCapitalize="none"
-                keyboardType="email-address"
-              />
-            </View>
-          </View>
-          
-          <View style={styles.inputContainer}>
-            <View style={styles.inputWrapper}>
-              <Text style={styles.inputIcon}>🔒</Text>
-              <TextInput
-                placeholder="Password"
-                placeholderTextColor="#9CA3AF"
-                value={password}
-                onChangeText={setPassword}
-                style={styles.input}
-                secureTextEntry
-              />
-            </View>
-          </View>
-          
-          <TouchableOpacity
-            style={styles.rememberMeContainer}
-            onPress={() => setRememberMe(!rememberMe)}
-          >
-            <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
-              {rememberMe && <Text style={styles.checkmark}>✓</Text>}
-            </View>
-            <Text style={styles.rememberMeText}>Remember me</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity
-            style={[styles.button, loading && styles.buttonDisabled]}
-            onPress={handleLogin}
-            disabled={loading}
-          >
-            {loading ? (
-              <View style={styles.buttonContent}>
-                <ActivityIndicator color="#fff" size="small" />
-                <Text style={styles.buttonText}>Signing In...</Text>
-              </View>
-            ) : (
-              <Text style={styles.buttonText}>Sign In</Text>
-            )}
-          </TouchableOpacity>
-          
-          <TouchableOpacity onPress={handleForgotPassword} style={styles.forgotButton}>
-            <Text style={styles.forgotText}>Forgot your password?</Text>
-          </TouchableOpacity>
-          
-          <View style={styles.signupContainer}>
-            <Text style={styles.signupText}>
-              Don't have an account?{' '}
-              <Text style={styles.signupLink} onPress={() => navigation.navigate('Signup')}>
-                Sign Up
+    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+      <StatusBar barStyle="light-content" backgroundColor="#1e3a8a" />
+
+      <View style={styles.container}>
+        {/* Header Section */}
+        <View style={styles.header}>
+          <Text style={styles.appTitle}>🌐 Exam Sphere</Text>
+          <Text style={styles.subtitle}>Master your knowledge</Text>
+        </View>
+
+        {/* Form Section */}
+        <KeyboardAvoidingView
+          style={styles.formWrapper}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <View style={styles.formCard}>
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.scrollContent}
+              keyboardShouldPersistTaps="handled"
+            >
+              <Text style={styles.title}>Welcome back</Text>
+              <Text style={styles.description}>
+                Sign in to continue your learning journey
               </Text>
-            </Text>
+
+              {/* Email */}
+              <View style={styles.inputContainer}>
+                <Text style={styles.fieldLabel}>Email</Text>
+                <View style={styles.inputWrapper}>
+                  <Text style={styles.inputIcon}>📧</Text>
+                  <TextInput
+                    placeholder="you@example.com"
+                    placeholderTextColor="#9CA3AF"
+                    value={email}
+                    onChangeText={setEmail}
+                    style={styles.input}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    keyboardType="email-address"
+                    returnKeyType="next"
+                  />
+                </View>
+              </View>
+
+              {/* Password */}
+              <View style={styles.inputContainer}>
+                <Text style={styles.fieldLabel}>Password</Text>
+                <View style={styles.inputWrapper}>
+                  <Text style={styles.inputIcon}>🔒</Text>
+                  <TextInput
+                    placeholder="Enter your password"
+                    placeholderTextColor="#9CA3AF"
+                    value={password}
+                    onChangeText={setPassword}
+                    style={styles.input}
+                    secureTextEntry
+                    returnKeyType="done"
+                    onSubmitEditing={handleLogin}
+                  />
+                </View>
+              </View>
+
+              {/* Remember me + forgot password */}
+              <View style={styles.rowBetween}>
+                <TouchableOpacity
+                  style={styles.rememberMeContainer}
+                  onPress={() => setRememberMe(!rememberMe)}
+                  activeOpacity={0.8}
+                >
+                  <View
+                    style={[
+                      styles.checkbox,
+                      rememberMe && styles.checkboxChecked,
+                    ]}
+                  >
+                    {rememberMe && <Text style={styles.checkmark}>✓</Text>}
+                  </View>
+                  <Text style={styles.rememberMeText}>Remember me</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity onPress={handleForgotPassword}>
+                  <Text style={styles.forgotText}>Forgot password?</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Submit */}
+              <TouchableOpacity
+                style={[styles.button, loading && styles.buttonDisabled]}
+                onPress={handleLogin}
+                disabled={loading}
+                activeOpacity={0.9}
+              >
+                {loading ? (
+                  <View style={styles.buttonContent}>
+                    <ActivityIndicator color="#fff" size="small" />
+                    <Text style={styles.buttonText}>Signing in...</Text>
+                  </View>
+                ) : (
+                  <Text style={styles.buttonText}>Sign In</Text>
+                )}
+              </TouchableOpacity>
+
+              {/* Signup */}
+              <View style={styles.signupContainer}>
+                <Text style={styles.signupText}>
+                  Don&apos;t have an account?{' '}
+                  <Text
+                    style={styles.signupLink}
+                    onPress={() => navigation.navigate('Signup')}
+                  >
+                    Sign up
+                  </Text>
+                </Text>
+              </View>
+            </ScrollView>
           </View>
-        </ScrollView>
+        </KeyboardAvoidingView>
       </View>
-    </View>
+    </SafeAreaView>
   );
 });
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#1e3a8a',
+  },
   container: {
     flex: 1,
     backgroundColor: '#1e3a8a',
   },
   header: {
-    flex: 0.25,
+    flex: 0.3,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: 40,
+    paddingTop: 24,
+    paddingHorizontal: spacing.lg,
   },
   appTitle: {
-    fontSize: 36,
+    fontSize: 32,
     fontWeight: '800',
-    color: '#ffffff',
-    marginBottom: 8,
+    color: '#FFFFFF',
+    marginBottom: 6,
     letterSpacing: -0.5,
-    textShadowColor: 'rgba(0,0,0,0.3)',
+    textShadowColor: 'rgba(0,0,0,0.25)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 15,
     color: 'rgba(255,255,255,0.9)',
     fontWeight: '500',
   },
-  formSection: {
-    flex: 0.75,
-    backgroundColor: '#ffffff',
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    paddingTop: 40,
-    paddingHorizontal: 24,
+
+  formWrapper: {
+    flex: 0.7,
   },
+  formCard: {
+    flex: 1,
+    backgroundColor: '#ffffff',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 24,
+    paddingTop: 28,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 6,
+  },
+  scrollContent: {
+    paddingBottom: 32,
+  },
+
   title: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '800',
-    color: '#1a202c',
+    color: '#111827',
     textAlign: 'center',
-    marginBottom: 8,
-    letterSpacing: -0.5,
+    marginBottom: 4,
+    letterSpacing: -0.3,
   },
   description: {
-    fontSize: 16,
-    color: '#6b7280',
+    fontSize: 14,
+    color: '#6B7280',
     textAlign: 'center',
-    marginBottom: 36,
+    marginBottom: 28,
   },
+
   inputContainer: {
-    marginBottom: 20,
+    marginBottom: 18,
+  },
+  fieldLabel: {
+    fontSize: 13,
+    color: '#6B7280',
+    fontWeight: '600',
+    marginBottom: 6,
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f9fafb',
-    borderRadius: 16,
-    paddingHorizontal: 20,
-    paddingVertical: 4,
-    borderWidth: 1.5,
-    borderColor: '#e5e7eb',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 2,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   inputIcon: {
     fontSize: 18,
     marginRight: 12,
-    color: '#64748b',
+    color: '#64748B',
   },
   input: {
     flex: 1,
-    fontSize: 16,
-    color: '#0f172a',
-    paddingVertical: 16,
-    fontWeight: '400',
+    fontSize: 15,
+    color: '#0F172A',
+    paddingVertical: 12,
   },
-  button: {
-    backgroundColor: '#1e3a8a',
-    borderRadius: 16,
-    paddingVertical: 18,
-    alignItems: 'center',
-    marginTop: 28,
-    shadowColor: '#1e3a8a',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  buttonDisabled: {
-    backgroundColor: '#94a3b8',
-    shadowOpacity: 0,
-    elevation: 0,
-  },
-  buttonContent: {
+
+  rowBetween: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    gap: 8,
-  },
-  buttonText: {
-    color: '#ffffff',
-    fontSize: 17,
-    fontWeight: '700',
-    letterSpacing: -0.2,
-  },
-  forgotButton: {
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  forgotText: {
-    color: '#475569',
-    fontSize: 15,
-    fontWeight: '500',
-  },
-  scrollContent: {
-    flexGrow: 1,
-    paddingBottom: 40,
-  },
-  signupContainer: {
-    alignItems: 'center',
-    paddingBottom: 20,
-    marginTop: 20,
-  },
-  signupText: {
-    fontSize: 15,
-    color: '#64748b',
-  },
-  signupLink: {
-    color: '#1e3a8a',
-    fontWeight: '700',
+    marginTop: 6,
+    marginBottom: 8,
   },
   rememberMeContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 16,
-    marginBottom: 8,
   },
   checkbox: {
-    width: 20,
-    height: 20,
+    width: 18,
+    height: 18,
     borderWidth: 2,
-    borderColor: '#d1d5db',
+    borderColor: '#D1D5DB',
     borderRadius: 4,
-    marginRight: 12,
+    marginRight: 8,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#FFFFFF',
   },
   checkboxChecked: {
     backgroundColor: '#1e3a8a',
     borderColor: '#1e3a8a',
   },
   checkmark: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: 'bold',
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '700',
   },
   rememberMeText: {
-    fontSize: 15,
+    fontSize: 14,
     color: '#475569',
     fontWeight: '500',
+  },
+  forgotText: {
+    fontSize: 14,
+    color: '#1e3a8a',
+    fontWeight: '600',
+  },
+
+  button: {
+    backgroundColor: '#1e3a8a',
+    borderRadius: 16,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginTop: 24,
+    shadowColor: '#1e3a8a',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  buttonDisabled: {
+    backgroundColor: '#94A3B8',
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    columnGap: 8,
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: -0.2,
+  },
+
+  signupContainer: {
+    alignItems: 'center',
+    marginTop: 20,
+    paddingBottom: 10,
+  },
+  signupText: {
+    fontSize: 14,
+    color: '#6B7280',
+  },
+  signupLink: {
+    color: '#1e3a8a',
+    fontWeight: '700',
   },
 });
 
