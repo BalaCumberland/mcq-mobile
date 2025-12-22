@@ -8,6 +8,7 @@ import LaTeXRenderer from '../components/LaTeXRenderer';
 import ExplanationView from '../components/ExplanationView';
 import LoadingAnimation from '../components/LoadingAnimation';
 import ScreenWrapper from '../components/ScreenWrapper';
+import QuizResultsHeader from '../components/QuizResultsHeader';
 import { designSystem, colors, spacing, borderRadius, shadows } from '../styles/designSystem';
 import LinearGradient from 'react-native-linear-gradient';
 
@@ -267,36 +268,15 @@ const QuizScreen = ({ navigation, route }) => {
     return (
       <ScreenWrapper navigation={navigation}>
         <View style={styles.resultsContainer}>
-        <LinearGradient
-          colors={['#f8fafc', '#ffffff']}
-          style={styles.resultsHeader}
-        >
-          <Text style={styles.title}>🎯 Quiz Results</Text>
-          <View style={styles.scoreContainer}>
-            <LinearGradient
-              colors={percentage >= 80 ? ['#10b981', '#059669'] : percentage >= 60 ? ['#f59e0b', '#d97706'] : ['#ef4444', '#dc2626']}
-              style={[styles.scoreCircle, { borderColor: percentage >= 80 ? '#10b981' : percentage >= 60 ? '#f59e0b' : '#ef4444' }]}
-            >
-              <Text style={[styles.scorePercentage, { color: '#ffffff' }]}>{Math.round(percentage)}%</Text>
-            </LinearGradient>
-            <Text style={styles.scoreText}>{correctCount}/{totalCount} Correct</Text>
-            <View style={styles.statsRow}>
-              <View style={styles.statItem}>
-                <Text style={styles.statNumber}>{correctCount}</Text>
-                <Text style={styles.statLabel}>✓ Correct</Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text style={styles.statNumber}>{wrongCount}</Text>
-                <Text style={styles.statLabel}>✗ Wrong</Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text style={styles.statNumber}>{skippedCount}</Text>
-                <Text style={styles.statLabel}>⏭ Skipped</Text>
-              </View>
-            </View>
-          </View>
-          {totalPages > 1 && <Text style={styles.pageInfo}>📄 Page {currentPage} of {totalPages}</Text>}
-        </LinearGradient>
+        <QuizResultsHeader
+          title="🎯 Quiz Results"
+          percentage={percentage}
+          correctCount={correctCount}
+          wrongCount={wrongCount}
+          skippedCount={skippedCount}
+        />
+        
+        {totalPages > 1 && <Text style={styles.pageInfo}>📄 Page {currentPage} of {totalPages}</Text>}
         
         <ScrollView 
           ref={scrollViewRef} 
@@ -914,208 +894,28 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 10,
   },
-
-  resultsHeader: {
-    alignItems: 'center',
-    marginBottom: 20,
-    paddingBottom: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  score: {
-    fontSize: 18,
-    textAlign: 'center',
-    marginTop: 10,
-    fontWeight: 'bold',
-    color: '#2196F3',
-  },
-  resultCard: {
-    backgroundColor: '#fff',
-    padding: 16,
-    marginVertical: 8,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  questionNumber: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#666',
-    marginBottom: 8,
-  },
-  answerSection: {
-    marginTop: 12,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
-  },
-  questionText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  resultLabel: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 5,
-  },
-  correctAnswerLabel: {
-    fontSize: 14,
-    color: '#4CAF50',
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  correctAnswer: {
-    fontSize: 14,
-    color: '#333',
-    flexWrap: 'wrap',
-  },
-  userAnswerLabel: {
-    fontSize: 14,
-    color: '#f44336',
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  userAnswer: {
-    fontSize: 14,
-    color: '#333',
-    flexWrap: 'wrap',
-  },
-  button: {
-    backgroundColor: '#007bff',
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  resultsHeader: {
-    alignItems: 'center',
-    marginBottom: 20,
-    paddingBottom: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  score: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#2196F3',
-    marginTop: 10,
-  },
-  resultCard: {
-    backgroundColor: '#fff',
-    padding: 16,
-    marginVertical: 8,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  questionNumber: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#666',
-    marginBottom: 8,
-  },
-  questionText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  resultLabel: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  answerSection: {
-    marginTop: 12,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
-  },
-  correctAnswerLabel: {
-    fontSize: 14,
-    color: '#4CAF50',
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  correctAnswer: {
-    fontSize: 14,
-    color: '#333',
-  },
-  userAnswerLabel: {
-    fontSize: 14,
-    color: '#f44336',
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  userAnswer: {
-    fontSize: 14,
-    color: '#333',
-  },
-  explanationLabel: {
-    fontSize: 14,
-    color: '#666',
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  explanation: {
-    fontSize: 14,
-    color: '#666',
-    fontStyle: 'italic',
-  },
   pageInfo: {
     fontSize: 14,
     color: '#64748b',
     marginTop: 8,
+    textAlign: 'center',
+    marginBottom: 16,
   },
   resultsContainer: {
     flex: 1,
     backgroundColor: '#ffffff',
-  },
-  scoreContainer: {
-    alignItems: 'center',
-    marginVertical: 16,
-  },
-  scoreCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    borderWidth: 4,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  scorePercentage: {
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  scoreText: {
-    fontSize: 16,
-    color: '#666',
-    fontWeight: '500',
   },
   questionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
+  },
+  questionNumber: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#666',
+    marginBottom: 8,
   },
   statusBadge: {
     width: 28,
@@ -1124,19 +924,59 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  correctBadge: {
-    backgroundColor: '#4CAF50',
-  },
-  incorrectBadge: {
-    backgroundColor: '#f44336',
-  },
-  skippedBadge: {
-    backgroundColor: '#FF9800',
-  },
   statusText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  questionText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  resultLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  answerSection: {
+    marginTop: 12,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+  },
+  correctAnswerLabel: {
+    fontSize: 14,
+    color: '#4CAF50',
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  correctAnswer: {
+    fontSize: 14,
+    color: '#333',
+  },
+  userAnswerLabel: {
+    fontSize: 14,
+    color: '#f44336',
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  userAnswer: {
+    fontSize: 14,
+    color: '#333',
+  },
+  resultCard: {
+    backgroundColor: '#fff',
+    padding: 16,
+    marginVertical: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   correctCard: {
     borderLeftWidth: 4,
@@ -1227,24 +1067,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#3b82f6',
   },
 
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
-  },
-  statItem: {
-    alignItems: 'center',
-  },
-  statNumber: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1f2937',
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#6b7280',
-    marginTop: 4,
-  },
+
 });
 
 export default QuizScreen;

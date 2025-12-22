@@ -6,6 +6,7 @@ import { LAMBDA_MCQ_GO_API_URL } from '../config/env';
 import LaTeXRenderer from '../components/LaTeXRenderer';
 import ExplanationView from '../components/ExplanationView';
 import LoadingAnimation from '../components/LoadingAnimation';
+import QuizResultsHeader from '../components/QuizResultsHeader';
 
 
 
@@ -95,15 +96,13 @@ const ReviewScreen = React.memo(({ route }) => {
       maxToRenderPerBatch={2}
       windowSize={3}
     >
-      <View style={styles.header}>
-        <Text style={styles.title}>📋 Quiz Review</Text>
-        <Text style={styles.score}>{results.percentage}%</Text>
-        <View style={styles.summary}>
-          <Text style={styles.summaryText}>✅ {results.correctCount} correct</Text>
-          <Text style={styles.summaryText}>❌ {results.wrongCount} wrong</Text>
-          <Text style={styles.summaryText}>⏭️ {results.skippedCount} skipped</Text>
-        </View>
-      </View>
+      <QuizResultsHeader
+        title="📋 Quiz Review"
+        percentage={results.percentage}
+        correctCount={results.correctCount}
+        wrongCount={results.wrongCount}
+        skippedCount={results.skippedCount}
+      />
 
       <View style={styles.paginationInfo}>
         <Text style={styles.paginationInfoText}>
@@ -191,39 +190,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#64748b',
   },
-  header: {
-    backgroundColor: '#ffffff',
-    padding: 24,
-    borderRadius: 16,
-    marginBottom: 20,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#0f172a',
-    marginBottom: 12,
-  },
-  score: {
-    fontSize: 36,
-    fontWeight: '700',
-    color: '#1e40af',
-    marginBottom: 16,
-  },
-  summary: {
-    flexDirection: 'row',
-    gap: 20,
-  },
-  summaryText: {
-    fontSize: 14,
-    color: '#64748b',
-    fontWeight: '500',
-  },
+
   questionCard: {
     backgroundColor: '#ffffff',
     padding: 20,
