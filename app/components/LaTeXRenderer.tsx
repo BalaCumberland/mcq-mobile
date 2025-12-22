@@ -54,7 +54,7 @@ const LaTeXRenderer: React.FC<LaTeXRendererProps> = memo(({ text, style }) => {
                   margin: 0;
                   padding: 4px;
                   display: inline-block;
-                  font-size: 14px; /* smaller for mobile */
+                  font-size: 10px; /* smaller for mobile */
                 }
               </style>
               <script>
