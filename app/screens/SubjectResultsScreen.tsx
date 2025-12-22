@@ -4,10 +4,22 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 
 const SubjectResultsScreen = ({ route, navigation }) => {
-  const { subjectName, tests, className } = route.params;
+  const { subjectName, tests, className } = route.params || {};
+
+  // Handle case where params might be undefined
+  if (!subjectName || !tests || !className) {
+    return (
+      <SafeAreaView style={styles.safeArea} edges={['bottom']}>
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyEmoji}>⚠️</Text>
+          <Text style={styles.emptyText}>Missing subject data</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   // Group tests by topic
-  const groupedByTopic = tests.reduce((acc, test) => {
+  const groupedByTopic = (tests || []).reduce((acc, test) => {
     if (!acc[test.topic]) {
       acc[test.topic] = [];
     }

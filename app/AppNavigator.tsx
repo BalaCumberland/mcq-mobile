@@ -129,7 +129,8 @@ const getHeaderTitle = (routeName, route) => {
     case 'Login': return '🌐 Exam Sphere';
     case 'Signup': return '🌐 Sign Up';
     case 'ForgotPassword': return '🔒 Reset Password';
-    case 'Review': return '📋 Quiz Review';
+    case 'Review': return '';
+    case 'Profile': return '👤 Profile';
     case 'Quiz': {
       const timeRemaining = route?.params?.timeRemaining || 0;
       return `⏰ ${Math.floor(timeRemaining / 60)}:${(timeRemaining % 60).toString().padStart(2, '0')}`;
@@ -146,27 +147,172 @@ export default function AppNavigator() {
     gestureEnabled: false,
     headerStyle,
     headerTitleStyle,
-    headerTitle: getHeaderTitle(route.name, route),
+    headerTitle: '',
     headerLeft: route.name !== 'Login' && route.name !== 'Signup' && route.name !== 'ForgotPassword' ? () => {
       const { toggleMenuFn } = useContext(MenuContext) || {};
+      
+      if (route.name === 'Profile') {
+        return (
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <HamburgerButton onPress={toggleMenuFn} />
+            <TouchableOpacity 
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: '#ffffff20',
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                borderRadius: 8,
+                marginLeft: 8,
+              }}
+              onPress={() => navigation.navigate('Home')}
+            >
+              <Text style={{ color: '#ffffff', fontSize: 14, fontWeight: '600' }}>← Home</Text>
+            </TouchableOpacity>
+          </View>
+        );
+      }
+      
+      if (route.name === 'Progress') {
+        return (
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <HamburgerButton onPress={toggleMenuFn} />
+            <TouchableOpacity 
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: '#ffffff20',
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                borderRadius: 8,
+                marginLeft: 8,
+              }}
+              onPress={() => navigation.navigate('Home')}
+            >
+              <Text style={{ color: '#ffffff', fontSize: 14, fontWeight: '600' }}>← Home</Text>
+            </TouchableOpacity>
+          </View>
+        );
+      }
+      
+      if (route.name === 'SubjectResults') {
+        return (
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <HamburgerButton onPress={toggleMenuFn} />
+            <TouchableOpacity 
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: '#ffffff20',
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                borderRadius: 8,
+                marginLeft: 8,
+              }}
+              onPress={() => navigation.goBack()}
+            >
+              <Text style={{ color: '#ffffff', fontSize: 14, fontWeight: '600' }}>← Progress</Text>
+            </TouchableOpacity>
+          </View>
+        );
+      }
+      
+      if (route.name === 'Quiz') {
+        const subjectName = route.params?.subjectName || 'Subject';
+        return (
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <HamburgerButton onPress={toggleMenuFn} />
+            <TouchableOpacity 
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: '#ffffff20',
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                borderRadius: 8,
+                marginLeft: 8,
+              }}
+              onPress={() => navigation.goBack()}
+            >
+              <Text style={{ color: '#ffffff', fontSize: 14, fontWeight: '600' }}>← {subjectName}</Text>
+            </TouchableOpacity>
+          </View>
+        );
+      }
+      
+      if (route.name === 'Review') {
+        const subjectName = route.params?.subjectName || 'Subject';
+        return (
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <HamburgerButton onPress={toggleMenuFn} />
+            <TouchableOpacity 
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: '#ffffff20',
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                borderRadius: 8,
+                marginLeft: 8,
+              }}
+              onPress={() => navigation.goBack()}
+            >
+              <Text style={{ color: '#ffffff', fontSize: 14, fontWeight: '600' }}>← {subjectName}</Text>
+            </TouchableOpacity>
+          </View>
+        );
+      }
+      
+      if (route.name === 'Leaderboard') {
+        return (
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <HamburgerButton onPress={toggleMenuFn} />
+            <TouchableOpacity 
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: '#ffffff20',
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                borderRadius: 8,
+                marginLeft: 8,
+              }}
+              onPress={() => navigation.navigate('Home')}
+            >
+              <Text style={{ color: '#ffffff', fontSize: 14, fontWeight: '600' }}>← Home</Text>
+            </TouchableOpacity>
+          </View>
+        );
+      }
+      
       return <HamburgerButton onPress={toggleMenuFn} />;
-    } : route.name === 'Review' ? undefined : () => null,
-    headerRight: route.name === 'Quiz' && !route.params?.showingResults ? () => (
-      <TouchableOpacity 
-        style={{
-          backgroundColor: '#ffffff20',
-          paddingHorizontal: 12,
-          paddingVertical: 6,
-          borderRadius: 8,
-          marginRight: 16,
-        }}
-        onPress={() => {
-          route.params?.openQuestions?.();
-        }}
-      >
-        <Text style={{ color: '#ffffff', fontSize: 12, fontWeight: '600' }}>📋 Questions</Text>
-      </TouchableOpacity>
-    ) : undefined,
+    } : () => null,
+    headerRight: () => {
+      if (route.name === 'Quiz' && !route.params?.showingResults) {
+        return (
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Text style={{ ...headerTitleStyle, marginRight: 12 }}>{getHeaderTitle(route.name, route)}</Text>
+            <TouchableOpacity 
+              style={{
+                backgroundColor: '#ffffff20',
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                borderRadius: 8,
+                marginRight: 16,
+              }}
+              onPress={() => {
+                route.params?.openQuestions?.();
+              }}
+            >
+              <Text style={{ color: '#ffffff', fontSize: 12, fontWeight: '600' }}>📋 Questions</Text>
+            </TouchableOpacity>
+          </View>
+        );
+      }
+      return (
+        <Text style={{ ...headerTitleStyle, marginRight: 16 }}>{getHeaderTitle(route.name, route)}</Text>
+      );
+    },
     gestureEnabled: route.name === 'Review',
   }), [hasActiveQuiz]);
 
