@@ -6,6 +6,15 @@ import LinearGradient from 'react-native-linear-gradient';
 const SubjectResultsScreen = ({ route, navigation }) => {
   const { subjectName, tests, className } = route.params;
 
+  // Group tests by topic
+  const groupedByTopic = tests.reduce((acc, test) => {
+    if (!acc[test.topic]) {
+      acc[test.topic] = [];
+    }
+    acc[test.topic].push(test);
+    return acc;
+  }, {});
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
       <LinearGradient
@@ -13,26 +22,18 @@ const SubjectResultsScreen = ({ route, navigation }) => {
         style={styles.headerGradient}
       >
         <Text style={styles.title}>🏆 {subjectName}</Text>
-        <Text style={styles.subtitle}>Test Results</Text>
+        <Text style={styles.subtitle}>Topic-wise Results</Text>
       </LinearGradient>
       
       <ScrollView style={styles.container}>
-        {tests && tests.length > 0 ? (
-          tests.map((test, index) => (
-            <TouchableOpacity 
-              key={index} 
-              style={styles.testCard}
-              onPress={() => navigation.navigate('Review', {
-                quizName: test.quizName,
-                className: className,
-                subjectName: test.subjectName,
-                topic: test.topic
-              })}
-            >
-              <View style={styles.testHeader}>
-                <Text style={styles.testName}>{test.topic}</Text>
+        {Object.keys(groupedByTopic).length > 0 ? (
+          Object.keys(groupedByTopic).map((topic, index) => (
+            <View key={index} style={styles.topicSection}>
+              <Text style={styles.topicTitle}>📚 {topic}</Text>
+              {groupedByTopic[topic].map((test, testIndex) => (
                 <TouchableOpacity 
-                  style={styles.reviewButton}
+                  key={testIndex} 
+                  style={styles.testCard}
                   onPress={() => navigation.navigate('Review', {
                     quizName: test.quizName,
                     className: className,
@@ -40,17 +41,30 @@ const SubjectResultsScreen = ({ route, navigation }) => {
                     topic: test.topic
                   })}
                 >
-                  <Text style={styles.reviewButtonText}>Review</Text>
+                  <View style={styles.testHeader}>
+                    <Text style={styles.testName}>{test.quizName}</Text>
+                    <TouchableOpacity 
+                      style={styles.reviewButton}
+                      onPress={() => navigation.navigate('Review', {
+                        quizName: test.quizName,
+                        className: className,
+                        subjectName: test.subjectName,
+                        topic: test.topic
+                      })}
+                    >
+                      <Text style={styles.reviewButtonText}>Review</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <View style={styles.testStats}>
+                    <Text style={styles.testScore}>{test.percentage}%</Text>
+                    <Text style={styles.testDetail}>✅ {test.correctCount}</Text>
+                    <Text style={styles.testDetail}>❌ {test.wrongCount}</Text>
+                    <Text style={styles.testDetail}>⏭️ {test.skippedCount}</Text>
+                  </View>
+                  <Text style={styles.testDate}>{new Date(test.attemptedAt).toLocaleDateString()}</Text>
                 </TouchableOpacity>
-              </View>
-              <View style={styles.testStats}>
-                <Text style={styles.testScore}>{test.percentage}%</Text>
-                <Text style={styles.testDetail}>✅ {test.correctCount}</Text>
-                <Text style={styles.testDetail}>❌ {test.wrongCount}</Text>
-                <Text style={styles.testDetail}>⏭️ {test.skippedCount}</Text>
-              </View>
-              <Text style={styles.testDate}>{new Date(test.attemptedAt).toLocaleDateString()}</Text>
-            </TouchableOpacity>
+              ))}
+            </View>
           ))
         ) : (
           <View style={styles.emptyState}>
@@ -96,6 +110,16 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: 'rgba(255,255,255,0.9)',
     marginTop: 4,
+  },
+  topicSection: {
+    marginBottom: 24,
+  },
+  topicTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1e293b',
+    marginBottom: 12,
+    paddingHorizontal: 4,
   },
   testCard: {
     backgroundColor: '#ffffff',
