@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getAuthToken } from '../services/firebaseAuth';
 import { LAMBDA_MCQ_GO_API_URL } from '../config/env';
@@ -7,10 +7,11 @@ import LaTeXRenderer from '../components/LaTeXRenderer';
 import ExplanationView from '../components/ExplanationView';
 import LoadingAnimation from '../components/LoadingAnimation';
 import QuizResultsHeader from '../components/QuizResultsHeader';
+import LinearGradient from 'react-native-linear-gradient';
 
 
 
-const ReviewScreen = React.memo(({ route }) => {
+const ReviewScreen = React.memo(({ route, navigation }) => {
   const { quizName, className, subjectName, topic } = route.params;
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -89,13 +90,7 @@ const ReviewScreen = React.memo(({ route }) => {
   }
 
   return (
-    <ScrollView 
-      ref={scrollViewRef} 
-      style={styles.container}
-      removeClippedSubviews={true}
-      maxToRenderPerBatch={2}
-      windowSize={3}
-    >
+    <View style={styles.resultsContainer}>
       <QuizResultsHeader
         title="📋 Quiz Review"
         percentage={results.percentage}
@@ -103,83 +98,141 @@ const ReviewScreen = React.memo(({ route }) => {
         wrongCount={results.wrongCount}
         skippedCount={results.skippedCount}
       />
-
-      <View style={styles.paginationInfo}>
-        <Text style={styles.paginationInfoText}>
-          Showing {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, results.results.length)} of {results.results.length} questions
-        </Text>
-      </View>
       
-      {paginatedResults.map((result, index) => (
-        <View key={`${result.qno}-${index}`} style={[
-          styles.questionCard,
-          result.status === 'correct' && styles.correctCard,
-          result.status === 'wrong' && styles.wrongCard,
-          result.status === 'skipped' && styles.skippedCard
-        ]}>
-          <View style={styles.questionHeader}>
-            <Text style={styles.questionNumber}>Q{result.qno}</Text>
-            <Text style={[
-              styles.statusBadge,
-              result.status === 'correct' && styles.correctBadge,
-              result.status === 'wrong' && styles.wrongBadge,
-              result.status === 'skipped' && styles.skippedBadge
-            ]}>
-              {result.status === 'correct' ? '✅' : result.status === 'wrong' ? '❌' : '⏭️'}
-            </Text>
-          </View>
+      {totalPages > 1 && <Text style={styles.pageInfo}>📄 Page {currentPage} of {totalPages}</Text>}
+      
+      <ScrollView 
+        ref={scrollViewRef} 
+        style={styles.resultsScrollView} 
+        contentContainerStyle={styles.scrollContent}
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={3}
+        windowSize={5}
+      >
+        {paginatedResults.map((result, index) => {
+          const isCorrect = result.status === 'correct';
+          const isSkipped = result.status === 'skipped';
+          const correctAnswers = Array.isArray(result.correctAnswer) ? result.correctAnswer : [result.correctAnswer];
+          const userAnswer = result.studentAnswer && result.studentAnswer.length > 0 
+            ? result.studentAnswer[0] 
+            : 'Not answered';
           
-          <LaTeXRenderer text={result.question} style={styles.question} />
-          
-          {result.studentAnswer && (
-            <View style={styles.answerSection}>
-              <Text style={styles.answerLabel}>Your Answer:</Text>
-              <LaTeXRenderer text={result.studentAnswer[0]} style={styles.studentAnswer} />
+          return (
+            <LinearGradient
+              key={`${result.qno}-${index}`}
+              colors={['#ffffff', '#f8fafc']}
+              style={[styles.resultCard, isCorrect ? styles.correctCard : isSkipped ? styles.skippedCard : styles.incorrectCard]}
+            >
+              <View style={styles.questionHeader}>
+                <Text style={styles.questionNumber}>Q{result.qno}</Text>
+                <LinearGradient
+                  colors={isCorrect ? ['#10b981', '#059669'] : isSkipped ? ['#f59e0b', '#d97706'] : ['#ef4444', '#dc2626']}
+                  style={styles.statusBadge}
+                >
+                  <Text style={styles.statusText}>{isCorrect ? '✓' : isSkipped ? '⏭' : '✗'}</Text>
+                </LinearGradient>
+              </View>
+              <LaTeXRenderer text={result.question} style={styles.questionText} />
+              
+              <Text style={[
+                styles.resultLabel,
+                { color: isCorrect ? '#10b981' : isSkipped ? '#f59e0b' : '#ef4444' }
+              ]}>
+                {isCorrect ? '✓ CORRECT' : isSkipped ? '⏭ SKIPPED' : '✗ INCORRECT'}
+              </Text>
+              
+              <View style={styles.answerSection}>
+                <Text style={styles.correctAnswerLabel}>Correct Answer:</Text>
+                {correctAnswers.map((answer, idx) => (
+                  <LaTeXRenderer key={idx} text={answer} style={styles.correctAnswer} />
+                ))}
+              </View>
+              
+              {!isCorrect && (
+                <View style={styles.answerSection}>
+                  <Text style={styles.userAnswerLabel}>Your Answer:</Text>
+                  <LaTeXRenderer 
+                    text={isSkipped ? 'Skipped' : userAnswer} 
+                    style={styles.userAnswer} 
+                  />
+                </View>
+              )}
+              
+              <ExplanationView 
+                explanation={result.explanation || 'No explanation available'} 
+                questionId={result.qno}
+              />
+            </LinearGradient>
+          );
+        })}
+      </ScrollView>
+      
+      <SafeAreaView style={styles.resultsFooter} edges={['bottom']}>
+        {totalPages > 1 && (
+          <View style={styles.paginationContainer}>
+            <TouchableOpacity 
+              style={[styles.paginationButton, currentPage === 1 && styles.paginationButtonDisabled]}
+              onPress={() => {
+                handlePrevPage();
+                setTimeout(() => {
+                  if (scrollViewRef.current) {
+                    scrollViewRef.current.scrollTo({ y: 0, animated: true });
+                  }
+                }, 100);
+              }}
+              disabled={currentPage === 1}
+            >
+              <Text style={[styles.paginationButtonText, currentPage === 1 && styles.paginationButtonTextDisabled]}>
+                ← Previous
+              </Text>
+            </TouchableOpacity>
+            
+            <View style={styles.pageIndicator}>
+              <Text style={styles.paginationText}>{currentPage} / {totalPages}</Text>
             </View>
-          )}
-          
-          <View style={styles.answerSection}>
-            <Text style={styles.answerLabel}>Correct Answer:</Text>
-            <LaTeXRenderer text={result.correctAnswer[0]} style={styles.correctAnswer} />
+            
+            <TouchableOpacity 
+              style={[styles.paginationButton, currentPage === totalPages && styles.paginationButtonDisabled]}
+              onPress={() => {
+                handleNextPage();
+                setTimeout(() => {
+                  if (scrollViewRef.current) {
+                    scrollViewRef.current.scrollTo({ y: 0, animated: true });
+                  }
+                }, 100);
+              }}
+              disabled={currentPage === totalPages}
+            >
+              <Text style={[styles.paginationButtonText, currentPage === totalPages && styles.paginationButtonTextDisabled]}>
+                Next →
+              </Text>
+            </TouchableOpacity>
           </View>
-          
-          {result.explanation && (
-            <ExplanationView explanation={result.explanation} />
-          )}
-        </View>
-      ))}
-      
-      {totalPages > 1 && (
-        <SafeAreaView style={styles.paginationContainer} edges={['bottom']}>
-          <TouchableOpacity 
-            style={[styles.paginationButton, currentPage === 1 && styles.disabledButton]}
-            onPress={handlePrevPage}
-            disabled={currentPage === 1 || !results?.results}
-          >
-            <Text style={styles.paginationButtonText}>Previous</Text>
-          </TouchableOpacity>
-          <Text style={styles.paginationText}>Page {currentPage} of {totalPages}</Text>
-          <TouchableOpacity 
-            style={[styles.paginationButton, currentPage === totalPages && styles.disabledButton]}
-            onPress={handleNextPage}
-            disabled={!results?.results || currentPage === totalPages}
-          >
-            <Text style={styles.paginationButtonText}>Next</Text>
-          </TouchableOpacity>
-        </SafeAreaView>
-      )}
-    </ScrollView>
+        )}
+        
+        <TouchableOpacity 
+          style={styles.homeButton} 
+          onPress={() => {
+            Alert.alert(
+              'Leave Quiz Review?',
+              'Are you sure you want to go back to home?',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Yes', onPress: () => navigation.navigate('Home') }
+              ]
+            );
+          }}
+        >
+          <Text style={styles.homeButtonText}>🏠 Back to Home</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    </View>
   );
 });
 
 export default ReviewScreen;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8fafc',
-    padding: 20,
-  },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -190,29 +243,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#64748b',
   },
-
-  questionCard: {
-    backgroundColor: '#ffffff',
-    padding: 20,
-    borderRadius: 12,
+  pageInfo: {
+    fontSize: 14,
+    color: '#64748b',
+    marginTop: 8,
+    textAlign: 'center',
     marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
   },
-  correctCard: {
-    borderLeftWidth: 4,
-    borderLeftColor: '#059669',
-  },
-  wrongCard: {
-    borderLeftWidth: 4,
-    borderLeftColor: '#dc2626',
-  },
-  skippedCard: {
-    borderLeftWidth: 4,
-    borderLeftColor: '#ea580c',
+  resultsContainer: {
+    flex: 1,
+    backgroundColor: '#ffffff',
   },
   questionHeader: {
     flexDirection: 'row',
@@ -222,87 +262,148 @@ const styles = StyleSheet.create({
   },
   questionNumber: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#1e40af',
+    fontWeight: 'bold',
+    color: '#666',
+    marginBottom: 8,
   },
   statusBadge: {
-    fontSize: 18,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  question: {
+  statusText: {
+    color: '#fff',
     fontSize: 16,
-    marginBottom: 16,
-    color: '#0f172a',
-    lineHeight: 24,
-    fontWeight: '400',
-    backgroundColor: '#f0f9ff',
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#bae6fd',
+    fontWeight: 'bold',
+  },
+  questionText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  resultLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 10,
   },
   answerSection: {
-    marginBottom: 12,
+    marginTop: 12,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
   },
-  answerLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#64748b',
-    marginBottom: 6,
-  },
-  studentAnswer: {
+  correctAnswerLabel: {
     fontSize: 14,
-    color: '#dc2626',
-    backgroundColor: '#fef2f2',
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#fecaca',
+    color: '#4CAF50',
+    fontWeight: 'bold',
+    marginBottom: 4,
   },
   correctAnswer: {
     fontSize: 14,
-    color: '#059669',
-    backgroundColor: '#f0fdf4',
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#bbf7d0',
+    color: '#333',
   },
-  paginationInfo: {
-    backgroundColor: '#f1f5f9',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 16,
-    alignItems: 'center',
-  },
-  paginationInfoText: {
+  userAnswerLabel: {
     fontSize: 14,
-    color: '#64748b',
-    fontWeight: '500',
+    color: '#f44336',
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  userAnswer: {
+    fontSize: 14,
+    color: '#333',
+  },
+  resultCard: {
+    backgroundColor: '#fff',
+    padding: 16,
+    marginVertical: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  correctCard: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#10b981',
+  },
+  incorrectCard: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#ef4444',
+  },
+  skippedCard: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#f59e0b',
+  },
+  resultsScrollView: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+  scrollContent: {
+    paddingBottom: 20,
+  },
+  resultsFooter: {
+    backgroundColor: '#ffffff',
+    borderTopWidth: 1,
+    borderTopColor: '#e2e8f0',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
   paginationContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 20,
-    marginTop: 16,
+    marginBottom: 12,
   },
   paginationButton: {
-    backgroundColor: '#1e40af',
-    paddingHorizontal: 16,
+    backgroundColor: '#3b82f6',
+    paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 8,
+    minWidth: 80,
+    alignItems: 'center',
   },
-  disabledButton: {
-    backgroundColor: '#94a3b8',
+  paginationButtonDisabled: {
+    backgroundColor: '#e5e7eb',
   },
   paginationButtonText: {
     color: '#ffffff',
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '600',
+  },
+  paginationButtonTextDisabled: {
+    color: '#9ca3af',
+  },
+  pageIndicator: {
+    backgroundColor: '#f3f4f6',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
   },
   paginationText: {
     fontSize: 14,
-    color: '#64748b',
-    fontWeight: '500',
+    color: '#374151',
+    fontWeight: '600',
+  },
+  homeButton: {
+    backgroundColor: '#1e40af',
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  homeButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
