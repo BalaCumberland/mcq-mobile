@@ -19,14 +19,8 @@ const ProgressScreen = ({ navigation }) => {
 
   useFocusEffect(
     React.useCallback(() => {
-      // Clear any persisted quiz state when entering Progress screen
-      try {
-        clearQuizState();
-      } catch (error) {
-        console.warn('Error clearing quiz state:', error);
-      }
       fetchAnalytics();
-    }, [clearQuizState])
+    }, [])
   );
 
   const fetchAnalytics = async () => {
