@@ -146,18 +146,20 @@ const LoginScreen = memo(function LoginScreen({ navigation }: any) {
         {/* Form Section */}
         <KeyboardAvoidingView
           style={styles.formWrapper}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
         >
-          <View style={styles.formCard}>
-            <ScrollView
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={styles.scrollContent}
-              keyboardShouldPersistTaps="handled"
-            >
-              <Text style={styles.title}>Welcome back</Text>
-              <Text style={styles.description}>
-                Sign in to continue your learning journey
-              </Text>
+          <ScrollView
+            style={styles.formCard}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            bounces={false}
+          >
+            <Text style={styles.title}>Welcome back</Text>
+            <Text style={styles.description}>
+              Sign in to continue your learning journey
+            </Text>
 
               {/* Email */}
               <View style={styles.inputContainer}>
@@ -249,7 +251,6 @@ const LoginScreen = memo(function LoginScreen({ navigation }: any) {
                 </Text>
               </View>
             </ScrollView>
-          </View>
         </KeyboardAvoidingView>
       </View>
     </SafeAreaView>
@@ -305,7 +306,8 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   scrollContent: {
-    paddingBottom: 32,
+    flexGrow: 1,
+    paddingBottom: 40,
   },
 
   title: {
