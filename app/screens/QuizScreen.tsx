@@ -1,131 +1,121 @@
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, Alert, BackHandler, Animated } from 'react-native';
+import React, {
+  useEffect,
+  useState,
+  useMemo,
+  useCallback,
+  useRef,
+} from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  Modal,
+  Alert,
+  BackHandler,
+} from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import LinearGradient from 'react-native-linear-gradient';
+
 import useQuizStore from '../store/QuizStore';
 import ApiService from '../services/apiService';
 import LaTeXRenderer from '../components/LaTeXRenderer';
-import ExplanationView from '../components/ExplanationView';
 import LoadingAnimation from '../components/LoadingAnimation';
 import ScreenWrapper from '../components/ScreenWrapper';
 import QuizResultsView from '../components/QuizResultsView';
-import { designSystem, colors, spacing, borderRadius, shadows } from '../styles/designSystem';
-import LinearGradient from 'react-native-linear-gradient';
+import {
+  designSystem,
+  colors,
+  spacing,
+  borderRadius,
+  shadows,
+} from '../styles/designSystem';
 
-
+const ITEMS_PER_PAGE = 5;
 
 const QuizScreen = ({ navigation, route }) => {
-  const { 
-    quiz, 
-    currentQuestionIndex, 
-    userAnswers, 
+  const {
+    quiz,
+    currentQuestionIndex,
+    userAnswers,
     showResults,
     timeRemaining,
-    nextQuestion, 
-    prevQuestion, 
+    nextQuestion,
+    prevQuestion,
     selectAnswer,
-    skipQuestion,
     finishQuiz,
     updateTimer,
-    setPage
+    setPage,
   } = useQuizStore();
-  
+
   const [showQuestionPanel, setShowQuestionPanel] = useState(false);
-  const [progressAnimation] = useState(new Animated.Value(0));
-  const [scoreAnimation] = useState(new Animated.Value(0));
-  const [showScrollHint, setShowScrollHint] = useState(false);
-  const [scrollHintAnimation] = useState(new Animated.Value(0));
-
-  // Show scroll hint on first question
-  useEffect(() => {
-    if (currentQuestionIndex === 0) {
-      const timer = setTimeout(() => {
-        setShowScrollHint(true);
-        Animated.loop(
-          Animated.sequence([
-            Animated.timing(scrollHintAnimation, {
-              toValue: 1,
-              duration: 800,
-              useNativeDriver: true,
-            }),
-            Animated.timing(scrollHintAnimation, {
-              toValue: 0,
-              duration: 800,
-              useNativeDriver: true,
-            })
-          ]),
-          { iterations: 3 }
-        ).start(() => {
-          setShowScrollHint(false);
-        });
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-  }, [currentQuestionIndex]);
-
-  // Set up navigation header button and timer
-  React.useLayoutEffect(() => {
-    navigation.setParams({
-      openQuestions: () => setShowQuestionPanel(true),
-      timeRemaining: timeRemaining || 0
-    });
-  }, [navigation, timeRemaining]);
-  
-  React.useLayoutEffect(() => {
-    if (showResults || forceResults) {
-      navigation.setOptions({
-        headerRight: undefined
-      });
-    }
-  }, [navigation, showResults, forceResults]);
   const [forceResults, setForceResults] = useState(false);
   const [quizResults, setQuizResults] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
-  const scrollViewRef = React.useRef(null);
-  const answersScrollRef = React.useRef(null);
-  const mainScrollRef = React.useRef(null);
 
-  // Reset scroll position when question changes
+  const mainScrollRef = useRef<ScrollView | null>(null);
+
+  // ----- Header: show questions button + timer in params -----
+  React.useLayoutEffect(() => {
+    navigation.setParams({
+      openQuestions: () => setShowQuestionPanel(true),
+      timeRemaining: timeRemaining || 0,
+    });
+  }, [navigation, timeRemaining]);
+
+  React.useLayoutEffect(() => {
+    if (showResults || forceResults) {
+      navigation.setOptions({
+        headerRight: undefined,
+      });
+    }
+  }, [navigation, showResults, forceResults]);
+
+  // Reset scroll when question changes
   useEffect(() => {
     if (mainScrollRef.current) {
       mainScrollRef.current.scrollTo({ y: 0, animated: false });
     }
   }, [currentQuestionIndex]);
 
+  // Timer handling
   useEffect(() => {
     if (showResults || forceResults) return;
-    
+
     const interval = setInterval(() => {
       updateTimer();
       if (timeRemaining <= 0) {
         setForceResults(true);
       }
     }, 1000);
-    
+
     return () => clearInterval(interval);
   }, [updateTimer, showResults, forceResults, timeRemaining]);
 
+  // Android back handling
   useFocusEffect(
-    React.useCallback(() => {
-      // Only handle back button during active quiz, not during results
+    useCallback(() => {
       if (showResults || forceResults) {
         return;
       }
-      
+
       const backAction = () => {
         if (quiz) {
           Alert.alert(
-            'Exit Quiz?',
+            'Exit quiz?',
             'Are you sure you want to exit? Your progress will be lost.',
             [
               { text: 'Cancel', style: 'cancel' },
-              { text: 'Exit', onPress: () => {
-                // Clear quiz state before navigating
-                const { resetQuiz } = useQuizStore.getState();
-                resetQuiz();
-                navigation.navigate('Home');
-              }}
+              {
+                text: 'Exit',
+                onPress: () => {
+                  const { resetQuiz } = useQuizStore.getState();
+                  resetQuiz();
+                  navigation.navigate('Home');
+                },
+              },
             ]
           );
           return true;
@@ -133,22 +123,30 @@ const QuizScreen = ({ navigation, route }) => {
         return false;
       };
 
-      const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+      const backHandler = BackHandler.addEventListener(
+        'hardwareBackPress',
+        backAction
+      );
       return () => backHandler.remove();
     }, [quiz, showResults, forceResults, navigation])
   );
 
+  // Shuffle + collect options for current question
   const allAnswers = useMemo(() => {
     if (!quiz || !quiz.questions[currentQuestionIndex]) return [];
     const currentQuestion = quiz.questions[currentQuestionIndex];
-    if (currentQuestion.allAnswers && Array.isArray(currentQuestion.allAnswers)) {
+
+    if (Array.isArray(currentQuestion.allAnswers)) {
       return currentQuestion.allAnswers;
     }
+
     const incorrect = currentQuestion.incorrectAnswers || '';
     return [
       currentQuestion.correctAnswer,
-      ...(typeof incorrect === 'string' ? incorrect.split(' ~~ ') : [])
-    ].filter(Boolean).sort(() => Math.random() - 0.5);
+      ...(typeof incorrect === 'string' ? incorrect.split(' ~~ ') : []),
+    ]
+      .filter(Boolean)
+      .sort(() => Math.random() - 0.5);
   }, [quiz, currentQuestionIndex]);
 
   const handlePrevPage = useCallback(() => {
@@ -156,87 +154,89 @@ const QuizScreen = ({ navigation, route }) => {
   }, []);
 
   const handleNextPage = useCallback(() => {
-    const totalPages = Math.ceil(quizResults?.results?.length || 0 / itemsPerPage);
+    const total = quizResults?.results?.length || 0;
+    const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
     setCurrentPage(prev => Math.min(prev + 1, totalPages));
-  }, [quizResults?.results?.length, itemsPerPage]);
+  }, [quizResults?.results?.length]);
 
   const handleGoHome = useCallback(() => {
     Alert.alert(
-      'Leave Quiz Results?',
+      'Leave quiz results?',
       'Are you sure you want to go back to home?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Yes', onPress: () => {
-          const { resetQuiz } = useQuizStore.getState();
-          resetQuiz();
-          navigation.navigate('Home');
-        }}
+        {
+          text: 'Yes',
+          onPress: () => {
+            const { resetQuiz } = useQuizStore.getState();
+            resetQuiz();
+            navigation.navigate('Home');
+          },
+        },
       ]
     );
   }, [navigation]);
 
-  // Submit quiz when results are requested
+  // Submit quiz & fetch results when results are triggered
   useEffect(() => {
     if ((showResults || forceResults) && !quizResults && quiz) {
       const submitAndGetResults = async () => {
         try {
-          console.log('UserAnswers array:', userAnswers);
           const answers = quiz.questions.map((question, index) => {
             const userAns = userAnswers[index];
-            console.log(`Question ${index + 1}: userAnswer = "${userAns}"`);
             return {
               questionId: `q${index + 1}`,
-              selectedAnswer: userAns || ''
+              selectedAnswer: userAns || '',
             };
           });
-          
-          // Get the actual selected values from navigation params or quiz object
-          const className = route?.params?.className || quiz.className || 'CLS12-MPC';
-          const subjectName = route?.params?.subjectName || quiz.subjectName || 'MATHS2A';
-          const topic = route?.params?.topic || quiz.topic || 'UNIT-1-Complex Numbers';
-          const quizName = route?.params?.quizName || quiz.quizName || quiz.title;
-          
-          console.log('Quiz data for submit:', {
-            className,
-            subjectName, 
-            topic,
-            quizName,
-            routeParams: route?.params
-          });
+
+          const className =
+            route?.params?.className || quiz.className || 'CLS12-MPC';
+          const subjectName =
+            route?.params?.subjectName || quiz.subjectName || 'MATHS2A';
+          const topic =
+            route?.params?.topic || quiz.topic || 'UNIT-1-Complex Numbers';
+          let quizName =
+            route?.params?.quizName || quiz.quizName || quiz.title;
+
+          const studentId = 'student123'; // TODO: from auth store
+
           let response;
-          
-          const studentId = 'student123'; // TODO: Get from user store
-          
           try {
-            response = await ApiService.submitQuiz(className, subjectName, topic, quizName, studentId, answers, quiz);
-            console.log('API Response:', JSON.stringify(response, null, 2));
-            if (response.results && response.results.length > 0) {
-              console.log('Sample result:', JSON.stringify(response.results[0], null, 2));
-            }
+            response = await ApiService.submitQuiz(
+              className,
+              subjectName,
+              topic,
+              quizName,
+              studentId,
+              answers,
+              quiz
+            );
             setQuizResults(response);
-            return; // Exit early if API succeeds
-          } catch (firstError) {
-            console.log('First API call failed:', firstError);
-            if (firstError.message.includes('404')) {
-              // Try with topic-based quiz name as fallback
-              const topicName = topic.replace('UNIT-1-', '').replace('+', ' ');
+            return;
+          } catch (firstError: any) {
+            if (String(firstError?.message || '').includes('404')) {
+              // fallback quizName
+              const topicName = topic
+                .replace('UNIT-1-', '')
+                .replace('+', ' ');
               quizName = `${topicName}-Exercise - 1-55MIN`;
-              try {
-                response = await ApiService.submitQuiz(className, subjectName, topic, quizName, studentId, answers, quiz);
-                console.log('Fallback API Response:', response);
-                setQuizResults(response);
-                return; // Exit early if fallback API succeeds
-              } catch (secondError) {
-                console.log('Fallback API also failed:', secondError);
-                throw secondError;
-              }
-            } else {
-              throw firstError;
+              response = await ApiService.submitQuiz(
+                className,
+                subjectName,
+                topic,
+                quizName,
+                studentId,
+                answers,
+                quiz
+              );
+              setQuizResults(response);
+              return;
             }
+            throw firstError;
           }
         } catch (error) {
           console.error('Quiz submission failed:', error);
-          // Create fallback results if API fails
           const fallbackResults = {
             correctCount: 0,
             wrongCount: 0,
@@ -249,25 +249,16 @@ const QuizScreen = ({ navigation, route }) => {
               status: 'skipped',
               correctAnswer: [question.correctAnswer],
               studentAnswer: [userAnswers[index] || 'Not answered'],
-              explanation: 'Results could not be loaded from server'
-            }))
+              explanation: 'Results could not be loaded from server.',
+            })),
           };
           setQuizResults(fallbackResults);
         }
       };
-      
+
       submitAndGetResults();
     }
-  }, [showResults, forceResults, quiz, userAnswers, quizResults]);
-
-  console.log('QuizScreen render:', { 
-    quiz: !!quiz, 
-    showResults, 
-    currentQuestionIndex, 
-    userAnswersLength: userAnswers.length,
-    questionsLength: quiz?.questions?.length,
-    willShowResults: showResults
-  });
+  }, [showResults, forceResults, quiz, userAnswers, quizResults, route?.params]);
 
   if (!quiz) {
     return <LoadingAnimation />;
@@ -276,25 +267,18 @@ const QuizScreen = ({ navigation, route }) => {
   const currentQuestion = quiz.questions[currentQuestionIndex];
   const isLastQuestion = currentQuestionIndex === quiz.questions.length - 1;
 
-  console.log('Results check:', { showResults, forceResults, hasQuiz: !!quiz });
-
+  // ---- Results mode ----
   if (showResults || forceResults) {
     if (!quizResults) {
-      return <LoadingAnimation text="Loading Results..." />;
+      return <LoadingAnimation text="Loading results..." />;
     }
-    
-    const { correctCount = 0, wrongCount = 0, skippedCount = 0, totalCount = 0, percentage = 0, results = [] } = quizResults;
-    
-    const totalPages = Math.ceil(results.length / itemsPerPage);
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const paginatedResults = results.slice(startIndex, startIndex + itemsPerPage);
 
     return (
       <ScreenWrapper navigation={navigation}>
         <QuizResultsView
           results={quizResults}
           currentPage={currentPage}
-          itemsPerPage={itemsPerPage}
+          itemsPerPage={ITEMS_PER_PAGE}
           title="🎯 Quiz Results"
           onPrevPage={handlePrevPage}
           onNextPage={handleNextPage}
@@ -304,50 +288,60 @@ const QuizScreen = ({ navigation, route }) => {
     );
   }
 
+  // ---- Active quiz mode ----
+  const answeredCount = userAnswers.filter(a => a && a !== '').length;
+  const progressPercent =
+    quiz.questions.length === 0
+      ? 0
+      : ((currentQuestionIndex + 1) / quiz.questions.length) * 100;
+
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
+      {/* Header row */}
       <View style={styles.header}>
         <Text style={styles.title}>
           Question {currentQuestionIndex + 1} of {quiz.questions.length}
         </Text>
+        {/* timer could be shown here if you like */}
       </View>
-      
-      {/* Progress Bar */}
+
+      {/* Progress section */}
       <LinearGradient
-        colors={['#f8fafc', '#ffffff']}
+        colors={['#F9FAFB', '#FFFFFF']}
         style={styles.progressContainer}
       >
         <View style={styles.progressStats}>
           <Text style={styles.progressText}>
             {currentQuestionIndex + 1}/{quiz.questions.length} Questions
           </Text>
-          <Text style={styles.progressText}>
-            {userAnswers.filter(answer => answer && answer !== '').length} Answered
-          </Text>
+          <Text style={styles.progressText}>{answeredCount} Answered</Text>
         </View>
         <View style={styles.progressBar}>
           <LinearGradient
-            colors={['#3b82f6', '#1e40af']}
-            style={[
-              styles.progressFill,
-              { width: `${((currentQuestionIndex + 1) / quiz.questions.length) * 100}%` }
-            ]}
+            colors={['#3B82F6', '#1E40AF']}
+            style={[styles.progressFill, { width: `${progressPercent}%` }]}
           />
         </View>
       </LinearGradient>
-      
-      <ScrollView 
+
+      {/* Main content */}
+      <ScrollView
         ref={mainScrollRef}
         style={styles.mainScrollView}
         contentContainerStyle={styles.mainScrollContent}
         showsVerticalScrollIndicator={false}
       >
+        {/* Question */}
         <View style={styles.questionSection}>
           <View style={styles.questionContainer}>
-            <LaTeXRenderer text={currentQuestion.question} style={styles.question} />
+            <LaTeXRenderer
+              text={currentQuestion.question}
+              style={styles.question}
+            />
           </View>
         </View>
-        
+
+        {/* Answers */}
         <View style={styles.answersSection}>
           <View style={styles.answersWrapper}>
             {allAnswers.map((answer, index) => {
@@ -357,22 +351,32 @@ const QuizScreen = ({ navigation, route }) => {
                   key={index}
                   style={[
                     styles.answerButton,
-                    isSelected && styles.selectedAnswer
+                    isSelected && styles.selectedAnswer,
                   ]}
                   onPress={() => selectAnswer(answer)}
+                  activeOpacity={0.9}
                 >
                   <LinearGradient
-                    colors={isSelected ? ['#dbeafe', '#bfdbfe'] : ['#f8fafc', '#ffffff']}
+                    colors={
+                      isSelected
+                        ? ['#DBEAFE', '#BFDBFE']
+                        : ['#F9FAFB', '#FFFFFF']
+                    }
                     style={styles.answerGradient}
                   >
                     <View style={styles.answerRow}>
-                      <View style={[
-                        styles.radioButton,
-                        isSelected && styles.radioSelected
-                      ]}>
+                      <View
+                        style={[
+                          styles.radioButton,
+                          isSelected && styles.radioSelected,
+                        ]}
+                      >
                         {isSelected && <View style={styles.radioInner} />}
                       </View>
-                      <LaTeXRenderer text={answer} style={styles.answerText} />
+                      <LaTeXRenderer
+                        text={answer}
+                        style={styles.answerText}
+                      />
                     </View>
                   </LinearGradient>
                 </TouchableOpacity>
@@ -381,23 +385,35 @@ const QuizScreen = ({ navigation, route }) => {
           </View>
         </View>
       </ScrollView>
-      
+
+      {/* Navigation buttons */}
       <View style={styles.navigationContainer}>
         <TouchableOpacity
-          style={[styles.navButton, styles.prevButton, currentQuestionIndex === 0 && styles.navButtonDisabled]}
+          style={[
+            styles.navButton,
+            styles.prevButton,
+            currentQuestionIndex === 0 && styles.navButtonDisabled,
+          ]}
           onPress={prevQuestion}
           disabled={currentQuestionIndex === 0}
         >
-          <Text style={[styles.navButtonText, currentQuestionIndex === 0 && styles.navButtonTextDisabled]}>
+          <Text
+            style={[
+              styles.navButtonText,
+              currentQuestionIndex === 0 && styles.navButtonTextDisabled,
+            ]}
+          >
             ← Previous
           </Text>
         </TouchableOpacity>
-        
+
         <TouchableOpacity
-          style={[styles.navButton, isLastQuestion ? styles.finishButton : styles.nextButton]}
+          style={[
+            styles.navButton,
+            isLastQuestion ? styles.finishButton : styles.nextButton,
+          ]}
           onPress={() => {
             if (isLastQuestion) {
-              console.log('FINISH CLICKED - Forcing results');
               setForceResults(true);
             } else {
               nextQuestion();
@@ -409,79 +425,115 @@ const QuizScreen = ({ navigation, route }) => {
           </Text>
         </TouchableOpacity>
       </View>
-      
+
+      {/* Question panel modal */}
       <Modal
         visible={showQuestionPanel}
-        transparent={true}
+        transparent
         animationType="slide"
         onRequestClose={() => setShowQuestionPanel(false)}
       >
-        {console.log('Modal rendering, visible:', showQuestionPanel)}
         <View style={styles.modalOverlay}>
           <SafeAreaView style={styles.questionPanel} edges={['top', 'bottom']}>
             <View style={styles.panelHeader}>
               <Text style={styles.panelTitle}>Questions</Text>
-              <TouchableOpacity onPress={() => setShowQuestionPanel(false)}>
+              <TouchableOpacity
+                onPress={() => setShowQuestionPanel(false)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
                 <Text style={styles.closeButton}>✕</Text>
               </TouchableOpacity>
             </View>
-            
+
+            {/* Legend */}
             <View style={styles.legend}>
               <View style={styles.legendItem}>
-                <View style={[styles.legendColor, { backgroundColor: '#4CAF50' }]} />
+                <View
+                  style={[
+                    styles.legendColor,
+                    { backgroundColor: '#059669' },
+                  ]}
+                />
                 <Text style={styles.legendText}>Answered</Text>
               </View>
               <View style={styles.legendItem}>
-                <View style={[styles.legendColor, { backgroundColor: '#FF9800' }]} />
+                <View
+                  style={[
+                    styles.legendColor,
+                    { backgroundColor: '#F59E0B' },
+                  ]}
+                />
                 <Text style={styles.legendText}>Skipped</Text>
               </View>
               <View style={styles.legendItem}>
-                <View style={[styles.legendColor, { backgroundColor: '#ccc' }]} />
-                <Text style={styles.legendText}>Not Visited</Text>
+                <View
+                  style={[
+                    styles.legendColor,
+                    { backgroundColor: '#D1D5DB' },
+                  ]}
+                />
+                <Text style={styles.legendText}>Not visited</Text>
               </View>
             </View>
-            
-            <ScrollView 
-              style={styles.questionGrid} 
-              nestedScrollEnabled={true} 
-              showsVerticalScrollIndicator={true}
-              removeClippedSubviews={true}
-              maxToRenderPerBatch={10}
+
+            {/* Question grid */}
+            <ScrollView
+              style={styles.questionGrid}
+              nestedScrollEnabled
+              showsVerticalScrollIndicator
             >
               <View style={styles.gridContainer}>
-                {console.log('Rendering question buttons, total questions:', quiz.questions.length)}
-                {Array.from({ length: quiz.questions.length }, (_, index) => {
-                  const questionNum = index + 1;
-                  const isAnswered = userAnswers[index] && userAnswers[index] !== '';
-                  const isSkipped = userAnswers[index] === null || userAnswers[index] === '';
-                  const isCurrent = index === currentQuestionIndex;
-                  
-                  console.log(`Question ${questionNum}: answered=${isAnswered}, skipped=${isSkipped}, current=${isCurrent}`);
-                  return (
-                    <TouchableOpacity
-                      key={questionNum}
-                      activeOpacity={0.7}
-                      style={[
-                        styles.questionButton,
-                        isCurrent && styles.currentQuestion,
-                        isAnswered && !isCurrent && styles.answeredQuestion,
-                        isSkipped && !isCurrent && !isAnswered && styles.skippedQuestion
-                      ]}
-                      onPress={() => {
-                        console.log('BUTTON PRESSED:', questionNum, 'Going to index:', index);
-                        setPage(index);
-                        setShowQuestionPanel(false);
-                      }}
-                    >
-                      <Text style={[
-                        styles.questionButtonText,
-                        (isCurrent || isAnswered || isSkipped) && styles.questionButtonTextActive
-                      ]}>
-                        {questionNum}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
+                {Array.from(
+                  { length: quiz.questions.length },
+                  (_, index) => {
+                    const questionNum = index + 1;
+                    const value = userAnswers[index];
+                    const isAnswered = value && value !== '';
+                    const isSkipped =
+                      value === null || value === '' || value === undefined;
+                    const isCurrent = index === currentQuestionIndex;
+
+                    let buttonStyle = styles.questionButton;
+                    if (isCurrent) {
+                      buttonStyle = {
+                        ...buttonStyle,
+                        ...styles.currentQuestion,
+                      };
+                    } else if (isAnswered) {
+                      buttonStyle = {
+                        ...buttonStyle,
+                        ...styles.answeredQuestion,
+                      };
+                    } else if (isSkipped) {
+                      buttonStyle = {
+                        ...buttonStyle,
+                        ...styles.skippedQuestion,
+                      };
+                    }
+
+                    return (
+                      <TouchableOpacity
+                        key={questionNum}
+                        activeOpacity={0.8}
+                        style={buttonStyle}
+                        onPress={() => {
+                          setPage(index);
+                          setShowQuestionPanel(false);
+                        }}
+                      >
+                        <Text
+                          style={[
+                            styles.questionButtonText,
+                            (isCurrent || isAnswered || isSkipped) &&
+                              styles.questionButtonTextActive,
+                          ]}
+                        >
+                          {questionNum}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  }
+                )}
               </View>
             </ScrollView>
           </SafeAreaView>
@@ -492,43 +544,32 @@ const QuizScreen = ({ navigation, route }) => {
 };
 
 const styles = StyleSheet.create({
+  // Layout
   container: {
     flex: 1,
     padding: spacing.xl,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#FFFFFF',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  questionsButton: {
-    backgroundColor: colors.secondary[500], // blue-100 background with blue-700 text
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.md,
-    ...shadows.sm,
-  },
-  questionsButtonText: {
-    color: '#ffffff', // text-blue-700
-    fontSize: 12, // text-xs
-    fontWeight: '500', // font-medium
+  title: {
+    ...designSystem.headingMedium,
+    fontWeight: '700',
   },
 
+  // Progress
   progressContainer: {
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: spacing.lg,
     marginBottom: spacing.lg,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    padding: 20,
-    marginHorizontal: 4,
-    shadowColor: '#000',
+    paddingVertical: 16,
+    paddingTop: 18,
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
     shadowRadius: 8,
@@ -552,128 +593,10 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     height: '100%',
-    backgroundColor: colors.primary[500], // orange-500 to red-500 gradient
     borderRadius: borderRadius.full,
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    justifyContent: 'flex-start',
-    alignItems: 'center',
-    paddingTop: 60,
-    padding: 20,
-  },
-  questionPanel: {
-    backgroundColor: '#ffffff',
-    width: '100%',
-    height: '75%',
-    borderRadius: 20,
-    padding: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  panelHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-  },
-  panelTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1f2937',
-  },
-  closeButton: {
-    fontSize: 24,
-    color: '#6b7280',
-    fontWeight: '600',
-    padding: 4,
-  },
-  legend: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: 20,
-    backgroundColor: '#f9fafb',
-    padding: 16,
-    borderRadius: 12,
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  legendColor: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-  },
-  legendText: {
-    fontSize: 13,
-    color: '#374151',
-    fontWeight: '500',
-  },
-  questionGrid: {
-    flex: 1,
-    minHeight: 200,
-  },
-  gridContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    justifyContent: 'flex-start',
-  },
-  questionButton: {
-    width: 48,
-    height: 48,
-    backgroundColor: '#f8fafc',
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  currentQuestion: {
-    backgroundColor: '#6366f1',
-    shadowColor: '#6366f1',
-    shadowOpacity: 0.3,
-  },
-  answeredQuestion: {
-    backgroundColor: '#059669',
-    shadowColor: '#059669',
-    shadowOpacity: 0.3,
-  },
-  skippedQuestion: {
-    backgroundColor: '#d97706',
-    shadowColor: '#d97706',
-    shadowOpacity: 0.3,
-  },
-  questionButtonText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#374151',
-    textAlign: 'center',
-  },
-  questionButtonTextActive: {
-    color: '#ffffff',
-  },
-  title: {
-    ...designSystem.headingMedium,
-    fontWeight: '700',
-  },
-  timer: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.error[500],
-  },
+
+  // Main content
   mainScrollView: {
     flex: 1,
   },
@@ -684,34 +607,39 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   questionContainer: {
-    backgroundColor: '#f0f9ff',
+    backgroundColor: '#EFF6FF',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#bae6fd',
+    borderColor: '#BFDBFE',
     padding: 16,
   },
   question: {
     fontSize: 18,
     lineHeight: 26,
-    color: '#374151',
+    color: '#1F2937',
     fontWeight: '600',
   },
+
+  // Answers
   answersSection: {
     marginBottom: 20,
   },
   answersWrapper: {
-    backgroundColor: '#f3f4f6',
+    backgroundColor: '#F3F4F6',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
-    padding: 8,
+    borderColor: '#E5E7EB',
+    paddingVertical: 8,
   },
   answerButton: {
     backgroundColor: 'transparent',
-    padding: spacing.lg,
     marginVertical: 4,
-    borderRadius: 8,
-    borderWidth: 0,
+    borderRadius: 10,
+  },
+  answerGradient: {
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: 10,
   },
   answerRow: {
     flexDirection: 'row',
@@ -722,18 +650,26 @@ const styles = StyleSheet.create({
     height: 20,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: '#ccc',
+    borderColor: '#CBD5E1',
     marginRight: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
   },
   radioSelected: {
-    backgroundColor: '#007bff',
-    borderColor: '#007bff',
+    borderColor: '#3B82F6',
+  },
+  radioInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#3B82F6',
   },
   selectedAnswer: {
-    borderColor: '#3b82f6',
-    backgroundColor: '#eff6ff',
-    shadowColor: '#3b82f6',
-    shadowOpacity: 0.1,
+    shadowColor: '#3B82F6',
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 3,
   },
   answerText: {
     fontSize: 16,
@@ -741,225 +677,166 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     lineHeight: 22,
   },
+
+  // Bottom navigation
   navigationContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 20,
+    marginTop: 12,
     gap: 12,
   },
   navButton: {
     flex: 1,
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: 12,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.12,
     shadowRadius: 4,
     elevation: 3,
   },
   prevButton: {
-    backgroundColor: '#64748b',
+    backgroundColor: '#1D4ED8',
   },
   nextButton: {
-    backgroundColor: '#3b82f6',
+    backgroundColor: '#1D4ED8',
   },
   finishButton: {
-    backgroundColor: '#10b981',
+    backgroundColor: '#1E40AF',
   },
   navButtonDisabled: {
-    backgroundColor: '#e5e7eb',
+    backgroundColor: '#E5E7EB',
     shadowOpacity: 0,
     elevation: 0,
   },
   navButtonText: {
-    color: '#ffffff',
-    fontSize: 16,
+    color: '#FFFFFF',
+    fontSize: 15,
     fontWeight: '600',
   },
   navButtonTextDisabled: {
-    color: '#9ca3af',
+    color: '#9CA3AF',
   },
-  rightButtons: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  pageInfo: {
-    fontSize: 14,
-    color: '#64748b',
-    marginTop: 8,
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  resultsContainer: {
+
+  // Modal
+  modalOverlay: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: 'rgba(15, 23, 42, 0.55)',
+    justifyContent: 'flex-start',
+    paddingTop: 60,
+    paddingHorizontal: 20,
   },
-  questionHeader: {
+  questionPanel: {
+    backgroundColor: '#FFFFFF',
+    width: '100%',
+    height: '75%',
+    borderRadius: 20,
+    padding: 24,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.18,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  panelHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  panelTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#111827',
+  },
+  closeButton: {
+    fontSize: 24,
+    color: '#6B7280',
+    fontWeight: '600',
+  },
+
+  legend: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 16,
+    backgroundColor: '#F9FAFB',
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  legendColor: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    marginRight: 6,
+  },
+  legendText: {
+    fontSize: 13,
+    color: '#374151',
+    fontWeight: '500',
+  },
+
+  questionGrid: {
+    flex: 1,
+    minHeight: 200,
+  },
+  gridContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-start',
+  },
+  questionButton: {
+    width: 48,
+    height: 48,
+    marginRight: 12,
     marginBottom: 12,
-  },
-  questionNumber: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#666',
-    marginBottom: 8,
-  },
-  statusBadge: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  statusText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  questionText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  resultLabel: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  answerSection: {
-    marginTop: 12,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
-  },
-  correctAnswerLabel: {
-    fontSize: 14,
-    color: '#4CAF50',
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  correctAnswer: {
-    fontSize: 14,
-    color: '#333',
-  },
-  userAnswerLabel: {
-    fontSize: 14,
-    color: '#f44336',
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  userAnswer: {
-    fontSize: 14,
-    color: '#333',
-  },
-  resultCard: {
-    backgroundColor: '#fff',
-    padding: 16,
-    marginVertical: 8,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    shadowColor: '#000',
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.08,
     shadowRadius: 4,
+    elevation: 1,
+  },
+  currentQuestion: {
+    backgroundColor: '#4F46E5',
+    shadowColor: '#4F46E5',
+    shadowOpacity: 0.25,
     elevation: 3,
   },
-  correctCard: {
-    borderLeftWidth: 4,
-    borderLeftColor: '#10b981',
+  answeredQuestion: {
+    backgroundColor: '#059669',
+    shadowColor: '#059669',
+    shadowOpacity: 0.25,
+    elevation: 3,
   },
-  incorrectCard: {
-    borderLeftWidth: 4,
-    borderLeftColor: '#ef4444',
+  skippedQuestion: {
+    backgroundColor: '#D97706',
+    shadowColor: '#D97706',
+    shadowOpacity: 0.25,
+    elevation: 3,
   },
-  skippedCard: {
-    borderLeftWidth: 4,
-    borderLeftColor: '#f59e0b',
-  },
-  resultsScrollView: {
-    flex: 1,
-    paddingHorizontal: 16,
-  },
-  scrollContent: {
-    paddingBottom: 20,
-  },
-  resultsFooter: {
-    backgroundColor: '#ffffff',
-    borderTopWidth: 1,
-    borderTopColor: '#e2e8f0',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  paginationContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  paginationButton: {
-    backgroundColor: '#3b82f6',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-    minWidth: 80,
-    alignItems: 'center',
-  },
-  paginationButtonDisabled: {
-    backgroundColor: '#e5e7eb',
-  },
-  paginationButtonText: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  paginationButtonTextDisabled: {
-    color: '#9ca3af',
-  },
-  pageIndicator: {
-    backgroundColor: '#f3f4f6',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  paginationText: {
-    fontSize: 14,
+  questionButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
     color: '#374151',
-    fontWeight: '600',
+    textAlign: 'center',
   },
-  homeButton: {
-    backgroundColor: '#1e40af',
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+  questionButtonTextActive: {
+    color: '#FFFFFF',
   },
-  homeButtonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  answerGradient: {
-    padding: spacing.lg,
-  },
-  radioInner: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#3b82f6',
-  },
-
-
 });
 
 export default QuizScreen;
