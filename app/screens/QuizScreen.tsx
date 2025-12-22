@@ -355,7 +355,10 @@ const QuizScreen = ({ navigation, route }) => {
                   </View>
                 )}
                 
-                <ExplanationView explanation={result.explanation || 'No explanation available'} />
+                <ExplanationView 
+                  explanation={result.explanation || 'No explanation available'} 
+                  questionId={result.qno}
+                />
               </LinearGradient>
             );
           })}

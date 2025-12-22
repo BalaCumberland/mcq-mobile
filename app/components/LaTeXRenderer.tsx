@@ -1,5 +1,5 @@
-import React, { memo, useMemo, useCallback } from 'react';
-import { Text, View, Dimensions, Image } from 'react-native';
+import React, { memo, useMemo, useCallback, useState } from 'react';
+import { Text, Image } from 'react-native';
 import { WebView } from 'react-native-webview';
 
 interface LaTeXRendererProps {
@@ -7,101 +7,144 @@ interface LaTeXRendererProps {
   style?: any;
 }
 
+const LATEX_SMILES_REGEX = /(\$\$(?:LATEX|SMILES)::[\s\S]*?::)/g;
+
 const LaTeXRenderer: React.FC<LaTeXRendererProps> = memo(({ text, style }) => {
-  const [webViewHeights, setWebViewHeights] = React.useState<{[key: number]: number}>({});
-  
-  const handleMessage = React.useCallback((index: number, isBlock: boolean) => {
+  const [webViewHeights, setWebViewHeights] = useState<{ [key: number]: number }>({});
+
+  const handleMessage = useCallback((index: number) => {
     return (event: any) => {
-      const height = parseInt(event.nativeEvent.data);
-      if (height > 0) {
-        setWebViewHeights(prev => ({ ...prev, [index]: Math.max(height, isBlock ? 200 : 80) }));
+      const height = parseInt(event.nativeEvent.data, 10);
+      if (!isNaN(height) && height > 0) {
+        setWebViewHeights(prev => {
+          if (prev[index] === height) return prev; // avoid unnecessary re-renders
+          return { ...prev, [index]: height };
+        });
       }
     };
   }, []);
+
   const isImageUrl = useCallback((str: string) => {
     return /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(str);
   }, []);
 
-
-
   const renderContent = useMemo(() => {
-    const parts = text.split(/(\$\$(?:LATEX|SMILES)::[\s\S]*?::)/g);
-    
+    const parts = text.split(LATEX_SMILES_REGEX);
+
     return parts.map((part, index) => {
+      if (!part) return null;
+
+      // ---------- LATEX ----------
       if (part.startsWith('$$LATEX::') && part.endsWith('::')) {
         const latex = part.replace(/^\$\$LATEX::/, '').replace(/::$/, '').trim();
         const isBlock = latex.includes('\\\\') || latex.length > 40;
         const mathDelimiter = isBlock ? `\\[${latex}\\]` : `\\(${latex}\\)`;
+
         const html = `
+          <!DOCTYPE html>
           <html>
             <head>
-              <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-              <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+              <meta name="viewport" content="width=device-width, initial-scale=1" />
+              <style>
+                html, body {
+                  margin: 0;
+                  padding: 0;
+                }
+                #math-content {
+                  margin: 0;
+                  padding: 4px;
+                  display: inline-block;
+                  font-size: 14px; /* smaller for mobile */
+                }
+              </style>
               <script>
+                function sendHeight() {
+                  var el = document.getElementById('math-content');
+                  if (!el || !window.ReactNativeWebView) return;
+                  var rect = el.getBoundingClientRect();
+                  var height = Math.ceil(rect.height) + 4;
+                  window.ReactNativeWebView.postMessage(String(height));
+                }
+
                 window.MathJax = {
                   tex: { inlineMath: [['\\\\(', '\\\\)']], displayMath: [['\\\\[', '\\\\]']] },
-                  chtml: { scale: 2.0 }
+                  chtml: { scale: 1.2 },
+                  startup: {
+                    ready: () => {
+                      MathJax.startup.defaultReady();
+                      MathJax.typesetPromise().then(() => {
+                        sendHeight();
+                        setTimeout(sendHeight, 50);
+                        setTimeout(sendHeight, 200);
+                      });
+                    }
+                  }
                 };
               </script>
+              <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
             </head>
-            <body style="margin:0; padding:12px; font-size:20px;">
+            <body>
               <div id="math-content">
                 ${mathDelimiter}
               </div>
-              <script>
-                function sendHeight() {
-                  const content = document.getElementById('math-content');
-                  const height = content.scrollHeight + 24;
-                  window.ReactNativeWebView?.postMessage(height.toString());
-                }
-                MathJax.startup.promise.then(() => {
-                  setTimeout(sendHeight, 100);
-                });
-              </script>
             </body>
           </html>
         `;
+
         return (
           <WebView
             key={`latex-${index}`}
             source={{ html }}
-            style={{ height: webViewHeights[index] || (isBlock ? 200 : 80), backgroundColor: 'transparent' }}
-            scrollEnabled={true}
+            originWhitelist={['*']}
+            style={{
+              width: '100%',
+              height: webViewHeights[index] ?? (isBlock ? 60 : 40), // small initial
+              backgroundColor: 'transparent',
+            }}
+            scrollEnabled={false}                  // we size it ourselves
             showsVerticalScrollIndicator={false}
-            showsHorizontalScrollIndicator={true}
+            showsHorizontalScrollIndicator={false}
             androidLayerType="hardware"
-            cacheEnabled={true}
-            cacheMode="LOAD_CACHE_ELSE_NETWORK"
+            cacheEnabled
             incognito={false}
             thirdPartyCookiesEnabled={false}
-            onMessage={handleMessage(index, isBlock)}
-          />
-        );
-      }
-      if (part.startsWith('$$SMILES::') && part.endsWith('::')) {
-        const smiles = part.replace(/^\$\$SMILES::/, '').replace(/::$/, '').trim();
-        const smilesUrl = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles/${encodeURIComponent(smiles)}/PNG?image_size=300x200`;
-        return (
-          <Image
-            key={`smiles-${index}`}
-            source={{ uri: smilesUrl, cache: 'force-cache' }}
-            style={{ width: 300, height: 200, resizeMode: 'contain', marginVertical: 8 }}
-            loadingIndicatorSource={{ uri: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==' }}
+            onMessage={handleMessage(index)}
           />
         );
       }
 
+      // ---------- SMILES ----------
+      if (part.startsWith('$$SMILES::') && part.endsWith('::')) {
+        const smiles = part.replace(/^\$\$SMILES::/, '').replace(/::$/, '').trim();
+        const smilesUrl = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles/${encodeURIComponent(
+          smiles
+        )}/PNG?image_size=300x200`;
+        return (
+          <Image
+            key={`smiles-${index}`}
+            source={{ uri: smilesUrl, cache: 'force-cache' as any }}
+            style={{ width: 300, height: 200, resizeMode: 'contain', marginVertical: 8 }}
+          />
+        );
+      }
+
+      // ---------- plain image URL ----------
       if (isImageUrl(part.trim())) {
         return (
           <Image
             key={`image-${index}`}
-            source={{ uri: part.trim(), cache: 'force-cache' }}
+            source={{ uri: part.trim(), cache: 'force-cache' as any }}
             style={{ width: 200, height: 150, resizeMode: 'contain', marginVertical: 8 }}
-            loadingIndicatorSource={{ uri: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==' }}
           />
         );
       }
-      return part ? <Text key={`text-${index}`} style={style}>{part}</Text> : null;
+
+      // ---------- plain text ----------
+      return (
+        <Text key={`text-${index}`} style={style}>
+          {part}
+        </Text>
+      );
     });
   }, [text, style, webViewHeights, handleMessage, isImageUrl]);
 

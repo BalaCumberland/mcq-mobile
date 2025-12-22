@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import LaTeXRenderer from './LaTeXRenderer';
 
 interface ExplanationViewProps {
@@ -7,19 +7,16 @@ interface ExplanationViewProps {
   label?: string;
 }
 
-const ExplanationView: React.FC<ExplanationViewProps> = React.memo(({ 
-  explanation, 
-  label = "💡 Explanation:" 
-}) => {
-  return (
-    <View style={styles.explanationSection}>
-      <Text style={styles.explanationLabel}>{label}</Text>
-      <ScrollView style={styles.explanationScrollView} nestedScrollEnabled={true}>
+const ExplanationView: React.FC<ExplanationViewProps> = React.memo(
+  ({ explanation, label = "💡 Explanation:" }) => {
+    return (
+      <View style={styles.explanationSection}>
+        <Text style={styles.explanationLabel}>{label}</Text>
         <LaTeXRenderer text={explanation} style={styles.explanation} />
-      </ScrollView>
-    </View>
-  );
-});
+      </View>
+    );
+  }
+);
 
 const styles = StyleSheet.create({
   explanationSection: {
@@ -41,9 +38,6 @@ const styles = StyleSheet.create({
     color: '#475569',
     lineHeight: 22,
     flexWrap: 'wrap',
-  },
-  explanationScrollView: {
-    maxHeight: 120,
   },
 });
 

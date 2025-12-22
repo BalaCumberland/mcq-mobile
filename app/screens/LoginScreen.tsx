@@ -1,5 +1,6 @@
 import React, { useState, memo, useEffect } from 'react';
 import { View, TextInput, StyleSheet, Alert, Text, TouchableOpacity, ActivityIndicator, Dimensions, StatusBar, ScrollView, BackHandler } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../config/firebase';
 import userStore from '../store/UserStore';
@@ -13,6 +14,25 @@ const LoginScreen = memo(function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+
+  useEffect(() => {
+    loadSavedCredentials();
+  }, []);
+
+  const loadSavedCredentials = async () => {
+    try {
+      const savedEmail = await AsyncStorage.getItem('savedEmail');
+      const savedPassword = await AsyncStorage.getItem('savedPassword');
+      if (savedEmail && savedPassword) {
+        setEmail(savedEmail);
+        setPassword(savedPassword);
+        setRememberMe(true);
+      }
+    } catch (error) {
+      console.error('Error loading saved credentials:', error);
+    }
+  };
 
   useFocusEffect(
     React.useCallback(() => {
@@ -61,6 +81,9 @@ const LoginScreen = memo(function LoginScreen({ navigation }: any) {
         setLoading(false);
         return;
       }
+      
+      await AsyncStorage.setItem('savedEmail', rememberMe ? email : '');
+      await AsyncStorage.setItem('savedPassword', rememberMe ? password : '');
       
       const response = await userStore.getState().fetchUserByEmail(email);
       console.log(response);
@@ -117,6 +140,16 @@ const LoginScreen = memo(function LoginScreen({ navigation }: any) {
               />
             </View>
           </View>
+          
+          <TouchableOpacity
+            style={styles.rememberMeContainer}
+            onPress={() => setRememberMe(!rememberMe)}
+          >
+            <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
+              {rememberMe && <Text style={styles.checkmark}>✓</Text>}
+            </View>
+            <Text style={styles.rememberMeText}>Remember me</Text>
+          </TouchableOpacity>
           
           <TouchableOpacity
             style={[styles.button, loading && styles.buttonDisabled]}
@@ -282,6 +315,36 @@ const styles = StyleSheet.create({
   signupLink: {
     color: '#1e3a8a',
     fontWeight: '700',
+  },
+  rememberMeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderWidth: 2,
+    borderColor: '#d1d5db',
+    borderRadius: 4,
+    marginRight: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxChecked: {
+    backgroundColor: '#1e3a8a',
+    borderColor: '#1e3a8a',
+  },
+  checkmark: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  rememberMeText: {
+    fontSize: 15,
+    color: '#475569',
+    fontWeight: '500',
   },
 });
 
