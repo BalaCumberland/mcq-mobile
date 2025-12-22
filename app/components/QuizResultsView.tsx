@@ -1,10 +1,17 @@
 import React, { useRef, useMemo, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import LinearGradient from 'react-native-linear-gradient';
+
 import LaTeXRenderer from './LaTeXRenderer';
 import ExplanationView from './ExplanationView';
 import QuizResultsHeader from './QuizResultsHeader';
-import LinearGradient from 'react-native-linear-gradient';
 
 interface QuizResultsViewProps {
   results: any;
@@ -16,6 +23,23 @@ interface QuizResultsViewProps {
   onGoHome: () => void;
 }
 
+// Centralized colors for consistency
+const COLORS = {
+  background: '#F9FAFB',
+  cardBackground: '#FFFFFF',
+  border: '#E5E7EB',
+  textPrimary: '#0F172A',
+  textSecondary: '#6B7280',
+  green: '#16A34A',
+  greenDark: '#15803D',
+  red: '#DC2626',
+  redDark: '#B91C1C',
+  amber: '#F59E0B',
+  amberDark: '#D97706',
+  primary: '#1D4ED8',
+  primaryDark: '#1E40AF',
+};
+
 const QuizResultsView: React.FC<QuizResultsViewProps> = ({
   results,
   currentPage,
@@ -23,9 +47,9 @@ const QuizResultsView: React.FC<QuizResultsViewProps> = ({
   title,
   onPrevPage,
   onNextPage,
-  onGoHome
+  onGoHome,
 }) => {
-  const scrollViewRef = useRef(null);
+  const scrollViewRef = useRef<ScrollView | null>(null);
 
   const paginatedResults = useMemo(() => {
     if (!results?.results) return [];
@@ -38,26 +62,24 @@ const QuizResultsView: React.FC<QuizResultsViewProps> = ({
     return Math.ceil(results.results.length / itemsPerPage);
   }, [results?.results?.length, itemsPerPage]);
 
+  const scrollToTop = useCallback(() => {
+    if (scrollViewRef.current) {
+      scrollViewRef.current.scrollTo({ y: 0, animated: true });
+    }
+  }, []);
+
   const handlePrevPage = useCallback(() => {
     onPrevPage();
-    setTimeout(() => {
-      if (scrollViewRef.current) {
-        scrollViewRef.current.scrollTo({ y: 0, animated: true });
-      }
-    }, 100);
-  }, [onPrevPage]);
+    setTimeout(scrollToTop, 80);
+  }, [onPrevPage, scrollToTop]);
 
   const handleNextPage = useCallback(() => {
     onNextPage();
-    setTimeout(() => {
-      if (scrollViewRef.current) {
-        scrollViewRef.current.scrollTo({ y: 0, animated: true });
-      }
-    }, 100);
-  }, [onNextPage]);
+    setTimeout(scrollToTop, 80);
+  }, [onNextPage, scrollToTop]);
 
   return (
-    <View style={styles.resultsContainer}>
+    <View style={styles.root}>
       <QuizResultsHeader
         title={title}
         percentage={results.percentage}
@@ -65,108 +87,200 @@ const QuizResultsView: React.FC<QuizResultsViewProps> = ({
         wrongCount={results.wrongCount}
         skippedCount={results.skippedCount}
       />
-      
-      {totalPages > 1 && <Text style={styles.pageInfo}>📄 Page {currentPage} of {totalPages}</Text>}
-      
-      <ScrollView 
-        ref={scrollViewRef} 
-        style={styles.resultsScrollView} 
+
+      {totalPages > 1 && (
+        <Text style={styles.pageInfo}>
+          📄 Page <Text style={styles.pageInfoStrong}>{currentPage}</Text> of{' '}
+          <Text style={styles.pageInfoStrong}>{totalPages}</Text>
+        </Text>
+      )}
+
+      <ScrollView
+        ref={scrollViewRef}
+        style={styles.resultsScrollView}
         contentContainerStyle={styles.scrollContent}
-        removeClippedSubviews={true}
-        maxToRenderPerBatch={3}
-        windowSize={5}
+        removeClippedSubviews
       >
-        {paginatedResults.map((result, index) => {
+        {paginatedResults.map((result: any, index: number) => {
           const isCorrect = result.status === 'correct';
           const isSkipped = result.status === 'skipped';
-          const correctAnswers = Array.isArray(result.correctAnswer) ? result.correctAnswer : [result.correctAnswer];
-          const userAnswer = result.studentAnswer && result.studentAnswer.length > 0 
-            ? result.studentAnswer[0] 
-            : 'Not answered';
-          
+          const correctAnswers = Array.isArray(result.correctAnswer)
+            ? result.correctAnswer
+            : [result.correctAnswer];
+
+          const userAnswer =
+            result.studentAnswer && result.studentAnswer.length > 0
+              ? result.studentAnswer[0]
+              : 'Not answered';
+
+          const statusColors = isCorrect
+            ? [COLORS.green, COLORS.greenDark]
+            : isSkipped
+            ? [COLORS.amber, COLORS.amberDark]
+            : [COLORS.red, COLORS.redDark];
+
+          const statusLabel = isCorrect
+            ? 'Correct'
+            : isSkipped
+            ? 'Skipped'
+            : 'Incorrect';
+
+          const statusIcon = isCorrect ? '✓' : isSkipped ? '⏭' : '✗';
+
           return (
             <LinearGradient
               key={`${result.qno}-${index}`}
-              colors={['#ffffff', '#f8fafc']}
-              style={[styles.resultCard, isCorrect ? styles.correctCard : isSkipped ? styles.skippedCard : styles.incorrectCard]}
+              colors={['#FFFFFF', '#F9FAFB']}
+              style={[
+                styles.resultCard,
+                isCorrect
+                  ? styles.correctCard
+                  : isSkipped
+                  ? styles.skippedCard
+                  : styles.incorrectCard,
+              ]}
             >
+              {/* Question header row */}
               <View style={styles.questionHeader}>
-                <Text style={styles.questionNumber}>Q{result.qno}</Text>
-                <LinearGradient
-                  colors={isCorrect ? ['#10b981', '#059669'] : isSkipped ? ['#f59e0b', '#d97706'] : ['#ef4444', '#dc2626']}
-                  style={styles.statusBadge}
-                >
-                  <Text style={styles.statusText}>{isCorrect ? '✓' : isSkipped ? '⏭' : '✗'}</Text>
+                <View style={styles.qLabelWrapper}>
+                  <Text style={styles.qLabel}>QUESTION</Text>
+                  <Text style={styles.questionNumber}>Q{result.qno}</Text>
+                </View>
+
+                <LinearGradient colors={statusColors} style={styles.statusBadge}>
+                  <Text style={styles.statusBadgeIcon}>{statusIcon}</Text>
+                  <Text style={styles.statusBadgeText}>{statusLabel}</Text>
                 </LinearGradient>
               </View>
-              <LaTeXRenderer text={result.question} style={styles.questionText} />
-              
-              <Text style={[
-                styles.resultLabel,
-                { color: isCorrect ? '#10b981' : isSkipped ? '#f59e0b' : '#ef4444' }
-              ]}>
-                {isCorrect ? '✓ CORRECT' : isSkipped ? '⏭ SKIPPED' : '✗ INCORRECT'}
-              </Text>
-              
+
+              {/* Question text */}
+              <LaTeXRenderer
+                text={result.question}
+                style={styles.questionText}
+              />
+
+              {/* Result summary line */}
+              <View style={styles.resultSummaryRow}>
+                <View
+                  style={[
+                    styles.statusDot,
+                    {
+                      backgroundColor: isCorrect
+                        ? COLORS.green
+                        : isSkipped
+                        ? COLORS.amber
+                        : COLORS.red,
+                    },
+                  ]}
+                />
+                <Text
+                  style={[
+                    styles.resultLabel,
+                    {
+                      color: isCorrect
+                        ? COLORS.green
+                        : isSkipped
+                        ? COLORS.amberDark
+                        : COLORS.redDark,
+                    },
+                  ]}
+                >
+                  {isCorrect
+                    ? 'You answered this correctly'
+                    : isSkipped
+                    ? 'You skipped this question'
+                    : 'Your answer was incorrect'}
+                </Text>
+              </View>
+
+              {/* Correct answer */}
               <View style={styles.answerSection}>
-                <Text style={styles.correctAnswerLabel}>Correct Answer:</Text>
-                {correctAnswers.map((answer, idx) => (
-                  <LaTeXRenderer key={idx} text={answer} style={styles.correctAnswer} />
+                <Text style={styles.answerSectionLabel}>Correct answer</Text>
+                {correctAnswers.map((answer: string, idx: number) => (
+                  <LaTeXRenderer
+                    key={`correct-${result.qno}-${idx}`}
+                    text={answer}
+                    style={styles.correctAnswer}
+                  />
                 ))}
               </View>
-              
+
+              {/* User answer */}
               {!isCorrect && (
                 <View style={styles.answerSection}>
-                  <Text style={styles.userAnswerLabel}>Your Answer:</Text>
-                  <LaTeXRenderer 
-                    text={isSkipped ? 'Skipped' : userAnswer} 
-                    style={styles.userAnswer} 
+                  <Text style={styles.answerSectionLabelSecondary}>
+                    Your answer
+                  </Text>
+                  <LaTeXRenderer
+                    text={isSkipped ? 'Skipped' : userAnswer}
+                    style={styles.userAnswer}
                   />
                 </View>
               )}
-              
-              <ExplanationView 
-                explanation={result.explanation || 'No explanation available'} 
-                questionId={result.qno}
-              />
+
+              {/* Explanation */}
+              <View style={styles.explanationWrapper}>
+                <ExplanationView
+                  explanation={result.explanation || 'No explanation available.'}
+                  // keep this only if your ExplanationView accepts questionId
+                  // questionId={result.qno}
+                />
+              </View>
             </LinearGradient>
           );
         })}
       </ScrollView>
-      
-      <SafeAreaView style={styles.resultsFooter} edges={['bottom']}>
+
+      {/* Footer with pagination + home */}
+      <SafeAreaView style={styles.footer} edges={['bottom']}>
         {totalPages > 1 && (
           <View style={styles.paginationContainer}>
-            <TouchableOpacity 
-              style={[styles.paginationButton, currentPage === 1 && styles.paginationButtonDisabled]}
+            <TouchableOpacity
+              style={[
+                styles.paginationButton,
+                currentPage === 1 && styles.paginationButtonDisabled,
+              ]}
               onPress={handlePrevPage}
               disabled={currentPage === 1}
             >
-              <Text style={[styles.paginationButtonText, currentPage === 1 && styles.paginationButtonTextDisabled]}>
+              <Text
+                style={[
+                  styles.paginationButtonText,
+                  currentPage === 1 && styles.paginationButtonTextDisabled,
+                ]}
+              >
                 ← Previous
               </Text>
             </TouchableOpacity>
-            
+
             <View style={styles.pageIndicator}>
-              <Text style={styles.paginationText}>{currentPage} / {totalPages}</Text>
+              <Text style={styles.pageIndicatorText}>
+                Page {currentPage} of {totalPages}
+              </Text>
             </View>
-            
-            <TouchableOpacity 
-              style={[styles.paginationButton, currentPage === totalPages && styles.paginationButtonDisabled]}
+
+            <TouchableOpacity
+              style={[
+                styles.paginationButton,
+                currentPage === totalPages && styles.paginationButtonDisabled,
+              ]}
               onPress={handleNextPage}
               disabled={currentPage === totalPages}
             >
-              <Text style={[styles.paginationButtonText, currentPage === totalPages && styles.paginationButtonTextDisabled]}>
+              <Text
+                style={[
+                  styles.paginationButtonText,
+                  currentPage === totalPages &&
+                    styles.paginationButtonTextDisabled,
+                ]}
+              >
                 Next →
               </Text>
             </TouchableOpacity>
           </View>
         )}
-        
-        <TouchableOpacity 
-          style={styles.homeButton} 
-          onPress={onGoHome}
-        >
+
+        <TouchableOpacity style={styles.homeButton} onPress={onGoHome}>
           <Text style={styles.homeButtonText}>🏠 Back to Home</Text>
         </TouchableOpacity>
       </SafeAreaView>
@@ -175,167 +289,214 @@ const QuizResultsView: React.FC<QuizResultsViewProps> = ({
 };
 
 const styles = StyleSheet.create({
-  pageInfo: {
-    fontSize: 14,
-    color: '#64748b',
-    marginTop: 8,
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  resultsContainer: {
+  root: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: COLORS.background,
   },
-  questionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  questionNumber: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#666',
+  pageInfo: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    marginTop: 6,
+    textAlign: 'center',
     marginBottom: 8,
   },
-  statusBadge: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  statusText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  questionText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  resultLabel: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  answerSection: {
-    marginTop: 12,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
-  },
-  correctAnswerLabel: {
-    fontSize: 14,
-    color: '#4CAF50',
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  correctAnswer: {
-    fontSize: 14,
-    color: '#333',
-  },
-  userAnswerLabel: {
-    fontSize: 14,
-    color: '#f44336',
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  userAnswer: {
-    fontSize: 14,
-    color: '#333',
-  },
-  resultCard: {
-    backgroundColor: '#fff',
-    padding: 16,
-    marginVertical: 8,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  correctCard: {
-    borderLeftWidth: 4,
-    borderLeftColor: '#10b981',
-  },
-  incorrectCard: {
-    borderLeftWidth: 4,
-    borderLeftColor: '#ef4444',
-  },
-  skippedCard: {
-    borderLeftWidth: 4,
-    borderLeftColor: '#f59e0b',
+  pageInfoStrong: {
+    fontWeight: '600',
+    color: COLORS.textPrimary,
   },
   resultsScrollView: {
     flex: 1,
     paddingHorizontal: 16,
   },
   scrollContent: {
-    paddingBottom: 20,
+    paddingBottom: 24,
   },
-  resultsFooter: {
-    backgroundColor: '#ffffff',
+
+  // Cards
+  resultCard: {
+    backgroundColor: COLORS.cardBackground,
+    padding: 16,
+    marginVertical: 8,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  correctCard: {
+    borderLeftWidth: 4,
+    borderLeftColor: COLORS.green,
+  },
+  incorrectCard: {
+    borderLeftWidth: 4,
+    borderLeftColor: COLORS.red,
+  },
+  skippedCard: {
+    borderLeftWidth: 4,
+    borderLeftColor: COLORS.amber,
+  },
+
+  questionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  qLabelWrapper: {
+    gap: 2,
+  },
+  qLabel: {
+    fontSize: 11,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    color: COLORS.textSecondary,
+    fontWeight: '600',
+  },
+  questionNumber: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+  },
+
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+  },
+  statusBadgeIcon: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    marginRight: 4,
+  },
+  statusBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
+
+  questionText: {
+    fontSize: 15,
+    color: COLORS.textPrimary,
+    marginBottom: 8,
+    fontWeight: '600',
+  },
+
+  resultSummaryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+    marginBottom: 4,
+  },
+  statusDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    marginRight: 6,
+  },
+  resultLabel: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+
+  answerSection: {
+    marginTop: 10,
+    paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: '#e2e8f0',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    borderTopColor: '#F3F4F6',
   },
+  answerSectionLabel: {
+    fontSize: 13,
+    color: COLORS.textPrimary,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  answerSectionLabelSecondary: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  correctAnswer: {
+    fontSize: 14,
+    color: COLORS.textPrimary,
+  },
+  userAnswer: {
+    fontSize: 14,
+    color: COLORS.textPrimary,
+  },
+
+  explanationWrapper: {
+    marginTop: 12,
+  },
+
+  footer: {
+    backgroundColor: COLORS.cardBackground,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+
   paginationContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   paginationButton: {
-    backgroundColor: '#3b82f6',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-    minWidth: 80,
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 18,
+    paddingVertical: 9,
+    borderRadius: 999,
+    minWidth: 92,
     alignItems: 'center',
   },
   paginationButtonDisabled: {
-    backgroundColor: '#e5e7eb',
+    backgroundColor: '#E5E7EB',
   },
   paginationButtonText: {
-    color: '#ffffff',
-    fontSize: 14,
+    color: '#FFFFFF',
+    fontSize: 13,
     fontWeight: '600',
   },
   paginationButtonTextDisabled: {
-    color: '#9ca3af',
+    color: '#9CA3AF',
   },
   pageIndicator: {
-    backgroundColor: '#f3f4f6',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: '#EEF2FF',
   },
-  paginationText: {
-    fontSize: 14,
-    color: '#374151',
+  pageIndicatorText: {
+    fontSize: 13,
     fontWeight: '600',
+    color: COLORS.primaryDark,
   },
+
   homeButton: {
-    backgroundColor: '#1e40af',
-    paddingVertical: 14,
+    backgroundColor: COLORS.primaryDark,
+    paddingVertical: 12,
     paddingHorizontal: 24,
-    borderRadius: 12,
+    borderRadius: 14,
     alignItems: 'center',
+    marginTop: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.12,
     shadowRadius: 4,
     elevation: 3,
   },
   homeButtonText: {
-    color: '#ffffff',
-    fontSize: 16,
+    color: '#FFFFFF',
+    fontSize: 15,
     fontWeight: '600',
   },
 });
