@@ -60,18 +60,41 @@ const QuizScreen = ({ navigation, route }) => {
   // ----- Header: show questions button + timer in params -----
   React.useLayoutEffect(() => {
     navigation.setParams({
-      openQuestions: () => setShowQuestionPanel(true),
       timeRemaining: timeRemaining || 0,
     });
   }, [navigation, timeRemaining]);
 
   React.useLayoutEffect(() => {
     if (showResults || forceResults) {
+      navigation.setParams({
+        showingResults: true,
+      });
       navigation.setOptions({
         headerRight: undefined,
+        headerTitle: undefined,
+      });
+    } else {
+      navigation.setParams({
+        showingResults: false,
+      });
+      const timeRemaining = route?.params?.timeRemaining || 0;
+      navigation.setOptions({
+        headerTitle: () => (
+          <Text style={{ color: '#ffffff', fontSize: 16, fontWeight: '600' }}>
+            ⏰ {Math.floor(timeRemaining / 60)}:{(timeRemaining % 60).toString().padStart(2, '0')}
+          </Text>
+        ),
+        headerRight: () => (
+          <TouchableOpacity
+            onPress={() => setShowQuestionPanel(true)}
+            style={{ backgroundColor: '#ffffff20', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, marginRight: 16 }}
+          >
+            <Text style={{ color: '#ffffff', fontSize: 14, fontWeight: '600' }}>📋 Questions</Text>
+          </TouchableOpacity>
+        ),
       });
     }
-  }, [navigation, showResults, forceResults]);
+  }, [navigation, showResults, forceResults, timeRemaining, route?.params?.timeRemaining]);
 
   // Reset scroll when question changes
   useEffect(() => {
@@ -235,8 +258,7 @@ const QuizScreen = ({ navigation, route }) => {
             }
             throw firstError;
           }
-        } catch (error) {
-          console.error('Quiz submission failed:', error);
+        } catch (error: any) {
           const fallbackResults = {
             correctCount: 0,
             wrongCount: 0,
@@ -282,7 +304,6 @@ const QuizScreen = ({ navigation, route }) => {
           title="🎯 Quiz Results"
           onPrevPage={handlePrevPage}
           onNextPage={handleNextPage}
-          onGoHome={handleGoHome}
         />
       </ScreenWrapper>
     );
@@ -334,10 +355,11 @@ const QuizScreen = ({ navigation, route }) => {
         {/* Question */}
         <View style={styles.questionSection}>
           <View style={styles.questionContainer}>
-            <LaTeXRenderer
-              text={currentQuestion.question}
-              style={styles.question}
-            />
+                    <LaTeXRenderer
+                      text={currentQuestion.question}
+                      style={styles.question}
+                      fontSize={16}
+                    />
           </View>
         </View>
 
@@ -376,6 +398,7 @@ const QuizScreen = ({ navigation, route }) => {
                       <LaTeXRenderer
                         text={answer}
                         style={styles.answerText}
+                        fontSize={16}
                       />
                     </View>
                   </LinearGradient>
@@ -614,10 +637,11 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   question: {
-    fontSize: 18,
-    lineHeight: 26,
+    fontSize: 16,
+    lineHeight: 24,
     color: '#1F2937',
-    fontWeight: '600',
+    fontWeight: '500',
+    fontFamily: 'SF Pro Text, -apple-system, BlinkMacSystemFont, Inter, Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif',
   },
 
   // Answers
@@ -674,8 +698,9 @@ const styles = StyleSheet.create({
   answerText: {
     fontSize: 16,
     color: colors.neutral[800],
-    fontWeight: '500',
-    lineHeight: 22,
+    fontWeight: '400',
+    lineHeight: 24,
+    fontFamily: 'SF Pro Text, -apple-system, BlinkMacSystemFont, Inter, Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif',
   },
 
   // Bottom navigation

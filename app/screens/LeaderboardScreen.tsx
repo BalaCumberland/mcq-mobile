@@ -42,7 +42,6 @@ const LeaderboardScreen = ({ navigation }) => {
       const data = await response.json();
       setLeaderboardData(data);
     } catch (error) {
-      console.error('Leaderboard fetch error:', error);
       Alert.alert('Error', 'Failed to load leaderboard');
     } finally {
       setLoading(false);

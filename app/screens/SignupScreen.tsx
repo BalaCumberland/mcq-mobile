@@ -37,7 +37,6 @@ const SignupScreen = memo(function SignupScreen({ navigation }: any) {
         const data = await ApiService.getClassesPublic();
         setClasses(Array.isArray(data) ? data : []);
       } catch (error) {
-        console.error('Error fetching classes:', error);
         setClasses([]);
         Alert.alert('Error', 'Failed to load classes. Please try again later.');
       } finally {
@@ -104,9 +103,7 @@ const SignupScreen = memo(function SignupScreen({ navigation }: any) {
       // Send email verification
       try {
         await sendEmailVerification(user);
-        console.log('✅ Verification email sent via Firebase');
       } catch (emailError: any) {
-        console.warn('⚠️ Firebase email failed:', emailError.message);
       }
 
       const result = await ApiService.registerStudent({
@@ -116,7 +113,6 @@ const SignupScreen = memo(function SignupScreen({ navigation }: any) {
         phoneNumber: sanitizeInput(phoneNumber),
         studentClass: sanitizeInput(studentClass),
       });
-      console.log('Registration result:', result);
 
       Alert.alert(
         'Registration Successful!',
@@ -124,7 +120,6 @@ const SignupScreen = memo(function SignupScreen({ navigation }: any) {
         [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
       );
     } catch (error: any) {
-      console.error('Signup error:', error);
       Alert.alert('Signup Failed', error.message || 'Unable to create your account. Please try again.');
     } finally {
       setLoading(false);

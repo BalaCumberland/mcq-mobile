@@ -55,7 +55,6 @@ class ApiService {
         
         // Handle authentication errors
         if (response.status === 401 || errorMessage.includes('not authenticated')) {
-          console.log('Authentication failed, logging out user');
           const { logout } = useUserStore.getState();
           await logout();
           await auth.signOut();
@@ -70,7 +69,6 @@ class ApiService {
     } catch (error: any) {
       // Handle authentication errors in catch block as well
       if (error.message === 'User is not authenticated' || error.message.includes('not authenticated')) {
-        console.log('Authentication error caught, logging out user');
         const { logout } = useUserStore.getState();
         await logout();
         await auth.signOut();
@@ -142,8 +140,6 @@ class ApiService {
       // Try existing endpoint structure first
       const specUrl = 'https://ieetpwfoci.execute-api.us-east-1.amazonaws.com/prod/v2/quiz/submit';
       const fullUrl = `${specUrl}?${params}`;
-      console.log('Quiz Submit URL:', fullUrl);
-      console.log('Request Body:', JSON.stringify(requestBody));
       
       const token = await getAuthToken();
       
@@ -159,7 +155,6 @@ class ApiService {
       
       if (!response.ok) {
         if (response.status === 401) {
-          console.log('Authentication failed in submitQuiz, logging out user');
           const { logout } = useUserStore.getState();
           await logout();
           await auth.signOut();
@@ -172,7 +167,6 @@ class ApiService {
       return response.json();
     } catch (error: any) {
       if (error.message === 'User is not authenticated' || error.message.includes('not authenticated')) {
-        console.log('Authentication error in submitQuiz, logging out user');
         const { logout } = useUserStore.getState();
         await logout();
         await auth.signOut();
@@ -231,7 +225,6 @@ class ApiService {
       
       if (!response.ok) {
         if (response.status === 401) {
-          console.log('Authentication failed in upgradeClass, logging out user');
           const { logout } = useUserStore.getState();
           await logout();
           await auth.signOut();
@@ -245,7 +238,6 @@ class ApiService {
       return response.json();
     } catch (error: any) {
       if (error.message === 'User is not authenticated' || error.message.includes('not authenticated')) {
-        console.log('Authentication error in upgradeClass, logging out user');
         const { logout } = useUserStore.getState();
         await logout();
         await auth.signOut();

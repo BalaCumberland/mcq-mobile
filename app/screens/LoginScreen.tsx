@@ -46,7 +46,7 @@ const LoginScreen = memo(function LoginScreen({ navigation }: any) {
         setRememberMe(true);
       }
     } catch (error) {
-      console.error('Error loading saved credentials:', error);
+      // Silent fail
     }
   };
 
@@ -77,7 +77,6 @@ const LoginScreen = memo(function LoginScreen({ navigation }: any) {
         "We've sent a verification link to your email.\n\n💡 Please also check your spam/junk folder."
       );
     } catch (error: any) {
-      console.error('Resend email error:', error);
       Alert.alert(
         'Error',
         error?.message || 'Failed to resend verification email. Please try again.'
@@ -119,10 +118,8 @@ const LoginScreen = memo(function LoginScreen({ navigation }: any) {
       await AsyncStorage.setItem('savedPassword', rememberMe ? password : '');
 
       const response = await userStore.getState().fetchUserByEmail(trimmedEmail);
-      Alert.alert('Login Successful', `Welcome back, ${response.email}`);
       navigation.navigate('Home');
     } catch (error: any) {
-      console.error('Login failed:', error);
       Alert.alert(
         'Login Failed',
         error?.message || 'Unable to sign in. Please check your details and try again.'

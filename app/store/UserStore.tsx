@@ -19,8 +19,6 @@ const useUserStore = create(
           set({ loading: true, error: null });
           const token = await getAuthToken();
           const url = `${LAMBDA_MCQ_GO_API_URL}/students/profile?email=${encodeURIComponent(email)}`;
-          console.log('UserStore - Fetching from:', url);
-          console.log('Base URL:', LAMBDA_MCQ_GO_API_URL);
 
           const response = await fetch(url, {
             method: "GET",
@@ -39,7 +37,6 @@ const useUserStore = create(
           set({ user: userData, loading: false });
           return userData;
         } catch (error: any) {
-          console.error('User fetch error:', error);
           set({ error: error.message, loading: false });
           throw error;
         }

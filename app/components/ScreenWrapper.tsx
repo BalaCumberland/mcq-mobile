@@ -70,7 +70,6 @@ const ScreenWrapper = ({ children, navigation, showMenu = true }) => {
               routes: [{ name: 'Login' }],
             });
           } catch (error) {
-            console.error('Logout error:', error);
           }
         }}
       ]

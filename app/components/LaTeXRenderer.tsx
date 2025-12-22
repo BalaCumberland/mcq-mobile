@@ -5,11 +5,12 @@ import { WebView } from 'react-native-webview';
 interface LaTeXRendererProps {
   text?: string | null;
   style?: any;
+  fontSize?: number;
 }
 
 const LATEX_SMILES_REGEX = /(\$\$(?:LATEX|SMILES)::[\s\S]*?::)/g;
 
-const LaTeXRenderer: React.FC<LaTeXRendererProps> = memo(({ text, style }) => {
+const LaTeXRenderer: React.FC<LaTeXRendererProps> = memo(({ text, style, fontSize = 15 }) => {
   const [webViewHeights, setWebViewHeights] = useState<{ [key: number]: number }>({});
 
   const handleMessage = useCallback((index: number) => {
@@ -55,7 +56,25 @@ const LaTeXRenderer: React.FC<LaTeXRendererProps> = memo(({ text, style }) => {
                   margin: 0;
                   padding: 4px;
                   display: inline-block;
-                  font-size: 10px; /* smaller for mobile */
+                  font-size: ${fontSize}px;
+                  font-family: 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                  font-weight: 400;
+                  line-height: 1.47;
+                }
+                .MathJax {
+                  font-family: 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+                }
+                mjx-container {
+                  font-family: 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+                }
+                mjx-container * {
+                  font-family: 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+                }
+                mjx-math {
+                  font-family: 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+                }
+                mjx-math * {
+                  font-family: 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
                 }
               </style>
               <script>
@@ -69,11 +88,20 @@ const LaTeXRenderer: React.FC<LaTeXRendererProps> = memo(({ text, style }) => {
 
                 window.MathJax = {
                   tex: { inlineMath: [['\\\\(', '\\\\)']], displayMath: [['\\\\[', '\\\\]']] },
-                  chtml: { scale: 1.2 },
+                  chtml: { 
+                    scale: 0.88,
+                    fontURL: 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2',
+                    adaptiveCSS: true
+                  },
                   startup: {
                     ready: () => {
                       MathJax.startup.defaultReady();
                       MathJax.typesetPromise().then(() => {
+                        // Force consistent font override after rendering
+                        const style = document.createElement('style');
+                        style.textContent = 'mjx-container, mjx-container *, mjx-math, mjx-math * { font-family: "SF Pro Text", -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important; font-weight: 400 !important; }';
+                        document.head.appendChild(style);
+                        
                         sendHeight();
                         setTimeout(sendHeight, 50);
                         setTimeout(sendHeight, 200);

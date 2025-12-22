@@ -23,15 +23,10 @@ import useQuizStore from './store/QuizStore';
 const Stack = createStackNavigator();
 
 const HamburgerButton = memo(({ onPress }) => {
-  console.log('HamburgerButton rendered with onPress:', !!onPress);
   return (
     <TouchableOpacity onPress={() => {
-      console.log('Hamburger button pressed, onPress exists:', !!onPress);
       if (onPress) {
-        console.log('Calling onPress function');
         onPress();
-      } else {
-        console.log('No onPress function available');
       }
     }} style={styles.hamburgerButton}>
       <Text style={styles.hamburgerIcon}>☰</Text>
@@ -131,10 +126,7 @@ const getHeaderTitle = (routeName, route) => {
     case 'ForgotPassword': return '🔒 Reset Password';
     case 'Review': return '';
     case 'Profile': return '👤 Profile';
-    case 'Quiz': {
-      const timeRemaining = route?.params?.timeRemaining || 0;
-      return `⏰ ${Math.floor(timeRemaining / 60)}:${(timeRemaining % 60).toString().padStart(2, '0')}`;
-    }
+    case 'Quiz': return '';
     default: return '🌐 Exam Sphere';
   }
 };
@@ -218,26 +210,30 @@ export default function AppNavigator() {
       }
       
       if (route.name === 'Quiz') {
-        const subjectName = route.params?.subjectName || 'Subject';
-        return (
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <HamburgerButton onPress={toggleMenuFn} />
-            <TouchableOpacity 
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                backgroundColor: '#ffffff20',
-                paddingHorizontal: 12,
-                paddingVertical: 6,
-                borderRadius: 8,
-                marginLeft: 8,
-              }}
-              onPress={() => navigation.goBack()}
-            >
-              <Text style={{ color: '#ffffff', fontSize: 14, fontWeight: '600' }}>← {subjectName}</Text>
-            </TouchableOpacity>
-          </View>
-        );
+        if (route.params?.showingResults) {
+          return (
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <HamburgerButton onPress={toggleMenuFn} />
+              <TouchableOpacity 
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: '#ffffff20',
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderRadius: 8,
+                  marginLeft: 8,
+                }}
+                onPress={() => {
+                  navigation.navigate('Home');
+                }}
+              >
+                <Text style={{ color: '#ffffff', fontSize: 14, fontWeight: '600' }}>← Home</Text>
+              </TouchableOpacity>
+            </View>
+          );
+        }
+        return <HamburgerButton onPress={toggleMenuFn} />;
       }
       
       if (route.name === 'Review') {
@@ -288,30 +284,7 @@ export default function AppNavigator() {
       return <HamburgerButton onPress={toggleMenuFn} />;
     } : () => null,
     headerRight: () => {
-      if (route.name === 'Quiz' && !route.params?.showingResults) {
-        return (
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text style={{ ...headerTitleStyle, marginRight: 12 }}>{getHeaderTitle(route.name, route)}</Text>
-            <TouchableOpacity 
-              style={{
-                backgroundColor: '#ffffff20',
-                paddingHorizontal: 12,
-                paddingVertical: 6,
-                borderRadius: 8,
-                marginRight: 16,
-              }}
-              onPress={() => {
-                route.params?.openQuestions?.();
-              }}
-            >
-              <Text style={{ color: '#ffffff', fontSize: 12, fontWeight: '600' }}>📋 Questions</Text>
-            </TouchableOpacity>
-          </View>
-        );
-      }
-      return (
-        <Text style={{ ...headerTitleStyle, marginRight: 16 }}>{getHeaderTitle(route.name, route)}</Text>
-      );
+      return null;
     },
     gestureEnabled: route.name === 'Review',
   }), [hasActiveQuiz]);
@@ -329,7 +302,7 @@ export default function AppNavigator() {
           <Stack.Screen name="Review">{(props) => <WrappedScreen {...props} component={ReviewScreen} />}</Stack.Screen>
           <Stack.Screen name="SubjectResults">{(props) => <WrappedScreen {...props} component={SubjectResultsScreen} />}</Stack.Screen>
           <Stack.Screen name="Home">{(props) => <WrappedScreen {...props} component={HomeScreen} />}</Stack.Screen>
-          <Stack.Screen name="Quiz">{(props) => <WrappedScreen {...props} component={QuizScreen} />}</Stack.Screen>
+          <Stack.Screen name="Quiz" options={{ title: '' }}>{(props) => <WrappedScreen {...props} component={QuizScreen} />}</Stack.Screen>
           <Stack.Screen name="Progress">{(props) => <WrappedScreen {...props} component={ProgressScreen} />}</Stack.Screen>
           <Stack.Screen name="Profile">{(props) => <WrappedScreen {...props} component={ProfileScreen} />}</Stack.Screen>
           <Stack.Screen name="Leaderboard">{(props) => <WrappedScreen {...props} component={LeaderboardScreen} />}</Stack.Screen>

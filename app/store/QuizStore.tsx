@@ -73,7 +73,6 @@ const useQuizStore = create<QuizState>()(persist((set, get) => ({
   }),
   
   setPage: (index) => {
-    console.log('setPage called with index:', index);
     set({ currentQuestionIndex: index });
   },
 
@@ -110,7 +109,6 @@ const useQuizStore = create<QuizState>()(persist((set, get) => ({
         state.userAnswers
       );
     } catch (error) {
-      console.error('Error submitting quiz:', error);
     }
   },
   
@@ -151,7 +149,6 @@ const useQuizStore = create<QuizState>()(persist((set, get) => ({
       const state = get();
       return !!(state.quiz && !state.showResults && state.startTime && state.timeRemaining && state.timeRemaining > 0);
     } catch (error) {
-      console.warn('Error checking active quiz:', error);
       return false;
     }
   }

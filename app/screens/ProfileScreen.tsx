@@ -28,7 +28,7 @@ const ProfileScreen = ({ navigation }: any) => {
         const data = await ApiService.getClassesPublic();
         setClasses(Array.isArray(data) ? data : []);
       } catch (error) {
-        console.error('Error fetching classes:', error);
+        // Silent fail
       } finally {
         setLoadingClasses(false);
       }

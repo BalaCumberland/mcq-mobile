@@ -12,7 +12,7 @@ const ExplanationView: React.FC<ExplanationViewProps> = React.memo(
     return (
       <View style={styles.explanationSection}>
         <Text style={styles.explanationLabel}>{label}</Text>
-        <LaTeXRenderer text={explanation} style={styles.explanation} />
+        <LaTeXRenderer text={explanation} style={styles.explanation} fontSize={15} />
       </View>
     );
   }
@@ -34,10 +34,11 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   explanation: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#475569',
     lineHeight: 22,
     flexWrap: 'wrap',
+    fontFamily: 'SF Pro Text, -apple-system, BlinkMacSystemFont, Inter, Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif',
   },
 });
 

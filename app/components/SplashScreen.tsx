@@ -20,7 +20,6 @@ export default function SplashScreen({ onInitialized }: SplashScreenProps) {
         setIsLoading(false);
         onInitialized();
       } catch (error) {
-        console.error('Splash screen initialization error:', error);
         // Still proceed to avoid infinite loading
         setIsLoading(false);
         onInitialized();

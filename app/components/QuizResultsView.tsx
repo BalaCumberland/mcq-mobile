@@ -20,7 +20,6 @@ interface QuizResultsViewProps {
   title: string;
   onPrevPage: () => void;
   onNextPage: () => void;
-  onGoHome: () => void;
 }
 
 // Centralized colors for consistency
@@ -47,7 +46,6 @@ const QuizResultsView: React.FC<QuizResultsViewProps> = ({
   title,
   onPrevPage,
   onNextPage,
-  onGoHome,
 }) => {
   const scrollViewRef = useRef<ScrollView | null>(null);
 
@@ -157,6 +155,7 @@ const QuizResultsView: React.FC<QuizResultsViewProps> = ({
               <LaTeXRenderer
                 text={result.question}
                 style={styles.questionText}
+                fontSize={16}
               />
 
               {/* Result summary line */}
@@ -201,6 +200,7 @@ const QuizResultsView: React.FC<QuizResultsViewProps> = ({
                     key={`correct-${result.qno}-${idx}`}
                     text={answer}
                     style={styles.correctAnswer}
+                    fontSize={16}
                   />
                 ))}
               </View>
@@ -214,6 +214,7 @@ const QuizResultsView: React.FC<QuizResultsViewProps> = ({
                   <LaTeXRenderer
                     text={isSkipped ? 'Skipped' : userAnswer}
                     style={styles.userAnswer}
+                    fontSize={16}
                   />
                 </View>
               )}
@@ -279,10 +280,6 @@ const QuizResultsView: React.FC<QuizResultsViewProps> = ({
             </TouchableOpacity>
           </View>
         )}
-
-        <TouchableOpacity style={styles.homeButton} onPress={onGoHome}>
-          <Text style={styles.homeButtonText}>🏠 Back to Home</Text>
-        </TouchableOpacity>
       </SafeAreaView>
     </View>
   );
@@ -382,10 +379,12 @@ const styles = StyleSheet.create({
   },
 
   questionText: {
-    fontSize: 15,
+    fontSize: 16,
     color: COLORS.textPrimary,
     marginBottom: 8,
-    fontWeight: '600',
+    fontWeight: '500',
+    fontFamily: 'SF Pro Text, -apple-system, BlinkMacSystemFont, Inter, Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif',
+    lineHeight: 24,
   },
 
   resultSummaryRow: {
@@ -424,12 +423,16 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   correctAnswer: {
-    fontSize: 14,
+    fontSize: 16,
     color: COLORS.textPrimary,
+    fontFamily: 'SF Pro Text, -apple-system, BlinkMacSystemFont, Inter, Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif',
+    lineHeight: 24,
   },
   userAnswer: {
-    fontSize: 14,
+    fontSize: 16,
     color: COLORS.textPrimary,
+    fontFamily: 'SF Pro Text, -apple-system, BlinkMacSystemFont, Inter, Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif',
+    lineHeight: 24,
   },
 
   explanationWrapper: {

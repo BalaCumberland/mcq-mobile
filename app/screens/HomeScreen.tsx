@@ -74,7 +74,6 @@ const HomeScreen = memo(({ navigation }) => {
         const data = await ApiService.getSubjects(className);
         setSubjects(Array.isArray(data) ? data : []);
       } catch (err) {
-        console.error('Error fetching subjects:', err);
         setSubjects([]);
       } finally {
         setFetchingSubjects(false);
@@ -90,7 +89,6 @@ const HomeScreen = memo(({ navigation }) => {
       const data = await ApiService.getTopics(className, subjectName);
       setTopics(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error('Error fetching topics:', err);
       setTopics([]);
     } finally {
       setFetchingTopics(false);
@@ -110,7 +108,6 @@ const HomeScreen = memo(({ navigation }) => {
         setQuizzes(availableQuizzes);
         setSelectedQuiz(availableQuizzes[0] || '');
       } catch (err) {
-        console.error('Error fetching quizzes:', err);
         setQuizzes([]);
         setSelectedQuiz('');
       } finally {
@@ -133,7 +130,6 @@ const HomeScreen = memo(({ navigation }) => {
       try {
         clearQuizState();
       } catch (error) {
-        console.warn('Error clearing quiz state:', error);
       }
 
       // Reset selections
@@ -215,7 +211,6 @@ const HomeScreen = memo(({ navigation }) => {
         quizName: selectedQuiz,
       });
     } catch (error: any) {
-      console.error('Error fetching quiz:', error);
       const message =
         error?.message ||
         'Failed to load quiz. Please check your connection and try again.';

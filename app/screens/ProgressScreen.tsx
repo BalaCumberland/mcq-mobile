@@ -28,7 +28,6 @@ const ProgressScreen = ({ navigation }) => {
       const data = await ApiService.getProgress();
       setAnalytics(data);
     } catch (error) {
-      console.error('Failed to fetch progress:', error);
     } finally {
       setLoading(false);
     }

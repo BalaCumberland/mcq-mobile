@@ -34,7 +34,6 @@ const ReviewScreen = React.memo(({ route, navigation }) => {
         setResults(data);
       }
     } catch (error) {
-      console.error('Failed to fetch results:', error);
     } finally {
       setLoading(false);
     }
