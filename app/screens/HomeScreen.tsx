@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Picker } from '@react-native-picker/picker';
 import LinearGradient from 'react-native-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import ApiService from '../services/apiService';
 import useUserStore from '../store/UserStore';
@@ -29,11 +30,11 @@ const HomeScreen = memo(({ navigation }) => {
   const [subjects, setSubjects] = useState<string[]>([]);
   const [topics, setTopics] = useState<string[]>([]);
   const [quizzes, setQuizzes] = useState<string[]>([]);
+  const [curriculumData, setCurriculumData] = useState<any>(null);
+  const [lastFetchTime, setLastFetchTime] = useState<number>(0);
 
   const [loading, setLoading] = useState(false);
-  const [fetchingSubjects, setFetchingSubjects] = useState(false);
-  const [fetchingTopics, setFetchingTopics] = useState(false);
-  const [fetchingQuizzes, setFetchingQuizzes] = useState(false);
+  const [fetchingCurriculum, setFetchingCurriculum] = useState(false);
 
   const [buttonScale] = useState(new Animated.Value(1));
 
@@ -66,63 +67,137 @@ const HomeScreen = memo(({ navigation }) => {
     ]).start();
   }, [buttonScale]);
 
-  const fetchSubjects = useCallback(
-    async (className: string) => {
+  const fetchCurriculum = useCallback(
+    async (className: string, forceRefresh = false) => {
       if (!className) return;
-      setFetchingSubjects(true);
+      
+      const cacheKey = `curriculum_${className}`;
+      const now = Date.now();
+      const CACHE_DURATION = 1 * 60 * 1000; // 1 minute
+      
+      // Try to load from cache first
+      if (!forceRefresh) {
+        try {
+          const cached = await AsyncStorage.getItem(cacheKey);
+          if (cached) {
+            const { data, timestamp } = JSON.parse(cached);
+            const cacheAge = now - timestamp;
+            
+            if (cacheAge < CACHE_DURATION && data?.subjects) {
+              setCurriculumData(data);
+              setSubjects(data.subjects || []);
+              setLastFetchTime(timestamp);
+              return;
+            }
+          }
+        } catch (e) {
+          // Cache corrupted, clear it
+          try {
+            await AsyncStorage.removeItem(cacheKey);
+          } catch {}
+        }
+      }
+      
+      setFetchingCurriculum(true);
       try {
-        const data = await ApiService.getSubjects(className);
-        setSubjects(Array.isArray(data) ? data : []);
+        const data = await ApiService.getCurriculum(className);
+        if (data?.subjects) {
+          setCurriculumData(data);
+          setSubjects(data.subjects || []);
+          setLastFetchTime(now);
+          
+          // Save to cache
+          try {
+            await AsyncStorage.setItem(cacheKey, JSON.stringify({ data, timestamp: now }));
+          } catch {
+            // Cache save failed, continue without caching
+          }
+        }
       } catch (err) {
+        // If cache exists and API fails, use stale cache
+        try {
+          const cached = await AsyncStorage.getItem(cacheKey);
+          if (cached) {
+            const { data } = JSON.parse(cached);
+            if (data?.subjects) {
+              setCurriculumData(data);
+              setSubjects(data.subjects || []);
+              return;
+            }
+          }
+        } catch {}
+        
+        setCurriculumData(null);
         setSubjects([]);
       } finally {
-        setFetchingSubjects(false);
+        setFetchingCurriculum(false);
       }
     },
     []
   );
 
-  const fetchTopics = useCallback(async (className: string, subjectName: string) => {
-    if (!className || !subjectName) return;
-    setFetchingTopics(true);
-    try {
-      const data = await ApiService.getTopics(className, subjectName);
-      setTopics(Array.isArray(data) ? data : []);
-    } catch (err) {
+  const getTopicsForSubject = useCallback((subject: string) => {
+    if (!curriculumData?.topics || !subject) return [];
+    return curriculumData.topics[subject] || [];
+  }, [curriculumData]);
+
+  const getQuizzesForSubjectTopic = useCallback((subject: string, topic: string) => {
+    if (!curriculumData?.quizzes || !subject || !topic) return [];
+    const key = `${subject}_${topic}`;
+    return curriculumData.quizzes[key] || [];
+  }, [curriculumData]);
+
+  // Clear curriculum data when user logs out or changes
+  useEffect(() => {
+    if (!user) {
+      // User logged out - clear all curriculum data immediately
+      const clearAllCurriculumData = async () => {
+        try {
+          const keys = await AsyncStorage.getAllKeys();
+          const curriculumKeys = keys.filter(key => key.startsWith('curriculum_'));
+          if (curriculumKeys.length > 0) {
+            await AsyncStorage.multiRemove(curriculumKeys);
+          }
+        } catch (e) {}
+      };
+      
+      clearAllCurriculumData();
+      setCurriculumData(null);
+      setSubjects([]);
+      setSelectedSubject('');
+      setSelectedTopic('');
+      setSelectedQuiz('');
       setTopics([]);
-    } finally {
-      setFetchingTopics(false);
+      setQuizzes([]);
+      setLastFetchTime(0);
     }
-  }, []);
+  }, [user]);
 
-  const fetchQuizzes = useCallback(
-    async (className: string, subjectName: string, topic: string) => {
-      if (!className || !subjectName || !topic) return;
-      setFetchingQuizzes(true);
-      try {
-        const data = await ApiService.getQuizzes(className, subjectName, topic);
-        const quizzesRaw = data?.quizzes || data?.unattempted_quizzes || [];
-        const availableQuizzes = quizzesRaw.map((quiz: any) =>
-          typeof quiz === 'string' ? quiz : quiz.quizName
-        );
-        setQuizzes(availableQuizzes);
-        setSelectedQuiz(availableQuizzes[0] || '');
-      } catch (err) {
-        setQuizzes([]);
-        setSelectedQuiz('');
-      } finally {
-        setFetchingQuizzes(false);
-      }
-    },
-    []
-  );
+  // Handle class change - clear cache for old class
+  useEffect(() => {
+    if (user?.student_class && curriculumData) {
+      const currentCacheKey = `curriculum_${user.student_class}`;
+      // If curriculum data doesn't match current class, clear it
+      AsyncStorage.getItem(currentCacheKey).then(cached => {
+        if (!cached) {
+          setCurriculumData(null);
+          setSubjects([]);
+          setSelectedSubject('');
+          setSelectedTopic('');
+          setSelectedQuiz('');
+          setTopics([]);
+          setQuizzes([]);
+        }
+      }).catch(() => {});
+    }
+  }, [user?.student_class, curriculumData]);
 
-  // Initial subjects load
+  // Initial curriculum load
   useEffect(() => {
     if (user?.student_class) {
-      fetchSubjects(user.student_class);
+      fetchCurriculum(user.student_class);
     }
-  }, [user?.student_class, fetchSubjects]);
+  }, [user?.student_class, fetchCurriculum]);
 
   useFocusEffect(
     useCallback(() => {
@@ -131,13 +206,11 @@ const HomeScreen = memo(({ navigation }) => {
         clearQuizState();
       } catch (error) {
       }
-
-      // Reset selections
-      setSelectedSubject('');
-      setSelectedTopic('');
-      setSelectedQuiz('');
-      setTopics([]);
-      setQuizzes([]);
+      
+      // Refresh curriculum data if needed
+      if (user?.student_class) {
+        fetchCurriculum(user.student_class);
+      }
 
       const backAction = () => {
         Alert.alert(
@@ -156,7 +229,7 @@ const HomeScreen = memo(({ navigation }) => {
         backAction
       );
       return () => backHandler.remove();
-    }, [clearQuizState])
+    }, [clearQuizState, fetchCurriculum, user?.student_class])
   );
 
   const freeUserLocked = useMemo(() => {
@@ -302,10 +375,10 @@ const HomeScreen = memo(({ navigation }) => {
           {/* Subject */}
           <View style={styles.inputContainer}>
             <Text style={styles.label}>📚 Subject</Text>
-            {fetchingSubjects ? (
+            {fetchingCurriculum ? (
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="small" color="#f97316" />
-                <Text style={styles.loadingText}>Loading subjects...</Text>
+                <Text style={styles.loadingText}>Loading curriculum...</Text>
               </View>
             ) : (
               <View style={styles.pickerWrapper}>
@@ -315,11 +388,9 @@ const HomeScreen = memo(({ navigation }) => {
                     setSelectedSubject(value);
                     setSelectedTopic('');
                     setSelectedQuiz('');
-                    setTopics([]);
+                    const newTopics = getTopicsForSubject(value);
+                    setTopics(newTopics);
                     setQuizzes([]);
-                    if (value && user?.student_class) {
-                      fetchTopics(user.student_class, value);
-                    }
                   }}
                   style={styles.picker}
                 >
@@ -339,107 +410,91 @@ const HomeScreen = memo(({ navigation }) => {
           {/* Topic */}
           <View style={styles.inputContainer}>
             <Text style={styles.label}>📝 Topic</Text>
-            {fetchingTopics ? (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="small" color="#f97316" />
-                <Text style={styles.loadingText}>Loading topics...</Text>
-              </View>
-            ) : (
-              <View
-                style={[
-                  styles.pickerWrapper,
-                  !selectedSubject && styles.disabledPicker,
-                ]}
+            <View
+              style={[
+                styles.pickerWrapper,
+                !selectedSubject && styles.disabledPicker,
+              ]}
+            >
+              <Picker
+                selectedValue={selectedTopic}
+                onValueChange={(value) => {
+                  setSelectedTopic(value);
+                  setSelectedQuiz('');
+                  const newQuizzes = getQuizzesForSubjectTopic(selectedSubject, value);
+                  setQuizzes(newQuizzes);
+                }}
+                style={styles.picker}
+                enabled={!!selectedSubject}
               >
-                <Picker
-                  selectedValue={selectedTopic}
-                  onValueChange={(value) => {
-                    setSelectedTopic(value);
-                    setSelectedQuiz('');
-                    setQuizzes([]);
-                    if (value && user?.student_class && selectedSubject) {
-                      fetchQuizzes(user.student_class, selectedSubject, value);
-                    }
-                  }}
-                  style={styles.picker}
-                  enabled={!!selectedSubject}
-                >
+                <Picker.Item
+                  label={
+                    !selectedSubject
+                      ? 'Select subject first'
+                      : topics.length === 0
+                      ? 'No topics available'
+                      : 'Select topic...'
+                  }
+                  value=""
+                />
+                {topics.map((topic, index) => (
                   <Picker.Item
-                    label={
-                      !selectedSubject
-                        ? 'Select subject first'
-                        : topics.length === 0 && !fetchingTopics
-                        ? 'No topics available'
-                        : 'Select topic...'
-                    }
-                    value=""
+                    key={topic + index}
+                    label={topic}
+                    value={topic}
                   />
-                  {topics.map((topic, index) => (
-                    <Picker.Item
-                      key={topic + index}
-                      label={topic}
-                      value={topic}
-                    />
-                  ))}
-                </Picker>
-              </View>
-            )}
+                ))}
+              </Picker>
+            </View>
           </View>
 
           {/* Quiz */}
           <View style={styles.inputContainer}>
             <Text style={styles.label}>🎯 Available Quizzes</Text>
-            {fetchingQuizzes ? (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="small" color="#f97316" />
-                <Text style={styles.loadingText}>Loading quizzes...</Text>
-              </View>
-            ) : (
-              <View
-                style={[
-                  styles.pickerWrapper,
-                  !selectedTopic && styles.disabledPicker,
-                ]}
+            <View
+              style={[
+                styles.pickerWrapper,
+                !selectedTopic && styles.disabledPicker,
+              ]}
+            >
+              <Picker
+                selectedValue={selectedQuiz}
+                onValueChange={setSelectedQuiz}
+                style={styles.picker}
+                enabled={!!selectedTopic}
               >
-                <Picker
-                  selectedValue={selectedQuiz}
-                  onValueChange={setSelectedQuiz}
-                  style={styles.picker}
-                  enabled={!!selectedTopic}
-                >
-                  <Picker.Item
-                    label={
-                      !selectedTopic
-                        ? 'Select topic first'
-                        : quizzes.length === 0 && !fetchingQuizzes
-                        ? 'No quizzes available'
-                        : 'Select a quiz...'
-                    }
-                    value=""
-                  />
-                  {quizzes.map((quiz, index) => {
-                    const isFirstQuiz = index === 0;
-                    const topicIndex = topics.indexOf(selectedTopic);
-                    const isFirstTopic = topicIndex === 0;
-                    const isAccessible =
-                      isPaidUser || (isFirstTopic && isFirstQuiz);
-                    const lockSymbol = isPaidUser
-                      ? ''
-                      : isAccessible
-                      ? '🆓 '
-                      : '🔒 ';
+                <Picker.Item
+                  label={
+                    !selectedTopic
+                      ? 'Select topic first'
+                      : quizzes.length === 0
+                      ? 'No quizzes available'
+                      : 'Select a quiz...'
+                  }
+                  value=""
+                />
+                {quizzes.map((quiz, index) => {
+                  const isFirstQuiz = index === 0;
+                  const topicIndex = topics.indexOf(selectedTopic);
+                  const isFirstTopic = topicIndex === 0;
+                  const isAccessible =
+                    isPaidUser || (isFirstTopic && isFirstQuiz);
+                  const lockSymbol = isPaidUser
+                    ? ''
+                    : isAccessible
+                    ? '🆓 '
+                    : '🔒 ';
 
-                    return (
-                      <Picker.Item
-                        key={quiz + index}
-                        label={`${lockSymbol}${quiz}`}
-                        value={quiz}
-                      />
-                    );
-                  })}
-                </Picker>
-              </View>
-            )}
+                  return (
+                    <Picker.Item
+                      key={quiz + index}
+                      label={`${lockSymbol}${quiz}`}
+                      value={quiz}
+                    />
+                  );
+                })}
+              </Picker>
+            </View>
           </View>
 
           {/* Begin Button */}

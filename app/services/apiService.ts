@@ -250,6 +250,34 @@ class ApiService {
   async getProgress() {
     return this.makeRequest('/students/progress');
   }
+
+  async getCurriculum(className: string) {
+    const specUrl = 'https://ieetpwfoci.execute-api.us-east-1.amazonaws.com/prod/v2/class/curriculum';
+    const params = new URLSearchParams({ className });
+    const token = await getAuthToken();
+    
+    const response = await fetch(`${specUrl}?${params}`, {
+      method: 'GET',
+      headers: {
+        'Accept': '*/*',
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    
+    if (!response.ok) {
+      if (response.status === 401) {
+        const { logout } = useUserStore.getState();
+        await logout();
+        await auth.signOut();
+        reset('Login');
+        throw new Error('User is not authenticated');
+      }
+      throw new Error(`API Error: ${response.status}`);
+    }
+    
+    return response.json();
+  }
 }
 
 export default new ApiService();

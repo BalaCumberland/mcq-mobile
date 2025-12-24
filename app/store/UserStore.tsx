@@ -43,6 +43,17 @@ const useUserStore = create(
       },
 
       logout: async () => {
+        // Clear all curriculum cache keys before clearing all storage
+        try {
+          const keys = await AsyncStorage.getAllKeys();
+          const curriculumKeys = keys.filter(key => key.startsWith('curriculum_'));
+          if (curriculumKeys.length > 0) {
+            await AsyncStorage.multiRemove(curriculumKeys);
+          }
+        } catch (e) {
+          // If specific clearing fails, clear all anyway
+        }
+        
         set({ user: null });
         await AsyncStorage.clear(); // Clear all cached data
       },

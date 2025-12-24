@@ -59,29 +59,27 @@ const QuizScreen = ({ navigation, route }) => {
 
   // ----- Header: show questions button + timer in params -----
   React.useLayoutEffect(() => {
-    navigation.setParams({
-      timeRemaining: timeRemaining || 0,
+    // Update route params for header display
+    navigation.setOptions({
+      headerTitle: () => (
+        <Text style={{ color: '#ffffff', fontSize: 16, fontWeight: '600' }}>
+          ⏰ {Math.floor((timeRemaining || 0) / 60)}:{((timeRemaining || 0) % 60).toString().padStart(2, '0')}
+        </Text>
+      ),
     });
   }, [navigation, timeRemaining]);
 
   React.useLayoutEffect(() => {
     if (showResults || forceResults) {
-      navigation.setParams({
-        showingResults: true,
-      });
       navigation.setOptions({
         headerRight: undefined,
         headerTitle: undefined,
       });
     } else {
-      navigation.setParams({
-        showingResults: false,
-      });
-      const timeRemaining = route?.params?.timeRemaining || 0;
       navigation.setOptions({
         headerTitle: () => (
           <Text style={{ color: '#ffffff', fontSize: 16, fontWeight: '600' }}>
-            ⏰ {Math.floor(timeRemaining / 60)}:{(timeRemaining % 60).toString().padStart(2, '0')}
+            ⏰ {Math.floor((timeRemaining || 0) / 60)}:{((timeRemaining || 0) % 60).toString().padStart(2, '0')}
           </Text>
         ),
         headerRight: () => (
@@ -94,7 +92,7 @@ const QuizScreen = ({ navigation, route }) => {
         ),
       });
     }
-  }, [navigation, showResults, forceResults, timeRemaining, route?.params?.timeRemaining]);
+  }, [navigation, showResults, forceResults, timeRemaining]);
 
   // Reset scroll when question changes
   useEffect(() => {
