@@ -98,30 +98,14 @@ class ApiService {
           const errorData = JSON.parse(responseText);
           console.log('Parsed API Error Response:', errorData);
           
-          // Extract nested message from the error structure
-          if (errorData.error && typeof errorData.error === 'string') {
-            // Extract message from nested JSON structure
-            const messageMatch = errorData.error.match(/"message":\s*"([^"]+)"/);  
-            console.log('Message match result:', messageMatch);
-            if (messageMatch && messageMatch[1]) {
-              console.log('Extracted message:', messageMatch[1]);
-              errorMessage = messageMatch[1];
-            } else {
-              console.log('No message match found, using full error');
-              errorMessage = errorData.error;
-            }
+          if (errorData.error) {
+            errorMessage = errorData.error;
           } else if (errorData.message) {
             errorMessage = errorData.message;
           }
         } catch (parseError) {
-          console.log('JSON parse failed, trying to extract message from raw text');
-          // Extract message directly from the raw response text
-          const messageMatch = responseText.match(/"message":\s*"([^"]+)"/);  
-          if (messageMatch && messageMatch[1]) {
-            errorMessage = messageMatch[1];
-          } else {
-            errorMessage = responseText || errorMessage;
-          }
+          console.log('JSON parse failed, using raw text');
+          errorMessage = responseText || errorMessage;
         }
       } catch (e) {
         console.log('Failed to read error response:', e);
