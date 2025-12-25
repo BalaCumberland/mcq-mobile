@@ -79,11 +79,58 @@ class ApiService {
   }
 
   async registerStudent(data: any) {
-    return this.makeRequest(API_ENDPOINTS.REGISTER, {
+    const response = await fetch(`${this.baseUrl}${API_ENDPOINTS.REGISTER}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+      headers: {
+        'Accept': '*/*',
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(data),
     });
+    
+    if (!response.ok) {
+      let errorMessage = `API Error: ${response.status}`;
+      try {
+        const responseText = await response.text();
+        console.log('Raw API Error Response:', responseText);
+        
+        try {
+          const errorData = JSON.parse(responseText);
+          console.log('Parsed API Error Response:', errorData);
+          
+          // Extract nested message from the error structure
+          if (errorData.error && typeof errorData.error === 'string') {
+            // Extract message from nested JSON structure
+            const messageMatch = errorData.error.match(/"message":\s*"([^"]+)"/);  
+            console.log('Message match result:', messageMatch);
+            if (messageMatch && messageMatch[1]) {
+              console.log('Extracted message:', messageMatch[1]);
+              errorMessage = messageMatch[1];
+            } else {
+              console.log('No message match found, using full error');
+              errorMessage = errorData.error;
+            }
+          } else if (errorData.message) {
+            errorMessage = errorData.message;
+          }
+        } catch (parseError) {
+          console.log('JSON parse failed, trying to extract message from raw text');
+          // Extract message directly from the raw response text
+          const messageMatch = responseText.match(/"message":\s*"([^"]+)"/);  
+          if (messageMatch && messageMatch[1]) {
+            errorMessage = messageMatch[1];
+          } else {
+            errorMessage = responseText || errorMessage;
+          }
+        }
+      } catch (e) {
+        console.log('Failed to read error response:', e);
+        errorMessage = response.statusText || errorMessage;
+      }
+      throw new Error(errorMessage);
+    }
+    
+    return response.json();
   }
 
   async getQuizzes(className: string, subjectName: string, topic: string) {

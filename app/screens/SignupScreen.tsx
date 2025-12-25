@@ -65,8 +65,8 @@ const SignupScreen = memo(function SignupScreen({ navigation }: any) {
     const trimmedName = name.trim();
     const trimmedEmail = email.trim();
 
-    if (!trimmedName) {
-      Alert.alert('Error', 'Please enter your full name');
+    if (!trimmedName || trimmedName.length < 2 || trimmedName.length > 50) {
+      Alert.alert('Error', 'Name must be 2-50 characters long');
       return;
     }
 
@@ -75,7 +75,7 @@ const SignupScreen = memo(function SignupScreen({ navigation }: any) {
       return;
     }
 
-    if (!isValidIndianPhone(phoneNumber)) {
+    if (!phoneNumber || !isValidIndianPhone(phoneNumber)) {
       Alert.alert('Error', 'Please enter a valid Indian phone number');
       return;
     }
@@ -85,8 +85,8 @@ const SignupScreen = memo(function SignupScreen({ navigation }: any) {
       return;
     }
 
-    if (!password || password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters long');
+    if (!password || password.length < 8 || password.length > 128) {
+      Alert.alert('Error', 'Password must be 8-128 characters long');
       return;
     }
 
@@ -97,21 +97,12 @@ const SignupScreen = memo(function SignupScreen({ navigation }: any) {
 
     setLoading(true);
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, trimmedEmail, password);
-      const user = userCredential.user;
-
-      // Send email verification
-      try {
-        await sendEmailVerification(user);
-      } catch (emailError: any) {
-      }
-
       const result = await ApiService.registerStudent({
-        uid: user.uid,
-        email: sanitizeInput(trimmedEmail),
-        name: sanitizeInput(trimmedName),
-        phoneNumber: sanitizeInput(phoneNumber),
-        studentClass: sanitizeInput(studentClass),
+        email: trimmedEmail,
+        password: password,
+        name: trimmedName,
+        phoneNumber: phoneNumber,
+        studentClass: studentClass,
       });
 
       Alert.alert(
@@ -120,6 +111,7 @@ const SignupScreen = memo(function SignupScreen({ navigation }: any) {
         [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
       );
     } catch (error: any) {
+      console.log('Registration error:', error);
       Alert.alert('Signup Failed', error.message || 'Unable to create your account. Please try again.');
     } finally {
       setLoading(false);
@@ -142,13 +134,17 @@ const SignupScreen = memo(function SignupScreen({ navigation }: any) {
   const isButtonDisabled =
     loading ||
     !name.trim() ||
+    name.trim().length < 2 ||
+    name.trim().length > 50 ||
     !email.trim() ||
     !password ||
     !confirmPassword ||
     !studentClass ||
+    !phoneNumber ||
     phoneInvalid ||
     emailInvalid ||
-    password.length < 6 ||
+    password.length < 8 ||
+    password.length > 128 ||
     password !== confirmPassword;
 
   return (
@@ -238,7 +234,7 @@ const SignupScreen = memo(function SignupScreen({ navigation }: any) {
               <View style={styles.inputWrapper}>
                 <Text style={styles.inputIcon}>🔒</Text>
                 <TextInput
-                  placeholder="Password (min 6 characters)"
+                  placeholder="Password (8-128 characters)"
                   placeholderTextColor="#9CA3AF"
                   value={password}
                   onChangeText={setPassword}
@@ -246,8 +242,8 @@ const SignupScreen = memo(function SignupScreen({ navigation }: any) {
                   secureTextEntry
                 />
               </View>
-              {password.length > 0 && password.length < 6 && (
-                <Text style={styles.errorText}>Password is too short</Text>
+              {password.length > 0 && (password.length < 8 || password.length > 128) && (
+                <Text style={styles.errorText}>Password must be 8-128 characters</Text>
               )}
             </View>
 
