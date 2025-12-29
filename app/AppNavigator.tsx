@@ -225,10 +225,12 @@ export default function AppNavigator() {
                   marginLeft: 8,
                 }}
                 onPress={() => {
+                  const { resetQuiz } = useQuizStore.getState();
+                  resetQuiz();
                   navigation.navigate('Home');
                 }}
               >
-                <Text style={{ color: '#ffffff', fontSize: 14, fontWeight: '600' }}>← Home</Text>
+                <Text style={{ color: '#ffffff', fontSize: 14, fontWeight: '600' }}>🏠 Home</Text>
               </TouchableOpacity>
             </View>
           );

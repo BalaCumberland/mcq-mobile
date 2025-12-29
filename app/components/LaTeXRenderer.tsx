@@ -9,6 +9,7 @@ interface LaTeXRendererProps {
 }
 
 const LATEX_SMILES_REGEX = /(\$\$(?:LATEX|SMILES)::[\s\S]*?::)/g;
+const IMAGE_URL_REGEX = /(https?:\/\/[^\s]+\.(jpg|jpeg|png|gif|bmp|webp)(?:\?[^\s]*)?)/gi;
 
 const LaTeXRenderer: React.FC<LaTeXRendererProps> = memo(({ text, style, fontSize = 15 }) => {
   const [webViewHeights, setWebViewHeights] = useState<{ [key: number]: number }>({});
@@ -31,9 +32,22 @@ const LaTeXRenderer: React.FC<LaTeXRendererProps> = memo(({ text, style, fontSiz
 
   const renderContent = useMemo(() => {
     if (!text) return null;
+    
+    // First split by LATEX/SMILES patterns
     const parts = text.split(LATEX_SMILES_REGEX);
+    
+    // Then split each part by image URLs
+    const allParts: string[] = [];
+    parts.forEach(part => {
+      if (part.startsWith('$$LATEX::') || part.startsWith('$$SMILES::')) {
+        allParts.push(part);
+      } else {
+        const imageParts = part.split(IMAGE_URL_REGEX);
+        allParts.push(...imageParts);
+      }
+    });
 
-    return parts.map((part, index) => {
+    return allParts.map((part, index) => {
       if (!part) return null;
 
       // ---------- LATEX ----------
@@ -158,7 +172,7 @@ const LaTeXRenderer: React.FC<LaTeXRendererProps> = memo(({ text, style, fontSiz
       }
 
       // ---------- plain image URL ----------
-      if (isImageUrl(part.trim())) {
+      if (IMAGE_URL_REGEX.test(part.trim())) {
         return (
           <Image
             key={`image-${index}`}

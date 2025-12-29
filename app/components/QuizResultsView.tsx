@@ -232,7 +232,7 @@ const QuizResultsView: React.FC<QuizResultsViewProps> = ({
         })}
       </ScrollView>
 
-      {/* Footer with pagination + home */}
+      {/* Footer with pagination */}
       <SafeAreaView style={styles.footer} edges={['bottom']}>
         {totalPages > 1 && (
           <View style={styles.paginationContainer}>

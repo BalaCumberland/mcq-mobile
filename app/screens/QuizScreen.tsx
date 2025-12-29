@@ -57,25 +57,18 @@ const QuizScreen = ({ navigation, route }) => {
 
   const mainScrollRef = useRef<ScrollView | null>(null);
 
-  // ----- Header: show questions button + timer in params -----
-  React.useLayoutEffect(() => {
-    // Update route params for header display
-    navigation.setOptions({
-      headerTitle: () => (
-        <Text style={{ color: '#ffffff', fontSize: 16, fontWeight: '600' }}>
-          ⏰ {Math.floor((timeRemaining || 0) / 60)}:{((timeRemaining || 0) % 60).toString().padStart(2, '0')}
-        </Text>
-      ),
-    });
-  }, [navigation, timeRemaining]);
-
-  React.useLayoutEffect(() => {
+  // Update route params when showing results
+  useEffect(() => {
     if (showResults || forceResults) {
-      navigation.setOptions({
-        headerRight: undefined,
-        headerTitle: undefined,
-      });
+      navigation.setParams({ showingResults: true });
     } else {
+      navigation.setParams({ showingResults: false });
+    }
+  }, [showResults, forceResults, navigation]);
+
+  // Set timer and questions button when not showing results
+  React.useLayoutEffect(() => {
+    if (!(showResults || forceResults)) {
       navigation.setOptions({
         headerTitle: () => (
           <Text style={{ color: '#ffffff', fontSize: 16, fontWeight: '600' }}>

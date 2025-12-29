@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, Alert } from 'react-native';
+import { View, Text, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import { getAuthToken } from '../services/firebaseAuth';
 import { LAMBDA_MCQ_GO_API_URL } from '../config/env';
 import LoadingAnimation from '../components/LoadingAnimation';
@@ -11,6 +11,31 @@ const ReviewScreen = React.memo(({ route, navigation }) => {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+
+  const handleGoHome = useCallback(() => {
+    Alert.alert(
+      'Leave Quiz Review?',
+      'Are you sure you want to go back to home?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Yes', onPress: () => navigation.navigate('Home') }
+      ]
+    );
+  }, [navigation]);
+
+  // Set header home button
+  React.useLayoutEffect(() => {
+    navigation.setOptions({
+      headerLeft: () => (
+        <TouchableOpacity
+          onPress={handleGoHome}
+          style={{ backgroundColor: '#ffffff20', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, marginLeft: 16 }}
+        >
+          <Text style={{ color: '#ffffff', fontSize: 14, fontWeight: '600' }}>🏠 Home</Text>
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, handleGoHome]);
 
   const fetchResults = useCallback(async () => {
     try {
@@ -60,17 +85,6 @@ const ReviewScreen = React.memo(({ route, navigation }) => {
     }
   }, [results?.results, currentPage, totalPages]);
 
-  const handleGoHome = useCallback(() => {
-    Alert.alert(
-      'Leave Quiz Review?',
-      'Are you sure you want to go back to home?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Yes', onPress: () => navigation.navigate('Home') }
-      ]
-    );
-  }, [navigation]);
-
   if (loading) {
     return <LoadingAnimation text="Loading Results..." />;
   }
@@ -91,7 +105,6 @@ const ReviewScreen = React.memo(({ route, navigation }) => {
       title="📋 Quiz Review"
       onPrevPage={handlePrevPage}
       onNextPage={handleNextPage}
-      onGoHome={handleGoHome}
     />
   );
 });
