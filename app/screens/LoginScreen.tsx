@@ -284,6 +284,21 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
   },
+  logoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  logoIcon: {
+    fontSize: 36,
+    marginRight: 8,
+  },
+  logoText: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#ffffff',
+    letterSpacing: 0.3,
+  },
   subtitle: {
     fontSize: 15,
     color: 'rgba(255,255,255,0.9)',
