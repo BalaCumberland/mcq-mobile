@@ -3,13 +3,13 @@ import { initializeAuth, getReactNativePersistence } from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCU8MW1DSWgqT4X_mOKuRm76gJMhJgWTOU",
-  authDomain: "gothinkerstech.firebaseapp.com",
-  projectId: "gothinkerstech",
-  storageBucket: "gothinkerstech.firebasestorage.app",
-  messagingSenderId: "1098307157317",
-  appId: "1:1098307157317:web:1be342bfe515dcd704d22c",
-  measurementId: "G-SQBENZ1XCP"
+  apiKey: "AIzaSyCU9E4AArx2SAg1S7Rz8-v_5IID21LbykU",
+  authDomain: "examsphereguru.firebaseapp.com",
+  projectId: "examsphereguru",
+  storageBucket: "examsphereguru.firebasestorage.app",
+  messagingSenderId: "332017099056",
+  appId: "1:332017099056:web:e25ff7589a0e748bd768f5",
+  measurementId: "G-SY0HPB0BLG"
 };
 
 // ✅ Initialize app only once (avoids "No default app" error)

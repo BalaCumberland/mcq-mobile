@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # MCQ Mobile App Release Script
-# Version: 1.8.2
+# Version: 1.8.3
 
 echo "🚀 Starting MCQ Mobile App Release Process..."
-echo "Version: 1.8.2"
+echo "Version: 1.8.3"
 echo "=================================="
 
 # Clean previous builds
@@ -26,7 +26,7 @@ if [ $? -eq 0 ]; then
     ls -la app/build/outputs/apk/release/*.apk
     
     echo ""
-    echo "🎉 Release v1.8.2 completed successfully!"
+    echo "🎉 Release v1.8.3 completed successfully!"
     echo "📂 Find your APK files in: android/app/build/outputs/apk/release/"
 else
     echo "❌ Build failed!"

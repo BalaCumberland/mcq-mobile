@@ -78,7 +78,7 @@ class ApiService {
     }
   }
 
-  async registerStudent(data: any) {
+  async registerStudent(data: { uid: string; email: string; name: string; phoneNumber: string; studentClass: string }) {
     const response = await fetch(`${this.baseUrl}${API_ENDPOINTS.REGISTER}`, {
       method: 'POST',
       headers: {

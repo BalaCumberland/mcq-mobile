@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
+import Logo from './Logo';
 
 interface SplashScreenProps {
   onInitialized: () => void;
@@ -31,11 +32,11 @@ export default function SplashScreen({ onInitialized }: SplashScreenProps) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>🎓 GradeUp</Text>
+      <Logo size="large" color="dark" />
       <Text style={styles.subtitle}>MCQ Quiz App</Text>
       <ActivityIndicator 
         size="large" 
-        color="#4CAF50" 
+        color="#1e40af" 
         style={styles.loader}
       />
       <Text style={styles.loadingText}>Loading...</Text>
@@ -48,24 +49,19 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 8,
+    backgroundColor: '#f8fafc',
   },
   subtitle: {
     fontSize: 16,
-    color: '#666',
+    color: '#64748b',
     marginBottom: 40,
+    marginTop: 8,
   },
   loader: {
     marginBottom: 20,
   },
   loadingText: {
     fontSize: 14,
-    color: '#666',
+    color: '#64748b',
   },
 });

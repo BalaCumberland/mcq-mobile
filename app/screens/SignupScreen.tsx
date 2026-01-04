@@ -12,10 +12,10 @@ import {
   Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
 import { Picker } from '@react-native-picker/picker';
-import { auth } from '../config/firebase';
+import { handleRegister } from '../services/firebaseAuth';
 import ApiService from '../services/apiService';
+import Logo from '../components/Logo';
 
 const { width } = Dimensions.get('window');
 
@@ -97,13 +97,13 @@ const SignupScreen = memo(function SignupScreen({ navigation }: any) {
 
     setLoading(true);
     try {
-      const result = await ApiService.registerStudent({
-        email: trimmedEmail,
-        password: password,
-        name: trimmedName,
-        phoneNumber: phoneNumber,
-        studentClass: studentClass,
-      });
+      await handleRegister(
+        trimmedEmail,
+        password,
+        trimmedName,
+        phoneNumber,
+        studentClass
+      );
 
       Alert.alert(
         'Registration Successful!',
@@ -153,7 +153,10 @@ const SignupScreen = memo(function SignupScreen({ navigation }: any) {
       <View style={styles.container}>
         {/* Header Section */}
         <View style={styles.header}>
-          <Text style={styles.appTitle}>🌐 Exam Sphere</Text>
+          <View style={styles.logoContainer}>
+            <Text style={styles.logoIcon}>🎓</Text>
+            <Text style={styles.logoText}>ExamSphere</Text>
+          </View>
           <Text style={styles.subtitle}>Join the learning community</Text>
         </View>
 
@@ -342,17 +345,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 32,
   },
-  appTitle: {
+  logoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  logoIcon: {
+    fontSize: 36,
+    marginRight: 8,
+  },
+  logoText: {
     fontSize: 32,
     fontWeight: '700',
     color: '#ffffff',
-    marginBottom: 6,
     letterSpacing: 0.3,
   },
   subtitle: {
     fontSize: 15,
     color: '#cbd5e1',
     fontWeight: '400',
+    marginTop: 8,
   },
   formSection: {
     flex: 0.78,

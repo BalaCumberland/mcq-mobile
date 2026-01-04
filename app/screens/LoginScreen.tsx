@@ -23,6 +23,7 @@ import { auth } from '../config/firebase';
 import userStore from '../store/UserStore';
 import { resendVerifiedEmail } from '../services/firebaseAuth';
 import { designSystem, colors, spacing, borderRadius } from '../styles/designSystem';
+import Logo from '../components/Logo';
 
 const { width } = Dimensions.get('window');
 
@@ -136,7 +137,10 @@ const LoginScreen = memo(function LoginScreen({ navigation }: any) {
       <View style={styles.container}>
         {/* Header Section */}
         <View style={styles.header}>
-          <Text style={styles.appTitle}>🌐 Exam Sphere</Text>
+          <View style={styles.logoContainer}>
+            <Text style={styles.logoIcon}>🎓</Text>
+            <Text style={styles.logoText}>ExamSphere</Text>
+          </View>
           <Text style={styles.subtitle}>Master your knowledge</Text>
         </View>
 
