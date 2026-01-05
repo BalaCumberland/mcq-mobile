@@ -29,6 +29,8 @@ const SignupScreen = memo(function SignupScreen({ navigation }: any) {
   const [classes, setClasses] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingClasses, setLoadingClasses] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
     const fetchClasses = async () => {
@@ -242,8 +244,14 @@ const SignupScreen = memo(function SignupScreen({ navigation }: any) {
                   value={password}
                   onChangeText={setPassword}
                   style={styles.input}
-                  secureTextEntry
+                  secureTextEntry={!showPassword}
                 />
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                  style={styles.eyeButton}
+                >
+                  <Text style={styles.eyeIcon}>{showPassword ? '👁️' : '👁️🗨️'}</Text>
+                </TouchableOpacity>
               </View>
               {password.length > 0 && (password.length < 8 || password.length > 128) && (
                 <Text style={styles.errorText}>Password must be 8-128 characters</Text>
@@ -260,8 +268,14 @@ const SignupScreen = memo(function SignupScreen({ navigation }: any) {
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
                   style={styles.input}
-                  secureTextEntry
+                  secureTextEntry={!showConfirmPassword}
                 />
+                <TouchableOpacity
+                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                  style={styles.eyeButton}
+                >
+                  <Text style={styles.eyeIcon}>{showConfirmPassword ? '👁️' : '👁️🗨️'}</Text>
+                </TouchableOpacity>
               </View>
               {confirmPassword.length > 0 && confirmPassword !== password && (
                 <Text style={styles.errorText}>Passwords do not match</Text>
@@ -489,5 +503,12 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     color: '#64748b',
     fontSize: 14,
+  },
+  eyeButton: {
+    padding: 4,
+  },
+  eyeIcon: {
+    fontSize: 18,
+    color: '#64748B',
   },
 });

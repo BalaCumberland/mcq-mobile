@@ -32,6 +32,7 @@ const LoginScreen = memo(function LoginScreen({ navigation }: any) {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     loadSavedCredentials();
@@ -192,10 +193,16 @@ const LoginScreen = memo(function LoginScreen({ navigation }: any) {
                     value={password}
                     onChangeText={setPassword}
                     style={styles.input}
-                    secureTextEntry
+                    secureTextEntry={!showPassword}
                     returnKeyType="done"
                     onSubmitEditing={handleLogin}
                   />
+                  <TouchableOpacity
+                    onPress={() => setShowPassword(!showPassword)}
+                    style={styles.eyeButton}
+                  >
+                    <Text style={styles.eyeIcon}>{showPassword ? '👁️' : '👁️‍🗨️'}</Text>
+                  </TouchableOpacity>
                 </View>
               </View>
 
@@ -455,6 +462,13 @@ const styles = StyleSheet.create({
   signupLink: {
     color: '#1e3a8a',
     fontWeight: '700',
+  },
+  eyeButton: {
+    padding: 4,
+  },
+  eyeIcon: {
+    fontSize: 18,
+    color: '#64748B',
   },
 });
 

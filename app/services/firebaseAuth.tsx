@@ -12,14 +12,11 @@ import { reset } from "./navigationService";
 export async function handleRegister(email, password, name, phoneNumber, studentClass) {
   return new Promise(async (resolve, reject) => {
     try {
+      // Create Firebase Auth user first (frontend)
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      try {
-        await sendEmailVerification(user);
-      } catch (emailError) {
-      }
-
+      // Save user details to backend first
       const response = await fetch(`${API_BASE_URL}/students/register`, {
         method: "POST",
         headers: { 'Content-Type': 'application/json' },
@@ -27,8 +24,8 @@ export async function handleRegister(email, password, name, phoneNumber, student
           uid: user.uid,
           email: email,
           name: name,
-          phoneNumber: phoneNumber,
           studentClass: studentClass,
+          phoneNumber: phoneNumber,
         }),
       });
 
@@ -36,6 +33,16 @@ export async function handleRegister(email, password, name, phoneNumber, student
         const errorMessage = await response.text();
         throw new Error(`Failed to save student details: ${errorMessage}`);
       }
+
+      // Send verification email after backend registration
+      try {
+        await sendEmailVerification(user);
+      } catch (emailError) {
+        console.warn('Failed to send verification email:', emailError);
+      }
+
+      // Sign out user after registration
+      await auth.signOut();
 
       resolve(userCredential.user);
     } catch (error) {
